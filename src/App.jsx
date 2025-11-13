@@ -19,17 +19,20 @@ import {
 } from 'firebase/auth';
 
 /*
-  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 12 - SEGURANÇA)
+  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 13 - Layout e Erros)
 
   Olá, Implementador!
 
-  Esta é uma atualização de SEGURANÇA.
-  NÃO PODEMOS enviar nossas chaves secretas para o GitHub.
+  Esta versão corrige os dois problemas que você apontou:
+  1. O layout no celular (botões grandes, quebra de linha feia).
+  2. A mensagem de erro do modal, que aparecia fora do modal.
 
   ATUALIZAÇÃO:
-  - O código não armazena mais as chaves.
-  - Ele agora lê as chaves de "Variáveis de Ambiente" (import.meta.env.VITE_...).
-  - Você PRECISARÁ criar um arquivo `.env.local` (instruções no outro arquivo).
+  - `renderEventosPage`: Layout agora é responsivo (flex-col no celular).
+  - `renderEventosPage`: Botão "[+] Novo Evento" redimensionado.
+  - `AddEventModal`: Agora tem seu próprio estado de erro (`modalError`).
+  - `AddEventModal`: A mensagem de erro agora aparece DENTRO do modal.
+  - `AddEventModal`: Botão "Salvar Evento" redimensionado.
 
   O código-base anterior está 100% preservado.
 */
@@ -49,7 +52,6 @@ const firebaseConfig = {
 // Validação para garantir que as variáveis foram carregadas
 if (!firebaseConfig.apiKey) {
   console.error("Erro: Variáveis de ambiente do Firebase não carregadas.");
-  // Em um app real, mostraríamos uma tela de erro aqui.
 }
 
 // Inicializa o Firebase
@@ -89,7 +91,7 @@ function App() {
   const [isDbReady, setIsDbReady] = useState(false); // Pronto para Firebase
 
   // --- Estados da Aplicação ---
-  const [error, setError] = useState(null);
+  const [globalError, setGlobalError] = useState(null); // Erro para o app (fora do modal)
   const [page, setPage] = useState('eventos');
   const [musicos, setMusicos] = useState([]);
   const [loadingMusicos, setLoadingMusicos] = useState(true);
@@ -140,7 +142,7 @@ function App() {
         setLoadingMusicos(false);
       }, (err) => {
         console.error("[Firestore] Erro ao carregar músicos:", err);
-        setError("Erro ao carregar lista de músicos.");
+        setGlobalError("Erro ao carregar lista de músicos.");
         setLoadingMusicos(false);
       }
     );
@@ -168,7 +170,7 @@ function App() {
         setLoadingEventos(false);
       }, (err) => {
         console.error("[Firestore] Erro ao carregar eventos:", err);
-        setError("Erro ao carregar lista de eventos.");
+        setGlobalError("Erro ao carregar lista de eventos.");
         setLoadingEventos(false);
       }
     );
@@ -190,7 +192,7 @@ function App() {
         })
         .catch((e) => {
           console.error('Erro ao inicializar GAPI client:', e);
-          setError('Erro ao inicializar GAPI client.');
+          setGlobalError('Erro ao inicializar GAPI client.');
         });
     });
   };
@@ -198,7 +200,7 @@ function App() {
   // --- Funções de Autenticação Google ---
   const handleAuthClick = async () => {
     if (!gapiClient) {
-      setError('Cliente GAPI não está pronto.');
+      setGlobalError('Cliente GAPI não está pronto.');
       return;
     }
 
@@ -225,14 +227,14 @@ function App() {
         setIsDbReady(true);
         console.log('Firebase Auth: Logado com Google UID:', result.user.uid);
 
-        setError(null);
+        setGlobalError(null);
       } else {
         throw new Error("Não foi possível obter o token ou o usuário do Google.");
       }
 
     } catch (e) {
       console.error("Erro no login com Google:", e);
-      setError(`Erro de autenticação: ${e.message}`);
+      setGlobalError(`Erro de autenticação: ${e.message}`);
       handleSignoutClick();
     }
   };
@@ -242,7 +244,7 @@ function App() {
       await signOut(auth);
     } catch (e) {
       console.error("Erro ao deslogar:", e);
-      setError("Erro ao tentar sair.");
+      setGlobalError("Erro ao tentar sair.");
     }
 
     setUserId(null);
@@ -252,20 +254,20 @@ function App() {
     if (gapiClient) {
       gapiClient.client.setToken(null);
     }
-    setError(null);
+    setGlobalError(null);
     setMusicos([]);
     setEventos([]);
     console.log('Firebase Auth: Deslogado e estados limpos.');
   };
-
+  
   // Deletar Evento (com SweetAlert2)
   const handleDeleteEvento = async (eventoId) => {
     const collectionPath = getEventosCollectionPath();
     if (!collectionPath) {
-      setError("Erro de conexão (User ID nulo).");
+      setGlobalError("Erro de conexão (User ID nulo).");
       return;
     }
-
+    
     // Troca `window.confirm` por `Swal.fire`
     const result = await Swal.fire({
       title: 'Tem certeza que deseja deletar?',
@@ -289,7 +291,7 @@ function App() {
         );
       } catch (e) {
         console.error("[Firestore] Erro ao deletar evento:", e);
-        setError("Não foi possível deletar o evento do Firestore.");
+        setGlobalError("Não foi possível deletar o evento do Firestore.");
         Swal.fire(
           'Erro!',
           'Não foi possível deletar o evento.',
@@ -342,18 +344,25 @@ function App() {
     </header>
   );
 
-  // --- Componente: Aba de Eventos ---
+  // --- Componente: Aba de Eventos (LAYOUT ATUALIZADO) ---
   const renderEventosPage = () => (
-    <div className="bg-white rounded-lg shadow-xl p-8">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl font-bold text-gray-900">
+    // Padding menor no celular (p-4), maior no desktop (sm:p-8)
+    <div className="bg-white rounded-lg shadow-xl p-4 sm:p-8">
+      
+      {/* Container do cabeçalho: flex-col no celular, flex-row no desktop */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6">
+        
+        {/* Título: menor no celular, margin-bottom no celular */}
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-0">
           Dashboard de Eventos
         </h2>
+        
+        {/* Botão: w-full no celular, w-auto no desktop, tamanho de texto/padding reduzido */}
         <button
           onClick={() => setShowEventModal(true)}
-          className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1"
+          className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1"
         >
-          [+] Adicionar Novo Evento
+          [+] Novo Evento
         </button>
       </div>
 
@@ -373,11 +382,11 @@ function App() {
                   {new Date(evento.dataInicio).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
                 </p>
               </div>
-
+              
               {/* Botão de Deletar (Lixeira) */}
               <button
                 onClick={() => handleDeleteEvento(evento.id)}
-                className="bg-red-100 hover:bg-red-200 text-red-700 p-2 rounded-full text-sm transition duration-300"
+                className="flex-shrink-0 bg-red-100 hover:bg-red-200 text-red-700 p-2 ml-2 rounded-full text-sm transition duration-300"
                 title="Deletar evento do app"
               >
                 {/* SVG da lixeira */}
@@ -396,8 +405,8 @@ function App() {
       musicos={musicos}
       loading={loadingMusicos}
       collectionPath={getMusicosCollectionPath()}
-      // Passa o setError para o MusicosManager poder mostrar erros globais
-      setError={setError}
+      // Passa o setGlobalError para o MusicosManager poder mostrar erros globais
+      setError={setGlobalError} 
     />
   );
 
@@ -426,7 +435,7 @@ function App() {
           <p className="text-gray-600 mb-8">
             Faça login com sua conta Google para gerenciar os eventos.
           </p>
-          {error && <ErrorMessage message={error} />}
+          {globalError && <ErrorMessage message={globalError} />}
           <button
             onClick={handleAuthClick}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1"
@@ -443,7 +452,7 @@ function App() {
     <div className="min-h-screen bg-gray-100 font-sans">
       {renderHeader()}
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        {error && <ErrorMessage message={error} onDismiss={() => setError(null)} />}
+        {globalError && <ErrorMessage message={globalError} onDismiss={() => setGlobalError(null)} />}
 
         {page === 'eventos' && renderEventosPage()}
         {page === 'musicos' && renderMusicosPage()}
@@ -456,7 +465,7 @@ function App() {
           musicosCadastrados={musicos}
           gapiClient={gapiClient}
           eventosCollectionPath={getEventosCollectionPath()}
-          setError={setError}
+          // Não passa mais o `setError` global
         />
       )}
     </div>
@@ -465,8 +474,8 @@ function App() {
 
 // --- Componentes Auxiliares ---
 
-// Modal de Adicionar Evento (Idêntico ao anterior)
-const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollectionPath, setError }) => {
+// Modal de Adicionar Evento (ERRO AGORA É LOCAL)
+const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollectionPath }) => {
   const [nome, setNome] = useState('');
   const [data, setData] = useState('');
   const [horaInicio, setHoraInicio] = useState('09:00'); // Valor padrão
@@ -475,12 +484,18 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
   const [status, setStatus] = useState('A Confirmar');
   const [selectedMusicos, setSelectedMusicos] = useState([]);
   const [saving, setSaving] = useState(false);
+  
+  // **********************************************************
+  // ATUALIZADO: Estado de erro local para o modal
+  // **********************************************************
+  const [modalError, setModalError] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null);
+    setModalError(null); // Limpa o erro local
+    
     if (!nome || !data || !horaInicio || !horaFim || !cidade) {
-      setError("Por favor, preencha todos os campos obrigatórios.");
+      setModalError("Por favor, preencha todos os campos obrigatórios."); // Seta o erro local
       return;
     }
     setSaving(true);
@@ -529,34 +544,20 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
       onClose();
 
     } catch (e) {
-      // **********************************************************
-      // TRATAMENTO DE ERRO (Idêntico ao anterior)
-      // **********************************************************
       console.error("Erro ao salvar evento (objeto bruto):", e);
-
       let errorMessage = "Ocorreu um erro desconhecido ao salvar.";
 
       if (e.result && e.result.error) {
-        // Erro estruturado do GAPI (Ex: 403, 404, etc.)
         errorMessage = `Erro do Google (${e.result.error.code}): ${e.result.error.message}`;
-
-        // Fornece feedback específico para o erro 403
         if (e.result.error.code === 403) {
             errorMessage += " - Verifique se a 'Google Calendar API' está ATIVADA no seu projeto do Google Cloud.";
         }
       } else if (e.message) {
-        // Erro de JavaScript ou de rede
         errorMessage = e.message;
-      } else {
-        // Fallback se o objeto de erro for incomum
-        errorMessage = "Um erro ocorreu. Verifique o console para o objeto 'e'.";
       }
-
-      setError(errorMessage); // Mostra a mensagem de erro real
+      
+      setModalError(errorMessage); // Seta o erro local
       setSaving(false);
-      // **********************************************************
-      // FIM DA CORREÇÃO
-      // **********************************************************
     }
   };
 
@@ -586,6 +587,12 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
           </div>
 
           <div className="p-6 space-y-4">
+            
+            {/* ********************************************************** */}
+            {/* ATUALIZADO: Mensagem de erro local renderizada DENTRO do modal */}
+            {/* ********************************************************** */}
+            {modalError && <ErrorMessage message={modalError} onDismiss={() => setModalError(null)} />}
+
             <FormInput
               label="Nome do Evento"
               value={nome}
@@ -661,7 +668,8 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
             <button
               type="submit"
               disabled={saving}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition duration-300 disabled:opacity-50"
+              // ATUALIZADO: Tamanho do botão reduzido de px-6 para px-4
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 disabled:opacity-50"
             >
               {saving ? 'Salvando...' : 'Salvar Evento'}
             </button>
@@ -709,15 +717,13 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
     setSaving(false);
   };
 
-  // **********************************************************
-  // ATUALIZADO: Deletar Músico (com SweetAlert2)
-  // **********************************************************
+  // Deletar Músico (com SweetAlert2)
   const handleDelete = async (musicoId) => {
     if (!collectionPath) {
       setError("Erro de conexão (User ID nulo).");
       return;
     }
-
+    
     const result = await Swal.fire({
       title: 'Tem certeza que deseja deletar?',
       text: "O músico será removido permanentemente.",
@@ -728,7 +734,7 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
       confirmButtonText: 'Sim, deletar!',
       cancelButtonText: 'Cancelar'
     });
-
+    
     if (result.isConfirmed) {
       try {
         await deleteDoc(doc(db, collectionPath, musicoId));
@@ -750,9 +756,11 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
   };
 
   return (
+    // ATUALIZADO: Layout responsivo para o gerenciador de músicos
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* Coluna 1: Formulário (com padding menor no celular) */}
       <div className="lg:col-span-1">
-        <div className="bg-white rounded-lg shadow-xl p-6">
+        <div className="bg-white rounded-lg shadow-xl p-4 sm:p-6">
           <h3 className="text-2xl font-bold text-gray-900 mb-4">
             Adicionar Músico
           </h3>
@@ -788,8 +796,9 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
         </div>
       </div>
 
+      {/* Coluna 2: Lista (com padding menor no celular) */}
       <div className="lg:col-span-2">
-        <div className="bg-white rounded-lg shadow-xl p-6">
+        <div className="bg-white rounded-lg shadow-xl p-4 sm:p-6">
           <h3 className="text-2xl font-bold text-gray-900 mb-4">
             Músicos Cadastrados
           </h3>
@@ -800,15 +809,16 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
           {!loading && musicos.length > 0 && (
             <ul className="divide-y divide-gray-200">
               {musicos.map(musico => (
-                <li key={musico.id} className="py-4 flex justify-between items-center">
-                  <div>
+                <li key={musico.id} className="py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                  <div className="mb-2 sm:mb-0">
                     <p className="text-lg font-medium text-gray-900">{musico.nome}</p>
                     <p className="text-sm text-gray-600">{musico.instrumento}</p>
                     <p className="text-sm text-gray-500">{musico.email}</p>
                   </div>
                   <button
                     onClick={() => handleDelete(musico.id)}
-                    className="bg-red-100 hover:bg-red-200 text-red-700 font-semibold py-1 px-3 rounded-lg text-sm transition duration-300"
+                    // ATUALIZADO: w-full no celular
+                    className="w-full sm:w-auto bg-red-100 hover:bg-red-200 text-red-700 font-semibold py-1 px-3 rounded-lg text-sm transition duration-300"
                   >
                     Deletar
                   </button>
