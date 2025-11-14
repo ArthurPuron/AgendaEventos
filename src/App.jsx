@@ -19,24 +19,24 @@ import {
 } from 'firebase/auth';
 
 /*
-  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 22 - Limpeza)
+  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 24)
 
   Olá, Implementador!
 
-  O bug do layout (espaço em branco) estava no `index.css`.
-  A correção real foi aplicada no `index.html`.
+  Implementei o "Modal de Visualização" de evento.
 
   ATUALIZAÇÃO:
-  - Eu reverti as mudanças de layout (w-full max-w-none)
-    que eu tinha adicionado neste arquivo. Elas eram "hacks"
-    desnecessários e agora o código está limpo.
-  
-  - O código do `firebaseConfig` foi mantido como
-    estava na última versão (Passo 21).
+  - Mudei o título "Dashboard de Eventos" para "Eventos".
+  - A lista de eventos agora é clicável.
+  - Criei um novo estado `selectedEvento` para controlar o modal.
+  - Criei um novo componente `ViewEventModal`.
+  - Este modal exibe TODOS os dados do evento, incluindo os
+    campos financeiros (Pacote, Valor, Cachets).
+  - Adicionei helpers de formatação para Data e Moeda (R$).
 */
 
 // **********************************************************
-// Chaves de Configuração (Corrigido no Passo 21)
+// Chaves de Configuração (Base Correta)
 // **********************************************************
 const firebaseConfig = {
   apiKey: "AIzaSyBlmPHXVo0isazUuPN7R76f1Y3Xcohad94",
@@ -80,6 +80,31 @@ const timeOptions = generateTimeOptions();
 // Lista de Pacotes (Nova)
 const pacotesOptions = ['Harmonie', 'Intimist', 'Essence'];
 
+// NOVO HELPER: Formata data/hora para exibição
+const formatDisplayDate = (dataInicioISO, dataFimISO) => {
+  try {
+    const start = new Date(dataInicioISO);
+    const end = new Date(dataFimISO);
+    
+    const dateStr = start.toLocaleDateString('pt-BR', { dateStyle: 'short' });
+    const startTimeStr = start.toLocaleTimeString('pt-BR', { timeStyle: 'short' });
+    const endTimeStr = end.toLocaleTimeString('pt-BR', { timeStyle: 'short' });
+    
+    return `${dateStr}, ${startTimeStr} - ${endTimeStr}`;
+  } catch (e) {
+    console.error("Erro ao formatar data:", e);
+    return "Data inválida";
+  }
+};
+
+// NOVO HELPER: Formata valores monetários
+const formatCurrency = (valor) => {
+  // Converte string (ex: "1.500,00" ou "1500") para número
+  const num = parseFloat(String(valor).replace(/\./g, '').replace(',', '.')) || 0;
+  return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+};
+
+
 function App() {
   // --- Estados da Autenticação ---
   const [gapiClient, setGapiClient] = useState(null); // Cliente da API (GAPI)
@@ -97,6 +122,9 @@ function App() {
   const [eventos, setEventos] = useState([]);
   const [loadingEventos, setLoadingEventos] = useState(true);
   const [showEventModal, setShowEventModal] = useState(false);
+  
+  // NOVO ESTADO: Controla o modal de visualização
+  const [selectedEvento, setSelectedEvento] = useState(null);
 
   // --- Caminhos das Coleções ---
   const getMusicosCollectionPath = () => {
@@ -349,9 +377,9 @@ function App() {
       {/* Container do cabeçalho: flex-col no celular, flex-row no desktop */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6">
         
-        {/* Título: menor no celular, margin-bottom no celular */}
+        {/* Título: ATUALIZADO (Dashboard de Eventos -> Eventos) */}
         <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-0">
-          Dashboard de Eventos
+          Eventos
         </h2>
         
         {/* Botão: w-full no celular, w-auto no desktop, tamanho de texto/padding reduzido */}
@@ -370,24 +398,36 @@ function App() {
       {!loadingEventos && eventos.length > 0 && (
         <ul className="divide-y divide-gray-200">
           {eventos.map(evento => (
-            <li key={evento.id} className="py-4 flex justify-between items-center">
-              {/* Informações do Evento */}
-              <div>
-                <p className="text-lg font-medium text-gray-900">{evento.nome}</p>
-                <p className="text-sm text-gray-600">{evento.cidade} - <span className={evento.status === 'Confirmado' ? 'text-green-600 font-semibold' : 'text-yellow-600 font-semibold'}>{evento.status}</span></p>
-                <p className="text-sm text-gray-500">
-                  {new Date(evento.dataInicio).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
-                </p>
-              </div>
-              
-              {/* Botão de Deletar (Lixeira) */}
+            // NOVO: A `li` agora é um `button` clicável
+            <li key={evento.id}>
               <button
-                onClick={() => handleDeleteEvento(evento.id)}
-                className="flex-shrink-0 bg-red-100 hover:bg-red-200 text-red-700 p-2 ml-2 rounded-full text-sm transition duration-300"
-                title="Deletar evento do app"
+                onClick={() => setSelectedEvento(evento)}
+                className="py-4 flex justify-between items-center w-full text-left hover:bg-gray-50 rounded-lg"
               >
-                {/* SVG da lixeira */}
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                {/* Informações do Evento */}
+                <div>
+                  <p className="text-lg font-medium text-gray-900">{evento.nome}</p>
+                  <p className="text-sm text-gray-600">{evento.cidade} - <StatusBadge status={evento.status} /></p>
+                  <p className="text-sm text-gray-500">
+                    {/* Usa o novo helper para formatar a data */}
+                    {formatDisplayDate(evento.dataInicio, evento.dataFim)}
+                  </p>
+                </div>
+                
+                {/* Botão de Deletar (Lixeira) */}
+                <button
+                  // NOVO: Adicionado e.stopPropagation() para
+                  // não abrir o modal ao clicar em deletar.
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteEvento(evento.id);
+                  }}
+                  className="flex-shrink-0 bg-red-100 hover:bg-red-200 text-red-700 p-2 ml-2 rounded-full text-sm transition duration-300"
+                  title="Deletar evento do app"
+                >
+                  {/* SVG da lixeira */}
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </button>
               </button>
             </li>
           ))}
@@ -458,7 +498,7 @@ function App() {
         {page === 'musicos' && renderMusicosPage()}
       </main>
 
-      {/* O Modal de Evento */}
+      {/* O Modal de Adicionar Evento */}
       {showEventModal && (
         <AddEventModal
           onClose={() => setShowEventModal(false)}
@@ -468,11 +508,107 @@ function App() {
           // Não passa mais o `setError` global
         />
       )}
+      
+      {/* NOVO: O Modal de Visualizar Evento */}
+      {selectedEvento && (
+        <ViewEventModal
+          evento={selectedEvento}
+          onClose={() => setSelectedEvento(null)}
+        />
+      )}
     </div>
   );
 }
 
 // --- Componentes Auxiliares ---
+
+// NOVO COMPONENTE: Modal de Visualização de Evento
+const ViewEventModal = ({ evento, onClose }) => {
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        
+        {/* Cabeçalho do Modal */}
+        <div className="flex justify-between items-start p-6 border-b border-gray-200">
+          <div>
+            <h3 className="text-2xl font-bold text-gray-900">
+              {evento.nome}
+            </h3>
+            <p className="text-sm text-gray-500">{evento.cidade}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+        </div>
+
+        {/* Corpo do Modal */}
+        <div className="p-6 space-y-6">
+          
+          {/* Seção 1: Detalhes Principais */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <InfoItem label="Data & Horário" value={formatDisplayDate(evento.dataInicio, evento.dataFim)} />
+            <InfoItem label="Status">
+              <StatusBadge status={evento.status} />
+            </InfoItem>
+            <InfoItem label="Pacote" value={evento.pacote} />
+          </div>
+
+          {/* Seção 2: Finanças */}
+          <div>
+            <h4 className="text-lg font-semibold text-gray-800 mb-2 border-b pb-1">
+              Financeiro
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <InfoItem label="Valor Total do Evento" value={formatCurrency(evento.valorEvento)} />
+            </div>
+          </div>
+          
+          {/* Seção 3: Músicos */}
+          <div>
+            <h4 className="text-lg font-semibold text-gray-800 mb-2 border-b pb-1">
+              Músicos e Cachets
+            </h4>
+            {evento.musicos && evento.musicos.length > 0 ? (
+              <ul className="divide-y divide-gray-200">
+                {evento.musicos.map(musico => (
+                  <li key={musico.id} className="py-3 flex justify-between items-center">
+                    <div>
+                      <p className="font-medium text-gray-900">{musico.nome}</p>
+                      <p className="text-sm text-gray-500">{musico.instrumento}</p>
+                    </div>
+                    <p className="text-gray-700 font-semibold">
+                      {formatCurrency(musico.cachet)}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-gray-500">Nenhum músico selecionado para este evento.</p>
+            )}
+          </div>
+
+        </div>
+
+        {/* Rodapé do Modal */}
+        <div className="p-6 bg-gray-50 border-t border-gray-200 rounded-b-2xl flex justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300"
+          >
+            Fechar
+          </button>
+        </div>
+
+      </div>
+    </div>
+  );
+};
+
 
 // Modal de Adicionar Evento (ATUALIZADO COM FINANÇAS)
 const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollectionPath }) => {
@@ -962,5 +1098,36 @@ const ErrorMessage = ({ message, onDismiss }) => (
     )}
   </div>
 );
+
+// NOVO: Componente Helper para o Modal de Visualização
+const InfoItem = ({ label, value, children }) => (
+  <div>
+    <label className="block text-sm font-medium text-gray-500">
+      {label}
+    </label>
+    {children ? (
+      <div className="mt-1">{children}</div>
+    ) : (
+      <p className="text-lg font-semibold text-gray-900">
+        {value}
+      </p>
+    )}
+  </div>
+);
+
+// NOVO: Componente Helper para o Modal de Visualização
+const StatusBadge = ({ status }) => (
+  <span
+    className={`px-2 py-0.5 rounded-full text-xs font-semibold
+      ${status === 'Confirmado'
+        ? 'bg-green-100 text-green-800'
+        : 'bg-yellow-100 text-yellow-800'
+      }
+    `}
+  >
+    {status}
+  </span>
+);
+
 
 export default App;
