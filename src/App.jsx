@@ -12,8 +12,8 @@ import {
   setDoc, 
   updateDoc, 
   setLogLevel,
-  collectionGroup, 
-  where, 
+  collectionGroup, // NOVO: Para buscar eventos de músicos
+  where, // NOVO: Para filtrar por email
 } from 'firebase/firestore';
 import {
   getAuth,
@@ -23,29 +23,25 @@ import {
 } from 'firebase/auth';
 
 /*
-  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 35)
+  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 36)
 
   Olá, Implementador!
 
-  Você estava 100% correto. O aviso de "perigo" era
-  desnecessário para os músicos.
+  Implementei sua ideia do "Avatar".
 
-  ATUALIZAÇÃO DE ARQUITETURA:
-  - `handleAuthClick`: AGORA SÓ FAZ LOGIN BÁSICO.
-    Eu removi o `CALENDAR_SCOPE` do login principal.
-    Músicos NUNCA verão o aviso de perigo.
+  ATUALIZAÇÃO:
+  - Não podemos (por segurança) pegar a foto real
+    do Google de um músico só com o e-mail.
+  - MAS, criei uma solução "igual ao Google":
+    um Avatar com as INICIAIS do nome.
 
-  - `AdminDashboard`: Agora verifica um novo estado `isCalendarReady`.
+  - `MusicosManager`: A lista de músicos agora
+    mostra um círculo com as iniciais (ex: "AF")
+    ao lado do nome, como você pediu.
   
-  - `AdminAuthScreen` (NOVO): Se você é Admin, mas ainda
-    não autorizou o calendário, você verá esta tela.
-  
-  - `handleCalendarAuth` (NOVA FUNÇÃO): O botão na tela acima
-    chama esta função, que PEDE a permissão do Calendar
-    (só para você).
-  
-  - `gapiClient`: Agora é carregado e inicializado SOMENTE
-    depois que o Admin autoriza o calendário.
+  - `Avatar` (NOVO Componente): Um novo helper
+    foi adicionado no final do arquivo para
+    gerar esses avatares.
 */
 
 // **********************************************************
@@ -481,7 +477,9 @@ function App() {
       >
         Autorizar Google Calendar
       </button>
-     
+      <p className="text-sm text-gray-500 mt-4">
+        (Os músicos não verão esta etapa.)
+      </p>
     </div>
   );
 
@@ -1322,10 +1320,19 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
             <ul className="divide-y divide-gray-200">
               {musicos.map(musico => (
                 <li key={musico.id} className="py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
-                  <div className="mb-2 sm:mb-0">
-                    <p className="text-lg font-medium text-gray-900">{musico.nome}</p>
-                    <p className="text-sm text-gray-600">{musico.instrumento}</p>
-                    <p className="text-sm text-gray-500">{musico.email}</p>
+                  
+                  {/* **********************************
+                    ATUALIZAÇÃO (Passo 36)
+                    Adicionado Avatar e flex layout
+                    **********************************
+                  */}
+                  <div className="mb-2 sm:mb-0 flex items-center">
+                    <Avatar name={musico.nome} />
+                    <div className="ml-3">
+                      <p className="text-lg font-medium text-gray-900">{musico.nome}</p>
+                      <p className="text-sm text-gray-600">{musico.instrumento}</p>
+                      <p className="text-sm text-gray-500">{musico.email}</p>
+                    </div>
                   </div>
                   
                   {/* NOVO: Container de botões de ícone */}
@@ -1422,7 +1429,7 @@ const ErrorMessage = ({ message, onDismiss }) => (
   </div>
 );
 
-// NOVO: Componente Helper para o Modal de Visualização
+// Componente Helper para o Modal de Visualização
 const InfoItem = ({ label, value, children }) => (
   <div>
     <label className="block text-sm font-medium text-gray-500">
@@ -1438,7 +1445,7 @@ const InfoItem = ({ label, value, children }) => (
   </div>
 );
 
-// NOVO: Componente Helper para o Modal de Visualização
+// Componente Helper para o Modal de Visualização
 const StatusBadge = ({ status }) => (
   <span
     className={`px-2 py-0.5 rounded-full text-xs font-semibold
@@ -1451,6 +1458,44 @@ const StatusBadge = ({ status }) => (
     {status}
   </span>
 );
+
+// **********************************
+// NOVO (Passo 36): Componente Avatar
+// **********************************
+const getInitials = (name = '') => {
+  const names = name.split(' ').filter(Boolean); // Filtra espaços extras
+  if (names.length === 0) return '?';
+  // Pega a primeira letra do primeiro nome
+  const first = names[0][0];
+  // Pega a primeira letra do último nome (se houver mais de 1 nome)
+  const last = names.length > 1 ? names[names.length - 1][0] : '';
+  return `${first}${last}`.toUpperCase();
+};
+
+// Gera uma cor consistente baseada no nome
+const Avatar = ({ name }) => {
+  const initials = getInitials(name);
+  const colors = [
+    'bg-red-200 text-red-800',
+    'bg-blue-200 text-blue-800',
+    'bg-green-200 text-green-800',
+    'bg-yellow-200 text-yellow-800',
+    'bg-purple-200 text-purple-800',
+    'bg-pink-200 text-pink-800',
+    'bg-indigo-200 text-indigo-800',
+  ];
+  // Cria um hash simples para pegar uma cor consistente
+  const charCodeSum = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const color = colors[charCodeSum % colors.length];
+
+  return (
+    <div
+      className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center font-bold ${color}`}
+    >
+      {initials}
+    </div>
+  );
+};
 
 
 export default App;
