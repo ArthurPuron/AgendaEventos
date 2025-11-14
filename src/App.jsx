@@ -19,18 +19,17 @@ import {
 } from 'firebase/auth';
 
 /*
-  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 15 - Tela Cheia)
+  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 16 - Correção do Layout)
 
   Olá, Implementador!
 
-  Esta atualização corrige o layout para preencher a tela (removendo o
-  espaço em branco lateral que você viu no celular).
+  Minha correção anterior estava incompleta. Eu removi o max-width do <main>,
+  mas esqueci de removê-lo de dentro do <header>.
 
   ATUALIZAÇÃO:
-  - Na tag `<main>`, eu removi as classes `max-w-7xl` e `mx-auto`.
-  - O conteúdo agora usará a largura total da tela, respeitando os paddings.
-
-  O código-base anterior ("Finanças") está 100% preservado.
+  - `renderHeader`: Removido `max-w-7xl` e `mx-auto` dos divs internos.
+  - Agora o cabeçalho E o conteúdo estão 100% full-width (respeitando o padding).
+  - O espaço em branco no celular deve desaparecer.
 */
 
 // **********************************************************
@@ -302,7 +301,13 @@ function App() {
   // --- Componente: Cabeçalho (com Abas) ---
   const renderHeader = () => (
     <header className="bg-white shadow-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/*
+        **********************************************************
+        ATUALIZAÇÃO DE LAYOUT (Tela Cheia)
+        Removido `max-w-7xl` e `mx-auto` daqui.
+        **********************************************************
+      */}
+      <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <h1 className="text-2xl font-bold text-gray-800">
             Agenda de Músicos
@@ -326,7 +331,13 @@ function App() {
         </div>
       </div>
       <nav className="bg-gray-50 border-t border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-4">
+        {/*
+          **********************************************************
+          ATUALIZAÇÃO DE LAYOUT (Tela Cheia)
+          Removido `max-w-7xl` e `mx-auto` daqui.
+          **********************************************************
+        */}
+        <div className="px-4 sm:px-6 lg:px-8 flex space-x-4">
           <TabButton
             label="Eventos"
             isActive={page === 'eventos'}
@@ -450,12 +461,6 @@ function App() {
     <div className="min-h-screen bg-gray-100 font-sans">
       {renderHeader()}
       
-      {/*
-        **********************************************************
-        ATUALIZAÇÃO DE LAYOUT (Tela Cheia)
-        Removido `max-w-7xl` e `mx-auto` daqui.
-        **********************************************************
-      */}
       <main className="py-6 px-4 sm:px-6 lg:px-8">
         {globalError && <ErrorMessage message={globalError} onDismiss={() => setGlobalError(null)} />}
 
