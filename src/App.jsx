@@ -19,22 +19,23 @@ import {
 } from 'firebase/auth';
 
 /*
-  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 19 - Correção de Deploy)
+  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 20 - A Correção Real)
 
   Olá, Implementador!
 
-  O deploy no Vercel falhou porque eu (a desenvolvedora) deixei
-  uma variável de estado (`accessToken`) que nunca era lida (um "unused variable").
-  O `npm run dev` (local) ignora isso, mas o `npm run build` (Vercel)
-  trata como um erro e para o deploy.
+  O bug do layout persistiu porque eu estava corrigindo os "filhos"
+  (<header> e <main>) em vez de corrigir o "PAI".
+
+  O seu feedback ("a tela de login fica certo, mas o dashboard não")
+  foi a chave.
 
   ATUALIZAÇÃO:
-  - Removi `const [accessToken, setAccessToken] = useState(null);`
-  - Removi `setAccessToken(token);` e `setAccessToken(null);`
-  - O token do GAPI já é gerenciado pelo `gapiClient.client.setToken()`,
-    então essa variável de estado era desnecessária.
+  - Adicionei `w-full max-w-none` ao <div className="min-h-screen...">
+    que envolve a tela principal APÓS o login.
+  - Isso força o container do dashboard a ignorar o index.css,
+    assim como a tela de login já fazia.
 
-  Isso DEVE corrigir o build do Vercel.
+  Esta é a correção definitiva para o espaço em branco.
 */
 
 // **********************************************************
@@ -305,12 +306,6 @@ function App() {
   // --- Componente: Cabeçalho (com Abas) ---
   const renderHeader = () => (
     <header className="bg-white shadow-md">
-      {/*
-        **********************************************************
-        ATUALIZAÇÃO DE LAYOUT (Passo 17 - Forçado)
-        Adicionado `w-full max-w-none` para forçar a tela cheia.
-        **********************************************************
-      */}
       <div className="w-full max-w-none px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <h1 className="text-2xl font-bold text-gray-800">
@@ -335,12 +330,6 @@ function App() {
         </div>
       </div>
       <nav className="bg-gray-50 border-t border-gray-200">
-        {/*
-          **********************************************************
-          ATUALIZAÇÃO DE LAYOUT (Passo 17 - Forçado)
-          Adicionado `w-full max-w-none` para forçar a tela cheia.
-          **********************************************************
-        */}
         <div className="w-full max-w-none px-4 sm:px-6 lg:px-8 flex space-x-4">
           <TabButton
             label="Eventos"
@@ -462,15 +451,13 @@ function App() {
 
   // Tela Principal (Logado e Autorizado)
   return (
-    <div className="min-h-screen bg-gray-100 font-sans">
+    // **********************************************************
+    // ATUALIZAÇÃO DE LAYOUT (Passo 20 - A Correção Real)
+    // Adicionado `w-full max-w-none` AQUI, no PAI.
+    // **********************************************************
+    <div className="min-h-screen bg-gray-100 font-sans w-full max-w-none">
       {renderHeader()}
       
-      {/*
-        **********************************************************
-        ATUALIZAÇÃO DE LAYOUT (Passo 17 - Forçado)
-        Adicionado `w-full max-w-none` para forçar a tela cheia.
-        **********************************************************
-      */}
       <main className="w-full max-w-none py-6 px-4 sm:px-6 lg:px-8">
         {globalError && <ErrorMessage message={globalError} onDismiss={() => setGlobalError(null)} />}
 
