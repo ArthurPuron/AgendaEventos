@@ -9,8 +9,8 @@ import {
   onSnapshot,
   deleteDoc,
   doc,
-  setDoc, // NOVO: Importado para Edição
-  updateDoc, // NOVO: Importado para Edição
+  setDoc, 
+  updateDoc, 
   setLogLevel,
 } from 'firebase/firestore';
 import {
@@ -21,20 +21,22 @@ import {
 } from 'firebase/auth';
 
 /*
-  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 25)
+  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 27)
 
   Olá, Implementador!
 
-  Implementei o "Editar Evento". Esta foi uma grande atualização.
+  Você encontrou o bug `evaluating 'vt.id'`. Isso foi um erro meu.
+  Acontecia se você tentasse salvar um evento com um músico
+  que (por algum motivo) não era encontrado na lista principal.
 
-  ATUALIZAÇÃO:
-  - Adicionado ícone de Lápis na lista de eventos.
-  - Adicionado estado `eventoParaEditar` para controlar o modal.
-  - O `AddEventModal` agora funciona para CRIAR ou EDITAR.
-  - O modal se preenche sozinho ao editar.
-  - `handleSubmit` agora tem lógica dupla:
-    1. (CRIAR): Salva no Firestore, Salva no Google, Salva o ID do Google de volta no Firestore.
-    2. (EDITAR): Atualiza o Firestore, Atualiza o Google Calendar.
+  ATUALIZAÇÃO (em `AddEventModal` -> `handleSubmit`):
+  - Adicionei uma verificação de segurança.
+  - O código agora verifica se o músico foi encontrado (`if (musico)`)
+    antes de tentar ler suas propriedades.
+  - Usei `.filter(Boolean)` para remover com segurança
+    quaisquer músicos "fantasma" que não foram encontrados.
+  
+  Isso corrige o bug `vt.id`.
 */
 
 // **********************************************************
@@ -419,7 +421,7 @@ function App() {
       {!loadingEventos && eventos.length > 0 && (
         <ul className="divide-y divide-gray-200">
           {eventos.map(evento => (
-            // NOVO: A `li` agora é um `button` clicável
+            // NOVO: A `li` agora é um `div`
             <li key={evento.id}>
               <div
                 className="py-4 flex justify-between items-center w-full text-left hover:bg-gray-50 rounded-lg cursor-pointer"
@@ -686,18 +688,34 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
       const dataFimISO = `${data}T${horaFim}:00`;
       const fusoHorario = getLocalTimeZone();
 
-      const musicosConvidados = selectedMusicos.map(musicoId => {
-        const musico = musicosCadastrados.find(m => m.id === musicoId);
-        return {
-          id: musico.id,
-          nome: musico.nome,
-          email: musico.email,
-          instrumento: musico.instrumento,
-          cachet: cachets[musicoId] || '0',
-        };
-      });
+      // 2. Prepara lista de músicos com cachets (para Firestore)
+      // **********************************************************
+      // ATUALIZAÇÃO (Passo 27) - Correção do bug 'vt.id'
+      // **********************************************************
+      const musicosConvidados = selectedMusicos
+        .map(musicoId => {
+          const musico = musicosCadastrados.find(m => m.id === musicoId);
+          // SE o músico for encontrado, retorna o objeto dele
+          if (musico) {
+            return {
+              id: musico.id,
+              nome: musico.nome,
+              email: musico.email,
+              instrumento: musico.instrumento,
+              cachet: cachets[musicoId] || '0', // Adiciona o cachet
+            };
+          }
+          // SE não for encontrado (ex: deletado), retorna null
+          console.warn(`Músico com ID ${musicoId} não encontrado. Será removido do evento.`);
+          return null;
+        })
+        .filter(Boolean); // Remove qualquer entrada nula (músicos não encontrados)
+      // **********************************************************
+      // FIM DA CORREÇÃO
+      // **********************************************************
 
-      // 2. Objeto para o FIRESTORE (Com todos os dados financeiros)
+
+      // 3. Objeto para o FIRESTORE (Com todos os dados financeiros)
       const eventoParaFirestore = {
         nome,
         cidade,
@@ -710,7 +728,7 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
         musicos: musicosConvidados,
       };
       
-      // 3. Objeto para o GOOGLE CALENDAR (Limpo, sem finanças)
+      // 4. Objeto para o GOOGLE CALENDAR (Limpo, sem finanças)
       const attendees = musicosConvidados.map(musico => ({ email: musico.email }));
       const eventoParaGoogle = {
         summary: nome,
@@ -722,34 +740,53 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
         reminders: { useDefault: true },
       };
       
-      // 4. LÓGICA DE SALVAR (CRIAR vs EDITAR)
+      // 5. LÓGICA DE SALVAR (CRIAR vs EDITAR)
       if (isEditMode) {
         // --- MODO DE ATUALIZAÇÃO ---
-        
-        // 1. Atualiza Firestore
         const eventoRef = doc(db, eventosCollectionPath, eventoParaEditar.id);
-        await setDoc(eventoRef, {
-          ...eventoParaFirestore,
-          // Garante que o googleEventId (se existir) seja preservado
-          googleEventId: eventoParaEditar.googleEventId || null 
-        });
         
-        // 2. Atualiza Google Calendar (se possível)
+        // **********************************************************
+        // ATUALIZAÇÃO (Passo 26) - Lógica de Edição Corrigida
+        // **********************************************************
         if (eventoParaEditar.googleEventId) {
+          // CASO 1: Evento MODERNO (Tem ID do Google)
+          console.log("Atualizando evento existente no Google Calendar...");
           await gapiClient.client.calendar.events.update({
             calendarId: 'primary',
             eventId: eventoParaEditar.googleEventId,
             resource: eventoParaGoogle,
+            sendUpdates: 'all' // NOVO: Força notificação de e-mail
           });
+          
+          // Atualiza Firestore
+          await setDoc(eventoRef, {
+            ...eventoParaFirestore,
+            googleEventId: eventoParaEditar.googleEventId // Preserva o ID
+          });
+          
         } else {
-          console.warn("Evento antigo sem googleEventId. Apenas o Firestore foi atualizado.");
+          // CASO 2: Evento ANTIGO (Sem ID do Google)
+          console.warn("Evento antigo sem googleEventId. Criando novo evento no Google Calendar...");
+          
+          // 1. Cria no Google Calendar
+          const googleResponse = await gapiClient.client.calendar.events.insert({
+            calendarId: 'primary',
+            resource: eventoParaGoogle,
+            sendNotifications: true,
+          });
+          const newGoogleEventId = googleResponse.result.id;
+
+          // 2. Atualiza Firestore com o novo ID
+          await setDoc(eventoRef, {
+            ...eventoParaFirestore,
+            googleEventId: newGoogleEventId // Salva o novo ID
+          });
         }
         
       } else {
         // --- MODO DE CRIAÇÃO ---
         
         // 1. Cria no Firestore PRIMEIRO (para ter o ID)
-        // (Deixamos o googleEventId de fora por enquanto)
         const docRef = await addDoc(collection(db, eventosCollectionPath), eventoParaFirestore);
         
         // 2. Cria no Google Calendar
