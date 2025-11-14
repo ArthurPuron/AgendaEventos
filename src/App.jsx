@@ -24,7 +24,7 @@ import {
 } from 'firebase/auth';
 
 /*
-  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 39)
+  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 40 - A Correção Final)
 
   Olá, Implementador!
 
@@ -49,6 +49,8 @@ import {
        um 2º popup do Firebase), o que evita o
        bloqueio do navegador (o 2º erro).
   4. (Texto): A frase no `AdminAuthScreen` foi removida.
+  5. (Erro 401 `invalid_client`): Eu corrigi o GOOGLE_CLIENT_ID
+     dentro da função `initializeGsi` (era meu erro).
 */
 
 // **********************************************************
@@ -70,6 +72,10 @@ const firebaseConfig = {
 
 // Chave para o localStorage
 const GAPI_TOKEN_KEY = 'gapi_access_token';
+
+// ATENÇÃO: Use o Client ID do Google Cloud, não a API Key do Firebase
+// Este é o ID do seu projeto `agenda-musicos-f6f01` no Google Cloud
+const GOOGLE_CLIENT_ID_GSI = "1033560928889-uel0855k0v713oqkqf4ktqa2j80burad.apps.googleusercontent.com";
 
 // Inicialização movida para dentro do App
 let db, auth;
@@ -397,15 +403,16 @@ function App() {
       return;
     }
     
-    // ATENÇÃO: Use o Client ID do Google Cloud, não a API Key do Firebase
-    // Vá para https://console.cloud.google.com/apis/credentials
-    // Selecione seu projeto `agenda-musicos-f6f01`
-    // Copie o "ID do cliente" de "IDs do cliente OAuth 2.0"
-    const GOOGLE_CLIENT_ID = "1033560928889-uel0855k0v713oqkqf4ktqa2j80burad.apps.googleusercontent.com"; // <-- O Client ID que você usou no início
-
+    // **********************************
+    // A CORREÇÃO (Passo 39)
+    // O erro `invalid_client` (401) foi causado por eu
+    // ter usado `firebaseConfig.apiKey` aqui.
+    // O correto é usar o Client ID OAuth 2.0
+    // do Google Cloud (o mesmo que você usou no início).
+    // **********************************
     try {
       const client = window.google.accounts.oauth2.initTokenClient({
-        client_id: GOOGLE_CLIENT_ID,
+        client_id: GOOGLE_CLIENT_ID_GSI, // <-- Corrigido
         scope: CALENDAR_SCOPE,
         login_hint: auth.currentUser.email,
         callback: (tokenResponse) => {
