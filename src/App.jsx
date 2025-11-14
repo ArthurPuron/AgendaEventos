@@ -919,7 +919,7 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Selecionar Músicos (e definir cachet)
+                Selecionar Músicos
               </label>
               <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-2 space-y-2">
                 {musicosCadastrados.length === 0 && (
