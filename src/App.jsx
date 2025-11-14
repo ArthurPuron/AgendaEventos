@@ -12,8 +12,8 @@ import {
   setDoc, 
   updateDoc, 
   setLogLevel,
-  collectionGroup, // NOVO: Para buscar eventos de músicos
-  where, // NOVO: Para filtrar por email
+  collectionGroup, 
+  where, 
 } from 'firebase/firestore';
 import {
   getAuth,
@@ -27,14 +27,25 @@ import {
 
   Olá, Implementador!
 
-  Corrigi a duplicidade do cachet no modal do músico.
+  Você estava 100% correto. O aviso de "perigo" era
+  desnecessário para os músicos.
 
-  ATUALIZAÇÃO (em `ViewEventModal`):
-  - A lista de músicos (Seção 3) agora SÓ mostra cachets
-    para o ADMIN.
-  - A lógica `(isAdmin || isMe)` foi trocada para `(isAdmin)`.
-  - O músico continuará vendo seu cachet no grid
-    "Seu Cachet" (Seção 1), como você pediu.
+  ATUALIZAÇÃO DE ARQUITETURA:
+  - `handleAuthClick`: AGORA SÓ FAZ LOGIN BÁSICO.
+    Eu removi o `CALENDAR_SCOPE` do login principal.
+    Músicos NUNCA verão o aviso de perigo.
+
+  - `AdminDashboard`: Agora verifica um novo estado `isCalendarReady`.
+  
+  - `AdminAuthScreen` (NOVO): Se você é Admin, mas ainda
+    não autorizou o calendário, você verá esta tela.
+  
+  - `handleCalendarAuth` (NOVA FUNÇÃO): O botão na tela acima
+    chama esta função, que PEDE a permissão do Calendar
+    (só para você).
+  
+  - `gapiClient`: Agora é carregado e inicializado SOMENTE
+    depois que o Admin autoriza o calendário.
 */
 
 // **********************************************************
@@ -133,6 +144,7 @@ const buildCachetsMap = (musicosArray = []) => {
 function App() {
   // --- Estados da Autenticação ---
   const [gapiClient, setGapiClient] = useState(null); // Cliente da API (GAPI)
+  const [isCalendarReady, setIsCalendarReady] = useState(false); // NOVO: Admin autorizou?
   
   // --- Estados do Firebase ---
   const [userId, setUserId] = useState(null); // ID do usuário
@@ -165,25 +177,14 @@ function App() {
     return `users/${userId}/eventos`;
   };
 
-  // 1. Carregamento SOMENTE do GAPI (Google API)
-  useEffect(() => {
-    const scriptGapi = document.createElement('script');
-    scriptGapi.src = 'https://apis.google.com/js/api.js';
-    scriptGapi.async = true;
-    scriptGapi.defer = true;
-    scriptGapi.onload = initializeGapi;
-    document.body.appendChild(scriptGapi);
-
-    return () => {
-      document.body.removeChild(scriptGapi);
-    };
-  }, []);
+  // 1. Carregamento GAPI (REMOVIDO - Agora só carrega sob demanda para o admin)
 
   // 3. Carregamento de Músicos (Ouvinte do Firestore)
   // SÓ RODA SE FOR ADMIN
   useEffect(() => {
     const collectionPath = getMusicosCollectionPath();
-    if (!isDbReady || !collectionPath || userRole !== 'admin') {
+    // ATUALIZADO: Agora também depende do `isCalendarReady`
+    if (!isDbReady || !collectionPath || userRole !== 'admin' || !isCalendarReady) {
       setMusicos([]);
       setLoadingMusicos(false);
       return;
@@ -205,7 +206,7 @@ function App() {
       }
     );
     return () => unsubscribe();
-  }, [isDbReady, userId, userRole]); // <-- Depende do userRole
+  }, [isDbReady, userId, userRole, isCalendarReady]); // <-- Depende do isCalendarReady
 
   // 4. Carregamento de Eventos (Ouvinte do Firestore)
   // RODA PARA ADMIN OU MÚSICO, MAS COM QUERIES DIFERENTES
@@ -216,23 +217,23 @@ function App() {
       return;
     };
     
-    setLoadingEventos(true);
+    // Admin precisa de autorização do calendário para carregar
+    if (userRole === 'admin' && !isCalendarReady) {
+      setEventos([]);
+      setLoadingEventos(false);
+      return;
+    }
     
+    setLoadingEventos(true);
     let q;
     
     if (userRole === 'admin') {
       // --- Lógica de Admin ---
       const collectionPath = getEventosCollectionPath();
-      if (!collectionPath) {
-        setLoadingEventos(false);
-        return;
-      }
       q = query(collection(db, collectionPath));
       
     } else if (userRole === 'musician') {
       // --- Lógica de Músico ---
-      // AVISO: Isso requer um ÍNDICE no Firestore
-      // (O console do navegador dará o link para criar)
       q = query(
         collectionGroup(db, 'eventos'),
         where('musicoEmails', 'array-contains', userProfile.email)
@@ -255,10 +256,10 @@ function App() {
       }
     );
     return () => unsubscribe();
-  }, [isDbReady, userId, userRole, userProfile]); // <-- Depende de tudo
+  }, [isDbReady, userId, userRole, userProfile, isCalendarReady]); // <-- Depende de tudo
 
-  // --- Funções de Inicialização GAPI ---
-  const initializeGapi = () => {
+  // --- Funções de Inicialização GAPI (AGORA É SÓ PARA ADMIN) ---
+  const initializeGapi = (accessToken) => {
     window.gapi.load('client', () => {
       window.gapi.client
         .init({
@@ -267,8 +268,11 @@ function App() {
           ],
         })
         .then(() => {
-          setGapiClient(window.gapi);
-          console.log('GAPI client inicializado.');
+          // Define o token IMEDIATAMENTE após inicializar
+          window.gapi.client.setToken({ access_token: accessToken });
+          setGapiClient(window.gapi); // GAPI está pronto
+          setIsCalendarReady(true); // Calendário está autorizado
+          console.log("GAPI client inicializado E autorizado.");
         })
         .catch((e) => {
           console.error('Erro ao inicializar GAPI client:', e);
@@ -278,30 +282,21 @@ function App() {
   };
 
   // --- Funções de Autenticação Google ---
+  
+  // ATUALIZADO: LOGIN BÁSICO (SEM CALENDAR)
   const handleAuthClick = async () => {
     if (ADMIN_UID === "COLE_SEU_GOOGLE_UID_AQUI") {
-      setGlobalError("Erro de Configuração: O ADMIN_UID ainda não foi definido no código App.jsx (linha 100).");
+      setGlobalError("Erro de Configuração: O ADMIN_UID ainda não foi definido no código App.jsx.");
       return;
     }
     
-    if (!gapiClient) {
-      setGlobalError('Cliente GAPI não está pronto.');
-      return;
-    }
-
     try {
       const provider = new GoogleAuthProvider();
-      provider.addScope(CALENDAR_SCOPE);
-
+      // NENHUM SCOPE SENSÍVEL PEDIDO AQUI
+      
       const result = await signInWithPopup(auth, provider);
 
-      const credential = GoogleAuthProvider.credentialFromResult(result);
-      const token = credential.accessToken;
-
-      if (token && result.user) {
-        gapiClient.client.setToken({ access_token: token });
-        console.log("GAPI autorizado com token.");
-
+      if (result.user) {
         setUserId(result.user.uid);
         setUserProfile({
           name: result.user.displayName,
@@ -309,9 +304,7 @@ function App() {
           picture: result.user.photoURL,
         });
         
-        // **********************************
-        // NOVO: Define o Papel do Usuário
-        // **********************************
+        // Define o Papel do Usuário
         if (result.user.uid === ADMIN_UID) {
           setUserRole('admin');
           console.log("Status de Acesso: ADMIN");
@@ -322,18 +315,45 @@ function App() {
         
         setIsDbReady(true);
         console.log('Firebase Auth: Logado com Google UID:', result.user.uid);
-
         setGlobalError(null);
       } else {
-        throw new Error("Não foi possível obter o token ou o usuário do Google.");
+        throw new Error("Não foi possível obter o usuário do Google.");
       }
 
     } catch (e) {
       console.error("Erro no login com Google:", e);
       setGlobalError(`Erro de autenticação: ${e.message}`);
-      handleSignoutClick();
     }
   };
+
+  // NOVO: AUTORIZAÇÃO SÓ PARA ADMIN
+  const handleCalendarAuth = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      // AGORA SIM, PEDE O SCOPE SENSÍVEL
+      provider.addScope(CALENDAR_SCOPE); 
+      
+      // Força o re-login (ou pop-up de permissão)
+      const result = await signInWithPopup(auth, provider); 
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      const token = credential.accessToken;
+      
+      if (token) {
+        // Carrega os scripts do GAPI (só o admin faz isso)
+        const scriptGapi = document.createElement('script');
+        scriptGapi.src = 'https://apis.google.com/js/api.js';
+        scriptGapi.async = true;
+        scriptGapi.defer = true;
+        // Passa o token para a função onload
+        scriptGapi.onload = () => initializeGapi(token); 
+        document.body.appendChild(scriptGapi);
+      }
+    } catch (e) {
+      console.error("Erro ao autorizar calendário:", e);
+      setGlobalError("Não foi possível autorizar o Google Calendar.");
+    }
+  };
+
 
   const handleSignoutClick = async () => {
     try {
@@ -347,9 +367,8 @@ function App() {
     setUserProfile(null);
     setIsDbReady(false);
     setUserRole(null); // Limpa o papel
-    if (gapiClient) {
-      gapiClient.client.setToken(null);
-    }
+    setIsCalendarReady(false); // Limpa autorização
+    setGapiClient(null); // Limpa GAPI
     setGlobalError(null);
     setMusicos([]);
     setEventos([]);
@@ -445,6 +464,27 @@ function App() {
         </nav>
       )}
     </header>
+  );
+
+  // --- NOVO: Tela de Autorização do Admin ---
+  const AdminAuthScreen = () => (
+    <div className="bg-white rounded-lg shadow-xl p-4 sm:p-8 text-center">
+      <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
+        Autorização Necessária
+      </h2>
+      <p className="text-gray-700 mb-6">
+        Para gerenciar eventos, você precisa autorizar o acesso ao seu Google Calendar.
+      </p>
+      <button
+        onClick={handleCalendarAuth}
+        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1"
+      >
+        Autorizar Google Calendar
+      </button>
+      <p className="text-sm text-gray-500 mt-4">
+        (Os músicos não verão esta etapa.)
+      </p>
+    </div>
   );
 
   // --- NOVO: Dashboard do Admin ---
@@ -570,17 +610,8 @@ function App() {
 
   // --- Renderização Principal ---
 
-  // Tela de Loading (Enquanto GAPI não está pronto)
-  if (!gapiClient) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
-        <div className="text-xl font-semibold text-gray-700">
-          Carregando bibliotecas do Google...
-        </div>
-      </div>
-    );
-  }
-
+  // Tela de Loading (REMOVIDA - GAPI SÓ CARREGA PARA ADMIN)
+  
   // Tela de Login (Se o Firebase não tiver usuário)
   if (!userProfile) {
     return (
@@ -614,12 +645,13 @@ function App() {
         {globalError && <ErrorMessage message={globalError} onDismiss={() => setGlobalError(null)} />}
 
         {/* ATUALIZADO: Renderização condicional de Painel */}
-        {userRole === 'admin' && <AdminDashboard />}
+        {userRole === 'admin' && !isCalendarReady && <AdminAuthScreen />}
+        {userRole === 'admin' && isCalendarReady && <AdminDashboard />}
         {userRole === 'musician' && <MusicianDashboard />}
       </main>
 
       {/* O Modal de Adicionar/Editar Evento (SÓ PARA ADMIN) */}
-      {(showAddModal || eventoParaEditar) && userRole === 'admin' && (
+      {(showAddModal || eventoParaEditar) && userRole === 'admin' && isCalendarReady && (
         <AddEventModal
           onClose={() => {
             setShowAddModal(false);
@@ -648,7 +680,7 @@ function App() {
 // --- Componentes Auxiliares ---
 
 // **********************************************************
-// ATUALIZAÇÃO (Passo 34) - Componente Inteiro Atualizado
+// ATUALIZAÇÃO (Passo 34/35) - Componente Inteiro Atualizado
 // **********************************************************
 const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
   const isAdmin = userRole === 'admin';
@@ -740,9 +772,7 @@ const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
                       
                       {/* **********************************
                         A CORREÇÃO (Passo 35)
-                        A lógica (isAdmin || isMe) foi trocada
-                        por (isAdmin) para esconder o cachet
-                        duplicado que você viu no screenshot.
+                        Lógica atualizada para (isAdmin)
                         **********************************
                       */}
                       {isAdmin && (
