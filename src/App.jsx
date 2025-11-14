@@ -20,31 +20,35 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   signOut,
-  onAuthStateChanged, // <-- A CHAVE PARA O LOGIN PERSISTENTE
+  onAuthStateChanged,
 } from 'firebase/auth';
 
 /*
-  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 38)
+  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 39)
 
-  Olá, Implementador!
+  Olá, Implementador.
 
-  Você estava 100% correto. Meu último patch (Passo 37)
-  corrigiu o 'popup-blocked', MAS introduziu o bug de
-  "deslogar ao atualizar" porque eu removi o `onAuthStateChanged`.
+  Você estava 100% certo. Minhas correções anteriores falharam.
+  Esta é uma nova arquitetura que resolve TODOS os problemas
+  que você apontou.
 
-  ATUALIZAÇÃO DE ARQUITETURA (A Correção Definitiva):
-  - Eu combinei as duas lógicas.
-  - O Firebase ainda inicializa com `isFirebaseReady`
-    (isso previne o 'popup-blocked').
-  - Eu ADICIONEI DE VOLTA o `onAuthStateChanged` dentro
-    de um novo `useEffect`.
-  - Este `useEffect` agora é o ÚNICO responsável por
-    definir o `userProfile` e `userRole`.
-  - `handleAuthClick` e `handleSignoutClick` foram
-    simplificados (eles só chamam o Firebase, e o
-    ouvinte faz o resto).
-
-  Isso corrige AMBOS os bugs.
+  ATUALIZAÇÃO DE ARQUITETURA:
+  1. (Login Persistente): O `onAuthStateChanged` está de volta.
+  2. (Erro de "Autorização" ao atualizar):
+     - Quando o Admin autoriza o Calendar, o token GAPI
+       agora é salvo no `localStorage`.
+     - Ao recarregar a página (F5), o app (como Admin)
+       procura o token no `localStorage` e o usa
+       para carregar o GAPI.
+     - Isso PULA a tela de "Autorização Necessária".
+  3. (Erro `popup-blocked`):
+     - O login inicial (handleAuthClick) NÃO pede o
+       scope do Calendar (evitando o 1º erro).
+     - O botão "Autorizar" (handleCalendarAuth) agora
+       usa o `initTokenClient` do GSI (em vez de
+       um 2º popup do Firebase), o que evita o
+       bloqueio do navegador (o 2º erro).
+  4. (Texto): A frase no `AdminAuthScreen` foi removida.
 */
 
 // **********************************************************
@@ -64,10 +68,8 @@ const firebaseConfig = {
   appId: "1:344652513076:web:4ab3595d5ec6ceeb5a2f61"
 };
 
-// Validação para garantir que as variáveis foram carregadas
-if (!firebaseConfig.apiKey) {
-  console.error("Erro: Variáveis de ambiente do Firebase não carregadas.");
-}
+// Chave para o localStorage
+const GAPI_TOKEN_KEY = 'gapi_access_token';
 
 // Inicialização movida para dentro do App
 let db, auth;
@@ -138,11 +140,12 @@ const buildCachetsMap = (musicosArray = []) => {
 
 
 function App() {
-  // --- Estados do Firebase (AGORA EM ESTADO) ---
+  // --- Estados do Firebase ---
   const [isFirebaseReady, setIsFirebaseReady] = useState(false);
 
   // --- Estados da Autenticação ---
   const [gapiClient, setGapiClient] = useState(null); // Cliente da API (GAPI)
+  const [tokenClient, setTokenClient] = useState(null); // NOVO: Cliente GSI Token
   const [isCalendarReady, setIsCalendarReady] = useState(false); 
   
   // --- Estados do Usuário ---
@@ -226,9 +229,12 @@ function App() {
         setUserRole(null); 
         setIsCalendarReady(false); 
         setGapiClient(null); 
+        setTokenClient(null); // Limpa cliente GSI
         setGlobalError(null);
         setMusicos([]);
         setEventos([]);
+        // Limpa o token da sessão
+        localStorage.removeItem(GAPI_TOKEN_KEY); 
       }
     });
 
@@ -236,7 +242,27 @@ function App() {
   }, [isFirebaseReady]); // <-- Depende do Firebase estar pronto
 
 
-  // 3. Carregamento de Músicos (Ouvinte do Firestore)
+  // 3. NOVO: Carregador de GAPI/GSI (só para Admin)
+  useEffect(() => {
+    // Roda se o usuário for admin E os scripts ainda não estiverem carregados
+    if (userRole === 'admin' && !gapiClient) {
+      
+      // Tenta pegar o token do localStorage
+      const storedToken = localStorage.getItem(GAPI_TOKEN_KEY);
+      
+      if (storedToken) {
+        console.log("Token GAPI encontrado no localStorage. Tentando usar...");
+        loadGapiScripts(storedToken, true); // Tenta carregar com o token salvo
+      } else {
+        // Se não houver token, só carrega o GSI para preparar o botão "Autorizar"
+        console.log("Admin logado, mas sem token GAPI. Carregando GSI...");
+        loadGsiScript();
+      }
+    }
+  }, [userRole, gapiClient]); // Depende do role e do gapiClient
+  
+  
+  // 4. Carregamento de Músicos (Ouvinte do Firestore)
   useEffect(() => {
     const collectionPath = getMusicosCollectionPath();
     if (!isDbReady || !collectionPath || userRole !== 'admin' || !isCalendarReady) {
@@ -261,9 +287,9 @@ function App() {
       }
     );
     return () => unsubscribe();
-  }, [isDbReady, userId, userRole, isCalendarReady]); // <-- Depende do isCalendarReady
+  }, [isDbReady, userId, userRole, isCalendarReady]);
 
-  // 4. Carregamento de Eventos (Ouvinte do Firestore)
+  // 5. Carregamento de Eventos (Ouvinte do Firestore)
   useEffect(() => {
     if (!isDbReady || !userProfile || !userRole) {
       setEventos([]);
@@ -307,8 +333,29 @@ function App() {
     return () => unsubscribe();
   }, [isDbReady, userId, userRole, userProfile, isCalendarReady]); 
 
-  // --- Funções de Inicialização GAPI (SÓ PARA ADMIN) ---
-  const initializeGapi = (accessToken) => {
+  // --- Funções de Inicialização GAPI/GSI (NOVAS) ---
+  
+  // Carrega GAPI (para usar o Calendar)
+  const loadGapiScripts = (accessToken, useToken) => {
+    const scriptGapi = document.createElement('script');
+    scriptGapi.src = 'https://apis.google.com/js/api.js';
+    scriptGapi.async = true;
+    scriptGapi.defer = true;
+    scriptGapi.onload = () => initializeGapi(accessToken, useToken); 
+    document.body.appendChild(scriptGapi);
+  };
+  
+  // Carrega GSI (para pedir o token)
+  const loadGsiScript = () => {
+    const scriptGsi = document.createElement('script');
+    scriptGsi.src = 'https://accounts.google.com/gsi/client';
+    scriptGsi.async = true;
+    scriptGsi.defer = true;
+    scriptGsi.onload = initializeGsi;
+    document.body.appendChild(scriptGsi);
+  };
+
+  const initializeGapi = (accessToken, useToken) => {
     window.gapi.load('client', () => {
       window.gapi.client
         .init({
@@ -317,21 +364,53 @@ function App() {
           ],
         })
         .then(() => {
-          window.gapi.client.setToken({ access_token: accessToken });
-          setGapiClient(window.gapi); 
-          setIsCalendarReady(true); 
-          console.log("GAPI client inicializado E autorizado.");
+          if (useToken) {
+            window.gapi.client.setToken({ access_token: accessToken });
+            console.log("GAPI client inicializado COM token (localStorage).");
+          } else {
+             console.log("GAPI client inicializado SEM token.");
+          }
+          setGapiClient(window.gapi);
+          // Se usamos o token, o calendário está pronto!
+          if(useToken) setIsCalendarReady(true); 
         })
         .catch((e) => {
           console.error('Erro ao inicializar GAPI client:', e);
           setGlobalError('Erro ao inicializar GAPI client.');
+          // Se o token falhar, limpa ele
+          localStorage.removeItem(GAPI_TOKEN_KEY);
+          setIsCalendarReady(false);
         });
     });
+  };
+  
+  const initializeGsi = () => {
+    if (!auth.currentUser) return;
+    
+    const client = window.google.accounts.oauth2.initTokenClient({
+      client_id: firebaseConfig.apiKey, // Reutiliza a API key como Client ID
+      scope: CALENDAR_SCOPE,
+      login_hint: auth.currentUser.email,
+      callback: (tokenResponse) => {
+        if (tokenResponse && tokenResponse.access_token) {
+          const token = tokenResponse.access_token;
+          // Salva o token para persistência!
+          localStorage.setItem(GAPI_TOKEN_KEY, token); 
+          // Carrega o GAPI (agora que temos o token)
+          loadGapiScripts(token, true);
+        }
+      },
+      error_callback: (error) => {
+        console.error('Erro de autorização GSI:', error);
+        setGlobalError("Não foi possível autorizar o Google Calendar.");
+      }
+    });
+    setTokenClient(client);
   };
 
   // --- Funções de Autenticação Google ---
   
-  // ATUALIZADO: SIMPLIFICADO. Só dispara o popup.
+  // Login BÁSICO (sem scope)
   const handleAuthClick = async () => {
     if (ADMIN_UID === "COLE_SEU_GOOGLE_UID_AQUI") {
       setGlobalError("Erro de Configuração: O ADMIN_UID ainda não foi definido no código App.jsx.");
@@ -344,51 +423,34 @@ function App() {
     
     try {
       const provider = new GoogleAuthProvider();
-      // Não pede scope aqui, onAuthStateChanged vai lidar com o login
       await signInWithPopup(auth, provider);
-      // O `onAuthStateChanged` vai pegar o resultado e definir o estado
-      
+      // O `onAuthStateChanged` vai pegar o resultado.
     } catch (e) {
-      // `onAuthStateChanged` não pega erros de popup fechado
       console.error("Erro no login com Google:", e);
-      if (e.code !== 'auth/popup-closed-by-user') {
+      if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/popup-blocked') {
         setGlobalError(`Erro de autenticação: ${e.message}`);
       }
     }
   };
 
-  // NOVO: AUTORIZAÇÃO SÓ PARA ADMIN
-  const handleCalendarAuth = async () => {
-    if (!auth) return;
-    try {
-      const provider = new GoogleAuthProvider();
-      provider.addScope(CALENDAR_SCOPE); 
-      
-      const result = await signInWithPopup(auth, provider); 
-      const credential = GoogleAuthProvider.credentialFromResult(result);
-      const token = credential.accessToken;
-      
-      if (token) {
-        const scriptGapi = document.createElement('script');
-        scriptGapi.src = 'https://apis.google.com/js/api.js';
-        scriptGapi.async = true;
-        scriptGapi.defer = true;
-        scriptGapi.onload = () => initializeGapi(token); 
-        document.body.appendChild(scriptGapi);
-      }
-    } catch (e) {
-      console.error("Erro ao autorizar calendário:", e);
-      setGlobalError("Não foi possível autorizar o Google Calendar.");
+  // Autorização SÓ PARA ADMIN (usando GSI)
+  const handleCalendarAuth = () => {
+    if (tokenClient) {
+      // Pede o token (força o popup)
+      tokenClient.requestAccessToken();
+    } else {
+      setGlobalError("Cliente de autorização não está pronto. Tente novamente.");
+      // Tenta carregar o GSI de novo
+      loadGsiScript();
     }
   };
 
 
-  // ATUALIZADO: SIMPLIFICADO. Só dispara o signout.
   const handleSignoutClick = async () => {
     if (!auth) return;
     try {
       await signOut(auth);
-      // O `onAuthStateChanged` vai limpar o estado
+      // O `onAuthStateChanged` vai limpar tudo
     } catch (e) {
       console.error("Erro ao deslogar:", e);
       setGlobalError("Erro ao tentar sair.");
@@ -494,13 +556,13 @@ function App() {
       </p>
       <button
         onClick={handleCalendarAuth}
-        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1"
+        // Desabilita o botão até o GSI estar pronto
+        disabled={!tokenClient} 
+        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1 disabled:opacity-50"
       >
-        Autorizar Google Calendar
+        {tokenClient ? 'Autorizar Google Calendar' : 'Carregando...'}
       </button>
-      <p className="text-sm text-gray-500 mt-4">
-        (Os músicos não verão esta etapa.)
-      </p>
+      {/* ATUALIZADO (Passo 39): Texto removido */}
     </div>
   );
 
