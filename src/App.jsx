@@ -9,11 +9,11 @@ import {
   onSnapshot,
   deleteDoc,
   doc,
-  setDoc, 
-  updateDoc, 
+  setDoc,
+  updateDoc,
   setLogLevel,
-  collectionGroup, 
-  where, 
+  collectionGroup,
+  where,
 } from 'firebase/firestore';
 import {
   getAuth,
@@ -24,39 +24,33 @@ import {
 } from 'firebase/auth';
 
 /*
-  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 40 - A Correção Final)
+  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 41)
 
   Olá, Implementador!
 
-  Você estava 100% certo. Minhas correções anteriores falharam.
-  Esta é uma nova arquitetura que resolve TODOS os problemas
-  que você apontou.
+  Identifiquei e corrigi o bug que você descreveu (F5 levando
+  a uma tela de autorização "travada").
 
-  ATUALIZAÇÃO DE ARQUITETURA:
-  1. (Login Persistente): O `onAuthStateChanged` está de volta.
-  2. (Erro de "Autorização" ao atualizar):
-     - Quando o Admin autoriza o Calendar, o token GAPI
-       agora é salvo no `localStorage`.
-     - Ao recarregar a página (F5), o app (como Admin)
-       procura o token no `localStorage` e o usa
-       para carregar o GAPI.
-     - Isso PULA a tela de "Autorização Necessária".
-  3. (Erro `popup-blocked`):
-     - O login inicial (handleAuthClick) NÃO pede o
-       scope do Calendar (evitando o 1º erro).
-     - O botão "Autorizar" (handleCalendarAuth) agora
-       usa o `initTokenClient` do GSI (em vez de
-       um 2º popup do Firebase), o que evita o
-       bloqueio do navegador (o 2º erro).
-  4. (Texto): A frase no `AdminAuthScreen` foi removida.
-  5. (Erro 401 `invalid_client`): Eu corrigi o GOOGLE_CLIENT_ID
-     dentro da função `initializeGsi` (era meu erro).
+  O problema era que, ao recarregar com um token salvo (no
+  localStorage), o app carregava o GAPI (para usar o token),
+  mas esquecia de carregar o GSI (para o botão "Autorizar").
+
+  Se o token estivesse expirado, o GAPI falhava, o app
+  mostrava a tela de autorização, mas o botão "Autorizar"
+  ficava "Carregando..." para sempre, pois o GSI (tokenClient)
+  nunca foi inicializado.
+
+  A CORREÇÃO (Abaixo, no useEffect 3):
+  Agora, o app (como admin) SEMPRE carrega o GSI (para
+  garantir que o 'tokenClient' do botão "Autorizar" esteja
+  pronto) E, em paralelo, se houver um token salvo, ele
+  tenta carregar o GAPI.
 */
 
 // **********************************************************
 // UID DE ADMIN (Corrigido no Passo 33)
 // **********************************************************
-const ADMIN_UID = "b2XJT8OqQ7SezDjU3WtWv6MwYVa2"; 
+const ADMIN_UID = "b2XJT8OqQ7SezDjU3WtWv6MwYVa2";
 
 // **********************************************************
 // Chaves de Configuração (Base Correta)
@@ -152,7 +146,7 @@ function App() {
   // --- Estados da Autenticação ---
   const [gapiClient, setGapiClient] = useState(null); // Cliente da API (GAPI)
   const [tokenClient, setTokenClient] = useState(null); // NOVO: Cliente GSI Token
-  const [isCalendarReady, setIsCalendarReady] = useState(false); 
+  const [isCalendarReady, setIsCalendarReady] = useState(false);
   
   // --- Estados do Usuário ---
   const [userId, setUserId] = useState(null); // ID do usuário
@@ -232,15 +226,15 @@ function App() {
         setUserId(null);
         setUserProfile(null);
         setIsDbReady(false);
-        setUserRole(null); 
-        setIsCalendarReady(false); 
-        setGapiClient(null); 
+        setUserRole(null);
+        setIsCalendarReady(false);
+        setGapiClient(null);
         setTokenClient(null); // Limpa cliente GSI
         setGlobalError(null);
         setMusicos([]);
         setEventos([]);
         // Limpa o token da sessão
-        localStorage.removeItem(GAPI_TOKEN_KEY); 
+        localStorage.removeItem(GAPI_TOKEN_KEY);
       }
     });
 
@@ -248,21 +242,26 @@ function App() {
   }, [isFirebaseReady]); // <-- Depende do Firebase estar pronto
 
 
-  // 3. NOVO: Carregador de GAPI/GSI (só para Admin)
+  // 3. NOVO: Carregador de GAPI/GSI (só para Admin) - CORRIGIDO
   useEffect(() => {
     // Roda se o usuário for admin E os scripts ainda não estiverem carregados
     if (userRole === 'admin' && !gapiClient) {
       
-      // Tenta pegar o token do localStorage
+      // CORREÇÃO: Carrega o GSI (para o botão "Autorizar")
+      // em TODAS as circunstâncias de admin.
+      console.log("Admin logado. Carregando GSI para o TokenClient...");
+      loadGsiScript(); 
+      
+      // Agora, verifica se já temos um token salvo para TENTAR
+      // pular a tela de autorização.
       const storedToken = localStorage.getItem(GAPI_TOKEN_KEY);
       
       if (storedToken) {
         console.log("Token GAPI encontrado no localStorage. Tentando usar...");
         loadGapiScripts(storedToken, true); // Tenta carregar com o token salvo
       } else {
-        // Se não houver token, só carrega o GSI para preparar o botão "Autorizar"
-        console.log("Admin logado, mas sem token GAPI. Carregando GSI...");
-        loadGsiScript();
+        console.log("Nenhum token GAPI salvo. GAPI não será carregado até a autorização.");
+        // Não precisa fazer nada, o GSI já está carregando.
       }
     }
   }, [userRole, gapiClient]); // Depende do role e do gapiClient
@@ -337,7 +336,7 @@ function App() {
       }
     );
     return () => unsubscribe();
-  }, [isDbReady, userId, userRole, userProfile, isCalendarReady]); 
+  }, [isDbReady, userId, userRole, userProfile, isCalendarReady]);
 
   // --- Funções de Inicialização GAPI/GSI (NOVAS) ---
   
@@ -347,7 +346,7 @@ function App() {
     scriptGapi.src = 'https://apis.google.com/js/api.js';
     scriptGapi.async = true;
     scriptGapi.defer = true;
-    scriptGapi.onload = () => initializeGapi(accessToken, useToken); 
+    scriptGapi.onload = () => initializeGapi(accessToken, useToken);
     document.body.appendChild(scriptGapi);
   };
   
@@ -385,14 +384,13 @@ function App() {
           }
           setGapiClient(window.gapi);
           // Se usamos o token, o calendário está pronto!
-          if(useToken) setIsCalendarReady(true); 
+          if(useToken) setIsCalendarReady(true);
         })
         .catch((e) => {
-          console.error('Erro ao inicializar GAPI client:', e);
-          setGlobalError('Erro ao inicializar GAPI client.');
+          console.error('Erro ao inicializar GAPI client (provavelmente token expirado):', e);
           // Se o token falhar, limpa ele
           localStorage.removeItem(GAPI_TOKEN_KEY);
-          setIsCalendarReady(false);
+          setIsCalendarReady(false); // FORÇA A TELA DE AUTORIZAÇÃO
         });
     });
   };
@@ -400,6 +398,10 @@ function App() {
   const initializeGsi = () => {
     if (!auth.currentUser || typeof window.google === 'undefined') {
       console.warn("GSI script carregou, mas usuário deslogou ou 'google' não está no window.");
+      // Tenta de novo se o auth.currentUser ainda não estiver pronto
+      if (typeof window.google === 'undefined') {
+        setTimeout(initializeGsi, 500); // Tenta de novo
+      }
       return;
     }
     
@@ -419,7 +421,7 @@ function App() {
           if (tokenResponse && tokenResponse.access_token) {
             const token = tokenResponse.access_token;
             // Salva o token para persistência!
-            localStorage.setItem(GAPI_TOKEN_KEY, token); 
+            localStorage.setItem(GAPI_TOKEN_KEY, token);
             // Carrega o GAPI (agora que temos o token)
             loadGapiScripts(token, true);
           }
@@ -429,6 +431,7 @@ function App() {
           setGlobalError("Não foi possível autorizar o Google Calendar.");
         }
       });
+      console.log("Cliente GSI (TokenClient) inicializado com sucesso.");
       setTokenClient(client);
     } catch (e) {
       console.error("Erro ao inicializar GSI token client:", e);
@@ -487,7 +490,7 @@ function App() {
   
   // Deletar Evento (com SweetAlert2)
   const handleDeleteEvento = async (eventoId) => {
-    if (userRole !== 'admin') return; 
+    if (userRole !== 'admin') return;
     
     const collectionPath = getEventosCollectionPath();
     if (!collectionPath || !db) {
@@ -508,7 +511,7 @@ function App() {
 
     if (result.isConfirmed) {
       try {
-        await deleteDoc(doc(db, collectionPath, eventoId)); 
+        await deleteDoc(doc(db, collectionPath, eventoId));
         console.log("Evento deletado do Firestore.");
         Swal.fire(
           'Deletado!',
@@ -585,7 +588,7 @@ function App() {
       <button
         onClick={handleCalendarAuth}
         // Desabilita o botão até o GSI estar pronto
-        disabled={!tokenClient} 
+        disabled={!tokenClient}
         className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1 disabled:opacity-50"
       >
         {tokenClient ? 'Autorizar Google Calendar' : 'Carregando...'}
@@ -676,7 +679,7 @@ function App() {
                 <div className="flex flex-shrink-0 ml-2">
                   <button
                     onClick={(e) => {
-                      e.stopPropagation(); 
+                      e.stopPropagation();
                       setEventoParaEditar(evento);
                     }}
                     className="bg-blue-100 hover:bg-blue-200 text-blue-700 p-2 rounded-full text-sm transition duration-300"
@@ -710,8 +713,8 @@ function App() {
       musicos={musicos}
       loading={loadingMusicos}
       collectionPath={getMusicosCollectionPath()}
-      setError={setGlobalError} 
-      db={db} // <-- Passa o db 
+      setError={setGlobalError}
+      db={db} // <-- Passa o db
     />
   );
 
@@ -744,7 +747,7 @@ function App() {
           {/* ATUALIZAÇÃO (Passo 37): Botão desabilitado */}
           <button
             onClick={handleAuthClick}
-            disabled={!isFirebaseReady} 
+            disabled={!isFirebaseReady}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-wait"
           >
             {isFirebaseReady ? 'Fazer Login com Google' : 'Carregando...'}
@@ -809,8 +812,8 @@ const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
   const startDate = new Date(evento.dataInicio);
   const endDate = new Date(evento.dataFim);
   // Helper 1: Data
-  const dateString = startDate.toLocaleDateString('pt-BR', { 
-    day: '2-digit', month: '2-digit', year: 'numeric' 
+  const dateString = startDate.toLocaleDateString('pt-BR', {
+    day: '2-digit', month: '2-digit', year: 'numeric'
   });
   // Helper 2: Horário
   const timeString = `${startDate.toLocaleTimeString('pt-BR', { timeStyle: 'short' })} - ${endDate.toLocaleTimeString('pt-BR', { timeStyle: 'short' })}`;
@@ -948,10 +951,10 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setModalError(null); 
+    setModalError(null);
     
     if (!nome || !data || !horaInicio || !horaFim || !cidade) {
-      setModalError("Por favor, preencha todos os campos obrigatórios."); 
+      setModalError("Por favor, preencha todos os campos obrigatórios.");
       return;
     }
     if (!db) { // Checa o db do prop
@@ -977,7 +980,7 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
               nome: musico.nome,
               email: musico.email,
               instrumento: musico.instrumento,
-              cachet: cachets[musicoId] || '0', 
+              cachet: cachets[musicoId] || '0',
             };
           }
           console.warn(`Músico com ID ${musicoId} não encontrado. Será removido do evento.`);
@@ -1224,7 +1227,7 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
                             value={cachets[musico.id] || ''}
                             onChange={(e) => handleCachetChange(musico.id, e.target.value)}
                             // Impede que clicar no input desmarque o músico
-                            onClick={(e) => e.stopPropagation()} 
+                            onClick={(e) => e.stopPropagation()}
                           />
                         </div>
                       )}
