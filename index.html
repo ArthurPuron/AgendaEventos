@@ -1,46 +1,20 @@
 <!doctype html>
 <html lang="pt-br">
-  <head>
-    <meta charset="UTF-8" />
-    
-    <!-- Esta tag de viewport está correta e é essencial -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    
-    <title>Agenda de Músicos</title>
-    
-    <!-- Scripts (SweetAlert e Tailwind) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <head>
+    <meta charset="UTF-8" />
+    
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <title>Agenda de Músicos</title>
+    
+        <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <!-- 
-      **********************************************************
-      A CORREÇÃO DEFINITIVA (Passo 22)
-      
-      O `index.css` do Vite força um `max-width: 1280px` e `margin: 0 auto`
-      no elemento `#root`. Isso causa a borda branca no celular.
-      
-      Este <style> "briga" com o index.css e remove o limite,
-      forçando o app a ocupar 100% da tela, como você pediu.
-      **********************************************************
-    -->
-    <style>
-      #root {
-        max-width: none !important;
-        margin: 0 !important;
-        padding: 0 !important;
-      }
-      body {
-        padding: 0 !important;
-      }
-    </style>
-
-  </head>
-  
-  <body>
-    <!-- O React vai injetar o app aqui -->
-    <div id="root"></div>
-    
-    <!-- O script principal do seu projeto Vite -->
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+      </head>
+  
+  <body>
+        <div id="root"></div>
+    
+        <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>
