@@ -23,27 +23,26 @@ import {
 } from 'firebase/auth';
 
 /*
-  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 33)
+  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 34)
 
   Olá, Implementador!
 
-  ENCONTREI O BUG.
+  Implementei as duas correções no Modal de Visualização (ViewEventModal):
+
+  1. (PRIVACIDADE): Removi o bug que escondia os outros músicos.
+     Agora, o músico logado vê TODOS os colegas de banda,
+     mas (graças a uma lógica que já existia) só vê o SEU
+     próprio cachet.
   
-  O UID com o qual você está logando (b2XJT8...YVa2)
-  NÃO era o mesmo que estava no código (b2XfTB...MvH2).
-  Eram duas contas diferentes.
-
-  ATUALIZAÇÃO:
-  - Corrigi a constante `ADMIN_UID` para bater
-    exatamente com o UID do seu último screenshot
-    (image_42b1d8.png).
-
-  Esta versão DEVE funcionar.
+  2. (LAYOUT): Redesenhei o modal (baseado no seu pedido/foto):
+     - "Nome" e "Status" agora estão na mesma linha no topo.
+     - "Data", "Horário" e "Seu Cachet" (ou "Pacote" se for Admin)
+       agora estão em um grid de 3 colunas.
+     - A lista de músicos (com cachets) continua abaixo.
 */
 
 // **********************************************************
-// A CORREÇÃO DEFINITIVA (Passo 33)
-// Este é o UID com o qual você está logando:
+// UID DE ADMIN (Corrigido no Passo 33)
 // **********************************************************
 const ADMIN_UID = "b2XJT8OqQ7SezDjU3WtWv6MwYVa2"; 
 
@@ -92,7 +91,7 @@ const timeOptions = generateTimeOptions();
 // Lista de Pacotes (Nova)
 const pacotesOptions = ['Harmonie', 'Intimist', 'Essence'];
 
-// NOVO HELPER: Formata data/hora para exibição
+// HELPER: Formata data/hora para exibição (USADO NA LISTA PRINCIPAL)
 const formatDisplayDate = (dataInicioISO, dataFimISO) => {
   try {
     const start = new Date(dataInicioISO);
@@ -109,14 +108,14 @@ const formatDisplayDate = (dataInicioISO, dataFimISO) => {
   }
 };
 
-// NOVO HELPER: Formata valores monetários
+// HELPER: Formata valores monetários
 const formatCurrency = (valor) => {
   // Converte string (ex: "1.500,00" ou "1500") para número
   const num = parseFloat(String(valor).replace(/\./g, '').replace(',', '.')) || 0;
   return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 };
 
-// NOVO HELPER (EDIÇÃO): Formata ISO (2025-11-26T09:00:00) para YYYY-MM-DD
+// HELPER (EDIÇÃO): Formata ISO (2025-11-26T09:00:00) para YYYY-MM-DD
 const formatDateForInput = (isoDate) => {
   if (!isoDate) return '';
   try {
@@ -126,7 +125,7 @@ const formatDateForInput = (isoDate) => {
   }
 };
 
-// NOVO HELPER (EDIÇÃO): Constrói o mapa de cachets a partir do array de músicos
+// HELPER (EDIÇÃO): Constrói o mapa de cachets a partir do array de músicos
 const buildCachetsMap = (musicosArray = []) => {
   return musicosArray.reduce((acc, musico) => {
     acc[musico.id] = musico.cachet;
@@ -613,12 +612,6 @@ function App() {
   return (
     // Código de layout limpo (sem hacks w-full)
     <div className="min-h-screen bg-gray-100 font-sans">
-      {/* **********************************
-        A CORREÇÃO (Passo 30)
-        Era `RenderHeader` (quebrado)
-        Mudei para `{renderHeader()}` (correto)
-        **********************************
-      */}
       {renderHeader()}
       
       <main className="py-6 px-4 sm:px-6 lg:px-8">
@@ -658,27 +651,42 @@ function App() {
 
 // --- Componentes Auxiliares ---
 
-// NOVO COMPONENTE: Modal de Visualização de Evento
-// ATUALIZADO: Agora esconde dados sensíveis de músicos
+// **********************************************************
+// ATUALIZAÇÃO (Passo 34) - Componente Inteiro Atualizado
+// **********************************************************
 const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
   const isAdmin = userRole === 'admin';
+
+  // --- Novos Helpers de Layout (para o Pedido 2) ---
+  const startDate = new Date(evento.dataInicio);
+  const endDate = new Date(evento.dataFim);
+  const dateString = startDate.toLocaleDateString('pt-BR', { dateStyle: 'short' });
+  const timeString = `${startDate.toLocaleTimeString('pt-BR', { timeStyle: 'short' })} - ${endDate.toLocaleTimeString('pt-BR', { timeStyle: 'short' })}`;
+  
+  // Encontra o cachet do músico logado
+  const myCachet = evento.musicos.find(m => m.email === userEmail)?.cachet || '0';
   
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         
-        {/* Cabeçalho do Modal */}
+        {/* Cabeçalho do Modal (Layout Corrigido) */}
         <div className="flex justify-between items-start p-6 border-b border-gray-200">
-          <div>
-            <h3 className="text-2xl font-bold text-gray-900">
-              {evento.nome}
-            </h3>
+          {/* Div Flex-grow para empurrar o status para a direita */}
+          <div className="flex-grow">
+            <div className="flex justify-between items-center">
+              <h3 className="text-2xl font-bold text-gray-900">
+                {evento.nome}
+              </h3>
+              {/* Status movido para o cabeçalho */}
+              <StatusBadge status={evento.status} />
+            </div>
             <p className="text-sm text-gray-500">{evento.cidade}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-gray-400 hover:text-gray-600 ml-4" // ml-4 para espaçamento
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
           </button>
@@ -687,15 +695,16 @@ const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
         {/* Corpo do Modal */}
         <div className="p-6 space-y-6">
           
-          {/* Seção 1: Detalhes Principais */}
+          {/* Seção 1: Detalhes Principais (Layout Corrigido) */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <InfoItem label="Data & Horário" value={formatDisplayDate(evento.dataInicio, evento.dataFim)} />
-            <InfoItem label="Status">
-              <StatusBadge status={evento.status} />
-            </InfoItem>
-            {/* Pacote só aparece para Admin */}
-            {isAdmin && (
+            <InfoItem label="Data" value={dateString} />
+            <InfoItem label="Horário" value={timeString} />
+            
+            {/* Coluna 3 inteligente */}
+            {isAdmin ? (
               <InfoItem label="Pacote" value={evento.pacote} />
+            ) : (
+              <InfoItem label="Seu Cachet" value={formatCurrency(myCachet)} />
             )}
           </div>
 
@@ -703,7 +712,7 @@ const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
           {isAdmin && (
             <div>
               <h4 className="text-lg font-semibold text-gray-800 mb-2 border-b pb-1">
-                Financeiro
+                Financeiro (Admin)
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <InfoItem label="Valor Total do Evento" value={formatCurrency(evento.valorEvento)} />
@@ -711,19 +720,21 @@ const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
             </div>
           )}
           
-          {/* Seção 3: Músicos */}
+          {/* Seção 3: Músicos (Lógica Corrigida) */}
           <div>
             <h4 className="text-lg font-semibold text-gray-800 mb-2 border-b pb-1">
-              {isAdmin ? "Músicos e Cachets" : "Músicos"}
+              Músicos no Evento
             </h4>
             {evento.musicos && evento.musicos.length > 0 ? (
               <ul className="divide-y divide-gray-200">
                 {evento.musicos.map(musico => {
-                  // Músico só vê a si mesmo E o admin vê todos
+                  // Lógica de Privacidade: Músico só vê o próprio cachet
                   const isMe = musico.email === userEmail;
-                  if (!isAdmin && !isMe) {
-                    return null; // Músico não vê outros músicos
-                  }
+                  
+                  // **********************************
+                  // A CORREÇÃO (Passo 34)
+                  // O `if` que escondia os músicos foi REMOVIDO.
+                  // **********************************
 
                   return (
                     <li key={musico.id} className="py-3 flex justify-between items-center">
@@ -807,30 +818,23 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
       const fusoHorario = getLocalTimeZone();
 
       // 2. Prepara lista de músicos com cachets (para Firestore)
-      // **********************************************************
-      // ATUALIZAÇÃO (Passo 27) - Correção do bug 'vt.id'
-      // **********************************************************
+      // (Correção do 'vt.id' - Passo 27)
       const musicosConvidados = selectedMusicos
         .map(musicoId => {
           const musico = musicosCadastrados.find(m => m.id === musicoId);
-          // SE o músico for encontrado, retorna o objeto dele
           if (musico) {
             return {
               id: musico.id,
               nome: musico.nome,
               email: musico.email,
               instrumento: musico.instrumento,
-              cachet: cachets[musicoId] || '0', // Adiciona o cachet
+              cachet: cachets[musicoId] || '0', 
             };
           }
-          // SE não for encontrado (ex: deletado), retorna null
           console.warn(`Músico com ID ${musicoId} não encontrado. Será removido do evento.`);
           return null;
         })
-        .filter(Boolean); // Remove qualquer entrada nula (músicos não encontrados)
-      // **********************************************************
-      // FIM DA CORREÇÃO
-      // **********************************************************
+        .filter(Boolean); // Remove nulos
 
 
       // 3. Objeto para o FIRESTORE (Com todos os dados financeiros)
@@ -864,9 +868,7 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
         // --- MODO DE ATUALIZAÇÃO ---
         const eventoRef = doc(db, eventosCollectionPath, eventoParaEditar.id);
         
-        // **********************************************************
-        // ATUALIZAÇÃO (Passo 26) - Lógica de Edição Corrigida
-        // **********************************************************
+        // (Correção de Edição - Passo 26)
         if (eventoParaEditar.googleEventId) {
           // CASO 1: Evento MODERNO (Tem ID do Google)
           console.log("Atualizando evento existente no Google Calendar...");
