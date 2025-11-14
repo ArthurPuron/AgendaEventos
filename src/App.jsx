@@ -12,6 +12,8 @@ import {
   setDoc, 
   updateDoc, 
   setLogLevel,
+  collectionGroup, // NOVO: Para buscar eventos de músicos
+  where, // NOVO: Para filtrar por email
 } from 'firebase/firestore';
 import {
   getAuth,
@@ -21,19 +23,45 @@ import {
 } from 'firebase/auth';
 
 /*
-  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 28)
+  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 29)
 
   Olá, Implementador!
 
-  Implementei a "Edição de Músicos".
+  Implementei a separação de "Admin" vs "Músico".
 
-  ATUALIZAÇÃO (Somente no componente `MusicosManager`):
-  - O botão "Deletar" foi substituído por ícones de Lápis e Lixeira.
-  - Adicionado estado `musicoParaEditar` para controlar o formulário.
-  - O formulário agora se preenche sozinho ao clicar no Lápis.
-  - O título e o botão do formulário mudam para "Editar" / "Atualizar".
-  - O `handleSubmit` do músico agora tem lógica dupla (CRIAR vs EDITAR).
+  ATUALIZAÇÃO:
+  - Adicionado `ADMIN_UID`: Cole seu UID do Google aqui (veja o console).
+  - Adicionado `userRole`: O app agora sabe se você é 'admin' ou 'musician'.
+  - `handleAuthClick`: Define o `userRole` no login.
+  - `App()` (Render): Mostra `AdminDashboard` ou `MusicianDashboard`
+    baseado no `userRole`.
+  - `MusicianDashboard`: Novo componente que busca eventos usando
+    `collectionGroup` (veja AVISO 2).
+  - `AddEventModal`: Agora salva um campo `musicoEmails` para
+    permitir a busca dos músicos.
+  - `ViewEventModal`: Agora esconde dados financeiros se o `userRole`
+    for 'musician' (mostra apenas o cachet do próprio músico).
+
+  AVISO 1: COLE SEU UID
+  - Encontre o `ADMIN_UID` no console do seu navegador ao logar
+    (procure por "Firebase Auth: Logado com Google UID:")
+    e cole na constante `ADMIN_UID` abaixo.
+
+  AVISO 2: ÍNDICE DO FIRESTORE (OBRIGATÓRIO)
+  - Ao logar como MÚSICO, o app vai falhar.
+  - Abra o Console (F12). O Firestore vai gerar um ERRO
+    com um LINK longo.
+  - Clique nesse link. Ele te levará ao Firebase para
+    criar o Índice necessário para esta busca.
+  - Clique em "Salvar" e aguarde o índice ser construído.
 */
+
+// **********************************************************
+// AÇÃO OBRIGATÓRIA: Cole seu UID de Admin aqui
+// (Encontre no console do navegador ao logar)
+// **********************************************************
+const ADMIN_UID = "COLE_SEU_GOOGLE_UID_AQUI"; 
+// Ex: "yokRgR[...]Z5I3"
 
 // **********************************************************
 // Chaves de Configuração (Base Correta)
@@ -132,6 +160,9 @@ function App() {
   const [userProfile, setUserProfile] = useState(null); // Perfil
   const [isDbReady, setIsDbReady] = useState(false); // Pronto para Firebase
 
+  // --- NOVO ESTADO DE AUTORIZAÇÃO ---
+  const [userRole, setUserRole] = useState(null); // 'admin', 'musician', ou null
+
   // --- Estados da Aplicação ---
   const [globalError, setGlobalError] = useState(null); // Erro para o app (fora do modal)
   const [page, setPage] = useState('eventos');
@@ -147,11 +178,11 @@ function App() {
 
   // --- Caminhos das Coleções ---
   const getMusicosCollectionPath = () => {
-    if (!userId) return null;
+    if (userRole !== 'admin' || !userId) return null;
     return `users/${userId}/musicos`;
   };
   const getEventosCollectionPath = () => {
-    if (!userId) return null;
+    if (userRole !== 'admin' || !userId) return null;
     return `users/${userId}/eventos`;
   };
 
@@ -170,13 +201,15 @@ function App() {
   }, []);
 
   // 3. Carregamento de Músicos (Ouvinte do Firestore)
+  // SÓ RODA SE FOR ADMIN
   useEffect(() => {
     const collectionPath = getMusicosCollectionPath();
-    if (!isDbReady || !collectionPath) {
+    if (!isDbReady || !collectionPath || userRole !== 'admin') {
       setMusicos([]);
       setLoadingMusicos(false);
       return;
     };
+    
     setLoadingMusicos(true);
     const q = query(collection(db, collectionPath));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -193,18 +226,40 @@ function App() {
       }
     );
     return () => unsubscribe();
-  }, [isDbReady, userId]);
+  }, [isDbReady, userId, userRole]); // <-- Depende do userRole
 
   // 4. Carregamento de Eventos (Ouvinte do Firestore)
+  // RODA PARA ADMIN OU MÚSICO, MAS COM QUERIES DIFERENTES
   useEffect(() => {
-    const collectionPath = getEventosCollectionPath();
-    if (!isDbReady || !collectionPath) {
+    if (!isDbReady || !userProfile || !userRole) {
       setEventos([]);
       setLoadingEventos(false);
       return;
     };
+    
     setLoadingEventos(true);
-    const q = query(collection(db, collectionPath));
+    
+    let q;
+    
+    if (userRole === 'admin') {
+      // --- Lógica de Admin ---
+      const collectionPath = getEventosCollectionPath();
+      if (!collectionPath) {
+        setLoadingEventos(false);
+        return;
+      }
+      q = query(collection(db, collectionPath));
+      
+    } else if (userRole === 'musician') {
+      // --- Lógica de Músico ---
+      // AVISO: Isso requer um ÍNDICE no Firestore
+      // (O console do navegador dará o link para criar)
+      q = query(
+        collectionGroup(db, 'eventos'),
+        where('musicoEmails', 'array-contains', userProfile.email)
+      );
+    }
+
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
         const eventosData = [];
         querySnapshot.forEach((doc) => {
@@ -216,12 +271,12 @@ function App() {
         setLoadingEventos(false);
       }, (err) => {
         console.error("[Firestore] Erro ao carregar eventos:", err);
-        setGlobalError("Erro ao carregar lista de eventos.");
+        setGlobalError("Erro ao carregar lista de eventos. (Se for Músico, verifique se o Índice do Firestore foi criado. Veja o console F12 para o link.)");
         setLoadingEventos(false);
       }
     );
     return () => unsubscribe();
-  }, [isDbReady, userId]);
+  }, [isDbReady, userId, userRole, userProfile]); // <-- Depende de tudo
 
   // --- Funções de Inicialização GAPI ---
   const initializeGapi = () => {
@@ -245,6 +300,11 @@ function App() {
 
   // --- Funções de Autenticação Google ---
   const handleAuthClick = async () => {
+    if (ADMIN_UID === "COLE_SEU_GOOGLE_UID_AQUI") {
+      setGlobalError("Erro de Configuração: O ADMIN_UID ainda não foi definido no código App.jsx (linha 100).");
+      return;
+    }
+    
     if (!gapiClient) {
       setGlobalError('Cliente GAPI não está pronto.');
       return;
@@ -269,6 +329,18 @@ function App() {
           email: result.user.email,
           picture: result.user.photoURL,
         });
+        
+        // **********************************
+        // NOVO: Define o Papel do Usuário
+        // **********************************
+        if (result.user.uid === ADMIN_UID) {
+          setUserRole('admin');
+          console.log("Status de Acesso: ADMIN");
+        } else {
+          setUserRole('musician');
+          console.log("Status de Acesso: MÚSICO");
+        }
+        
         setIsDbReady(true);
         console.log('Firebase Auth: Logado com Google UID:', result.user.uid);
 
@@ -295,6 +367,7 @@ function App() {
     setUserId(null);
     setUserProfile(null);
     setIsDbReady(false);
+    setUserRole(null); // Limpa o papel
     if (gapiClient) {
       gapiClient.client.setToken(null);
     }
@@ -306,6 +379,9 @@ function App() {
   
   // Deletar Evento (com SweetAlert2)
   const handleDeleteEvento = async (eventoId) => {
+    // Apenas Admins podem deletar
+    if (userRole !== 'admin') return; 
+    
     const collectionPath = getEventosCollectionPath();
     if (!collectionPath) {
       setGlobalError("Erro de conexão (User ID nulo).");
@@ -371,39 +447,78 @@ function App() {
           </div>
         </div>
       </div>
-      <nav className="bg-gray-50 border-t border-gray-200">
-        <div className="px-4 sm:px-6 lg:px-8 flex space-x-4">
-          <TabButton
-            label="Eventos"
-            isActive={page === 'eventos'}
-            onClick={() => setPage('eventos')}
-          />
-          <TabButton
-            label="Músicos"
-            isActive={page === 'musicos'}
-            onClick={() => setPage('musicos')}
-          />
-        </div>
-      </nav>
+      
+      {/* ATUALIZADO: Abas só aparecem para o ADMIN */}
+      {userRole === 'admin' && (
+        <nav className="bg-gray-50 border-t border-gray-200">
+          <div className="px-4 sm:px-6 lg:px-8 flex space-x-4">
+            <TabButton
+              label="Eventos"
+              isActive={page === 'eventos'}
+              onClick={() => setPage('eventos')}
+            />
+            <TabButton
+              label="Músicos"
+              isActive={page === 'musicos'}
+              onClick={() => setPage('musicos')}
+            />
+          </div>
+        </nav>
+      )}
     </header>
   );
 
-  // --- Componente: Aba de Eventos (LAYOUT ATUALIZADO) ---
-  const renderEventosPage = () => (
-    // Padding menor no celular (p-4), maior no desktop (sm:p-8)
+  // --- NOVO: Dashboard do Admin ---
+  const AdminDashboard = () => (
+    <>
+      {page === 'eventos' && renderEventosPage()}
+      {page === 'musicos' && renderMusicosPage()}
+    </>
+  );
+
+  // --- NOVO: Dashboard do Músico ---
+  const MusicianDashboard = () => (
     <div className="bg-white rounded-lg shadow-xl p-4 sm:p-8">
+      <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">
+        Meus Próximos Eventos
+      </h2>
       
-      {/* Container do cabeçalho: flex-col no celular, flex-row no desktop */}
+      {loadingEventos && <p>Carregando seus eventos...</p>}
+      {!loadingEventos && eventos.length === 0 && (
+        <p className="text-gray-600">Você ainda não foi convidado para nenhum evento.</p>
+      )}
+      {!loadingEventos && eventos.length > 0 && (
+        <ul className="divide-y divide-gray-200">
+          {eventos.map(evento => (
+            <li key={evento.id}>
+              <div
+                className="py-4 flex justify-between items-center w-full text-left hover:bg-gray-50 rounded-lg cursor-pointer"
+                onClick={() => setSelectedEvento(evento)}
+              >
+                <div>
+                  <p className="text-lg font-medium text-gray-900">{evento.nome}</p>
+                  <p className="text-sm text-gray-600">{evento.cidade} - <StatusBadge status={evento.status} /></p>
+                  <p className="text-sm text-gray-500">
+                    {formatDisplayDate(evento.dataInicio, evento.dataFim)}
+                  </p>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+
+  // --- Componente: Aba de Eventos (ADMIN) ---
+  const renderEventosPage = () => (
+    <div className="bg-white rounded-lg shadow-xl p-4 sm:p-8">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6">
-        
-        {/* Título: ATUALIZADO (Dashboard de Eventos -> Eventos) */}
         <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-0">
           Eventos
         </h2>
-        
-        {/* Botão: w-full no celular, w-auto no desktop, tamanho de texto/padding reduzido */}
         <button
-          onClick={() => setShowAddModal(true)} // ATUALIZADO: showAddModal
+          onClick={() => setShowAddModal(true)}
           className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1"
         >
           [+] Novo Evento
@@ -417,7 +532,6 @@ function App() {
       {!loadingEventos && eventos.length > 0 && (
         <ul className="divide-y divide-gray-200">
           {eventos.map(evento => (
-            // NOVO: A `li` agora é um `div`
             <li key={evento.id}>
               <div
                 className="py-4 flex justify-between items-center w-full text-left hover:bg-gray-50 rounded-lg cursor-pointer"
@@ -428,27 +542,23 @@ function App() {
                   <p className="text-lg font-medium text-gray-900">{evento.nome}</p>
                   <p className="text-sm text-gray-600">{evento.cidade} - <StatusBadge status={evento.status} /></p>
                   <p className="text-sm text-gray-500">
-                    {/* Usa o novo helper para formatar a data */}
                     {formatDisplayDate(evento.dataInicio, evento.dataFim)}
                   </p>
                 </div>
                 
                 {/* Container para os botões de ação */}
                 <div className="flex flex-shrink-0 ml-2">
-                  {/* NOVO: Botão de Editar (Lápis) */}
                   <button
                     onClick={(e) => {
-                      e.stopPropagation(); // Não abre o modal de view
-                      setEventoParaEditar(evento); // Abre o modal de EDIÇÃO
+                      e.stopPropagation(); 
+                      setEventoParaEditar(evento);
                     }}
                     className="bg-blue-100 hover:bg-blue-200 text-blue-700 p-2 rounded-full text-sm transition duration-300"
                     title="Editar evento"
                   >
-                    {/* SVG do Lápis */}
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg>
                   </button>
 
-                  {/* Botão de Deletar (Lixeira) */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -457,7 +567,6 @@ function App() {
                     className="bg-red-100 hover:bg-red-200 text-red-700 p-2 ml-2 rounded-full text-sm transition duration-300"
                     title="Deletar evento do app"
                   >
-                    {/* SVG da lixeira */}
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                   </button>
                 </div>
@@ -469,13 +578,12 @@ function App() {
     </div>
   );
 
-  // --- Componente: Aba de Músicos ---
+  // --- Componente: Aba de Músicos (ADMIN) ---
   const renderMusicosPage = () => (
     <MusicosManager
       musicos={musicos}
       loading={loadingMusicos}
       collectionPath={getMusicosCollectionPath()}
-      // Passa o setGlobalError para o MusicosManager poder mostrar erros globais
       setError={setGlobalError} 
     />
   );
@@ -486,7 +594,6 @@ function App() {
   // Tela de Loading (Enquanto GAPI não está pronto)
   if (!gapiClient) {
     return (
-      // O `index.html` agora força este a ter 100% de largura
       <div className="flex items-center justify-center min-h-screen bg-gray-100">
         <div className="text-xl font-semibold text-gray-700">
           Carregando bibliotecas do Google...
@@ -522,17 +629,18 @@ function App() {
   return (
     // Código de layout limpo (sem hacks w-full)
     <div className="min-h-screen bg-gray-100 font-sans">
-      {renderHeader()}
+      <RenderHeader />
       
       <main className="py-6 px-4 sm:px-6 lg:px-8">
         {globalError && <ErrorMessage message={globalError} onDismiss={() => setGlobalError(null)} />}
 
-        {page === 'eventos' && renderEventosPage()}
-        {page === 'musicos' && renderMusicosPage()}
+        {/* ATUALIZADO: Renderização condicional de Painel */}
+        {userRole === 'admin' && <AdminDashboard />}
+        {userRole === 'musician' && <MusicianDashboard />}
       </main>
 
-      {/* O Modal de Adicionar/Editar Evento (LÓGICA ATUALIZADA) */}
-      {(showAddModal || eventoParaEditar) && (
+      {/* O Modal de Adicionar/Editar Evento (SÓ PARA ADMIN) */}
+      {(showAddModal || eventoParaEditar) && userRole === 'admin' && (
         <AddEventModal
           onClose={() => {
             setShowAddModal(false);
@@ -545,11 +653,13 @@ function App() {
         />
       )}
       
-      {/* O Modal de Visualizar Evento */}
+      {/* O Modal de Visualizar Evento (ADMIN E MÚSICO) */}
       {selectedEvento && (
         <ViewEventModal
           evento={selectedEvento}
           onClose={() => setSelectedEvento(null)}
+          userRole={userRole} // NOVO: Passa o papel
+          userEmail={userProfile.email} // NOVO: Passa o email
         />
       )}
     </div>
@@ -559,7 +669,10 @@ function App() {
 // --- Componentes Auxiliares ---
 
 // NOVO COMPONENTE: Modal de Visualização de Evento
-const ViewEventModal = ({ evento, onClose }) => {
+// ATUALIZADO: Agora esconde dados sensíveis de músicos
+const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
+  const isAdmin = userRole === 'admin';
+  
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -590,37 +703,56 @@ const ViewEventModal = ({ evento, onClose }) => {
             <InfoItem label="Status">
               <StatusBadge status={evento.status} />
             </InfoItem>
-            <InfoItem label="Pacote" value={evento.pacote} />
+            {/* Pacote só aparece para Admin */}
+            {isAdmin && (
+              <InfoItem label="Pacote" value={evento.pacote} />
+            )}
           </div>
 
-          {/* Seção 2: Finanças */}
-          <div>
-            <h4 className="text-lg font-semibold text-gray-800 mb-2 border-b pb-1">
-              Financeiro
-            </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <InfoItem label="Valor Total do Evento" value={formatCurrency(evento.valorEvento)} />
+          {/* Seção 2: Finanças (SÓ PARA ADMIN) */}
+          {isAdmin && (
+            <div>
+              <h4 className="text-lg font-semibold text-gray-800 mb-2 border-b pb-1">
+                Financeiro
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <InfoItem label="Valor Total do Evento" value={formatCurrency(evento.valorEvento)} />
+              </div>
             </div>
-          </div>
+          )}
           
           {/* Seção 3: Músicos */}
           <div>
             <h4 className="text-lg font-semibold text-gray-800 mb-2 border-b pb-1">
-              Músicos e Cachets
+              {isAdmin ? "Músicos e Cachets" : "Músicos"}
             </h4>
             {evento.musicos && evento.musicos.length > 0 ? (
               <ul className="divide-y divide-gray-200">
-                {evento.musicos.map(musico => (
-                  <li key={musico.id} className="py-3 flex justify-between items-center">
-                    <div>
-                      <p className="font-medium text-gray-900">{musico.nome}</p>
-                      <p className="text-sm text-gray-500">{musico.instrumento}</p>
-                    </div>
-                    <p className="text-gray-700 font-semibold">
-                      {formatCurrency(musico.cachet)}
-                    </p>
-                  </li>
-                ))}
+                {evento.musicos.map(musico => {
+                  // Músico só vê a si mesmo E o admin vê todos
+                  const isMe = musico.email === userEmail;
+                  if (!isAdmin && !isMe) {
+                    return null; // Músico não vê outros músicos
+                  }
+
+                  return (
+                    <li key={musico.id} className="py-3 flex justify-between items-center">
+                      <div>
+                        <p className="font-medium text-gray-900">{musico.nome}</p>
+                        <p className="text-sm text-gray-500">{musico.instrumento}</p>
+                      </div>
+                      
+                      {/* Admin vê TODOS os cachets
+                        Músico vê SÓ O SEU cachet
+                      */}
+                      {(isAdmin || isMe) && (
+                        <p className="text-gray-700 font-semibold">
+                          {formatCurrency(musico.cachet)}
+                        </p>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             ) : (
               <p className="text-gray-500">Nenhum músico selecionado para este evento.</p>
@@ -685,30 +817,22 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
       const fusoHorario = getLocalTimeZone();
 
       // 2. Prepara lista de músicos com cachets (para Firestore)
-      // **********************************************************
-      // ATUALIZAÇÃO (Passo 27) - Correção do bug 'vt.id'
-      // **********************************************************
       const musicosConvidados = selectedMusicos
         .map(musicoId => {
           const musico = musicosCadastrados.find(m => m.id === musicoId);
-          // SE o músico for encontrado, retorna o objeto dele
           if (musico) {
             return {
               id: musico.id,
               nome: musico.nome,
               email: musico.email,
               instrumento: musico.instrumento,
-              cachet: cachets[musicoId] || '0', // Adiciona o cachet
+              cachet: cachets[musicoId] || '0', 
             };
           }
-          // SE não for encontrado (ex: deletado), retorna null
           console.warn(`Músico com ID ${musicoId} não encontrado. Será removido do evento.`);
           return null;
         })
-        .filter(Boolean); // Remove qualquer entrada nula (músicos não encontrados)
-      // **********************************************************
-      // FIM DA CORREÇÃO
-      // **********************************************************
+        .filter(Boolean); // Remove nulos
 
 
       // 3. Objeto para o FIRESTORE (Com todos os dados financeiros)
@@ -722,6 +846,7 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
         pacote: pacote,
         valorEvento: valorEvento,
         musicos: musicosConvidados,
+        musicoEmails: musicosConvidados.map(m => m.email), // NOVO: Campo de busca
       };
       
       // 4. Objeto para o GOOGLE CALENDAR (Limpo, sem finanças)
@@ -741,9 +866,6 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
         // --- MODO DE ATUALIZAÇÃO ---
         const eventoRef = doc(db, eventosCollectionPath, eventoParaEditar.id);
         
-        // **********************************************************
-        // ATUALIZAÇÃO (Passo 26) - Lógica de Edição Corrigida
-        // **********************************************************
         if (eventoParaEditar.googleEventId) {
           // CASO 1: Evento MODERNO (Tem ID do Google)
           console.log("Atualizando evento existente no Google Calendar...");
@@ -919,7 +1041,7 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Selecionar Músicos
+                Selecionar Músicos (e definir cachet)
               </label>
               <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-2 space-y-2">
                 {musicosCadastrados.length === 0 && (
