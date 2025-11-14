@@ -19,17 +19,20 @@ import {
 } from 'firebase/auth';
 
 /*
-  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 16 - Correção do Layout)
+  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 17 - Layout Forçado)
 
   Olá, Implementador!
 
-  Minha correção anterior estava incompleta. Eu removi o max-width do <main>,
-  mas esqueci de removê-lo de dentro do <header>.
+  O bug do layout persistiu porque eu falhei em diagnosticar que o
+  `index.css` padrão do Vite estava centralizando o app.
+
+  Minha correção anterior (Passo 16) estava incompleta.
 
   ATUALIZAÇÃO:
-  - `renderHeader`: Removido `max-w-7xl` e `mx-auto` dos divs internos.
-  - Agora o cabeçalho E o conteúdo estão 100% full-width (respeitando o padding).
-  - O espaço em branco no celular deve desaparecer.
+  - Adicionei `w-full max-w-none` ao <header> e ao <main>.
+  - Isso FORÇA o app a ignorar os limites do index.css e
+    preencher 100% da largura da tela.
+  - O espaço em branco no celular DEVE desaparecer agora.
 */
 
 // **********************************************************
@@ -303,11 +306,11 @@ function App() {
     <header className="bg-white shadow-md">
       {/*
         **********************************************************
-        ATUALIZAÇÃO DE LAYOUT (Tela Cheia)
-        Removido `max-w-7xl` e `mx-auto` daqui.
+        ATUALIZAÇÃO DE LAYOUT (Passo 17 - Forçado)
+        Adicionado `w-full max-w-none` para forçar a tela cheia.
         **********************************************************
       */}
-      <div className="px-4 sm:px-6 lg:px-8">
+      <div className="w-full max-w-none px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <h1 className="text-2xl font-bold text-gray-800">
             Agenda de Músicos
@@ -333,11 +336,11 @@ function App() {
       <nav className="bg-gray-50 border-t border-gray-200">
         {/*
           **********************************************************
-          ATUALIZAÇÃO DE LAYOUT (Tela Cheia)
-          Removido `max-w-7xl` e `mx-auto` daqui.
+          ATUALIZAÇÃO DE LAYOUT (Passo 17 - Forçado)
+          Adicionado `w-full max-w-none` para forçar a tela cheia.
           **********************************************************
         */}
-        <div className="px-4 sm:px-6 lg:px-8 flex space-x-4">
+        <div className="w-full max-w-none px-4 sm:px-6 lg:px-8 flex space-x-4">
           <TabButton
             label="Eventos"
             isActive={page === 'eventos'}
@@ -461,7 +464,13 @@ function App() {
     <div className="min-h-screen bg-gray-100 font-sans">
       {renderHeader()}
       
-      <main className="py-6 px-4 sm:px-6 lg:px-8">
+      {/*
+        **********************************************************
+        ATUALIZAÇÃO DE LAYOUT (Passo 17 - Forçado)
+        Adicionado `w-full max-w-none` para forçar a tela cheia.
+        **********************************************************
+      */}
+      <main className="w-full max-w-none py-6 px-4 sm:px-6 lg:px-8">
         {globalError && <ErrorMessage message={globalError} onDismiss={() => setGlobalError(null)} />}
 
         {page === 'eventos' && renderEventosPage()}
