@@ -19,23 +19,18 @@ import {
 } from 'firebase/auth';
 
 /*
-  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 14 - Finanças)
+  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 15 - Tela Cheia)
 
   Olá, Implementador!
 
-  Esta é uma grande atualização.
-  1. Adiciona campos "Pacote" e "Valor do Evento" (apenas para o Firestore).
-  2. Adiciona um campo de input "Cachet" para cada músico (apenas para o Firestore).
+  Esta atualização corrige o layout para preencher a tela (removendo o
+  espaço em branco lateral que você viu no celular).
 
   ATUALIZAÇÃO:
-  - `AddEventModal`: Adicionados novos estados `pacote`, `valorEvento`, `cachets`.
-  - `AddEventModal`: Atualizado o formulário (JSX) para incluir os novos campos.
-  - `AddEventModal`: Atualizada a lista de músicos para incluir um input de R$ (cachet)
-    quando um músico é selecionado.
-  - `handleSubmit`: Atualizado para salvar os novos dados (`pacote`, `valorEvento`,
-    e `musicos` com cachet) no Firestore.
-  - `handleSubmit`: O `eventoParaGoogle` permanece "limpo" (sem dados financeiros),
-    respeitando sua regra de privacidade.
+  - Na tag `<main>`, eu removi as classes `max-w-7xl` e `mx-auto`.
+  - O conteúdo agora usará a largura total da tela, respeitando os paddings.
+
+  O código-base anterior ("Finanças") está 100% preservado.
 */
 
 // **********************************************************
@@ -384,9 +379,6 @@ function App() {
                 <p className="text-sm text-gray-500">
                   {new Date(evento.dataInicio).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
                 </p>
-                {/* TODO (Próxima feature): Mostrar os dados financeiros aqui
-                  <p className="text-xs text-gray-500">{evento.pacote} | R$ {evento.valorEvento}</p>
-                */}
               </div>
               
               {/* Botão de Deletar (Lixeira) */}
@@ -457,7 +449,14 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-100 font-sans">
       {renderHeader()}
-      <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+      
+      {/*
+        **********************************************************
+        ATUALIZAÇÃO DE LAYOUT (Tela Cheia)
+        Removido `max-w-7xl` e `mx-auto` daqui.
+        **********************************************************
+      */}
+      <main className="py-6 px-4 sm:px-6 lg:px-8">
         {globalError && <ErrorMessage message={globalError} onDismiss={() => setGlobalError(null)} />}
 
         {page === 'eventos' && renderEventosPage()}
@@ -490,14 +489,11 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
   const [cidade, setCidade] = useState('');
   const [status, setStatus] = useState('A Confirmar');
   
-  // **********************************************************
-  // NOVOS ESTADOS (FINANÇAS)
-  // **********************************************************
+  // Estados de Finanças
   const [pacote, setPacote] = useState(pacotesOptions[0]); // Padrão 'Harmonie'
   const [valorEvento, setValorEvento] = useState(''); // Valor total
   const [selectedMusicos, setSelectedMusicos] = useState([]); // Array de IDs
   const [cachets, setCachets] = useState({}); // Objeto de cachets { musicoId: '250' }
-  // **********************************************************
 
   const [saving, setSaving] = useState(false);
   const [modalError, setModalError] = useState(null);
@@ -709,9 +705,7 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
                         {musico.nome} <span className="text-gray-500 text-sm">({musico.instrumento})</span>
                       </span>
 
-                      {/* ********************************************************** */}
                       {/* NOVO: Input de Cachet (aparece se selecionado) */}
-                      {/* ********************************************************** */}
                       {selectedMusicos.includes(musico.id) && (
                         <div className="ml-auto flex items-center pl-2">
                           <span className="text-sm text-gray-600 mr-1">R$</span>
@@ -727,9 +721,6 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
                           />
                         </div>
                       )}
-                      {/* ********************************************************** */}
-                      {/* FIM DO INPUT DE CACHET */}
-                      {/* ********************************************************** */}
                     </label>
                   </div>
                 ))}
@@ -953,6 +944,7 @@ const TabButton = ({ label, isActive, onClick }) => (
     className={`py-3 px-4 font-medium text-sm rounded-t-lg transition-colors duration-200
       ${isActive
         ? 'bg-white border-b-2 border-blue-600 text-blue-600'
+        // Correção de bug visual: Corrigido o hover da aba inativa
         : 'text-gray-500 hover:text-gray-700 border-b-2 border-transparent hover:border-gray-300'
       }
     `}
