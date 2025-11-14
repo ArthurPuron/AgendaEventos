@@ -60,7 +60,7 @@ import {
 // AÇÃO OBRIGATÓRIA: Cole seu UID de Admin aqui
 // (Encontre no console do navegador ao logar)
 // **********************************************************
-const ADMIN_UID = "COLE_SEU_GOOGLE_UID_AQUI"; 
+const ADMIN_UID = "b2XJT8OqQ7SezDjU3WtWv6MwYVa2"; 
 // Ex: "yokRgR[...]Z5I3"
 
 // **********************************************************
