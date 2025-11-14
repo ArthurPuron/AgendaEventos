@@ -9,6 +9,8 @@ import {
   onSnapshot,
   deleteDoc,
   doc,
+  setDoc, // NOVO: Importado para Edição
+  updateDoc, // NOVO: Importado para Edição
   setLogLevel,
 } from 'firebase/firestore';
 import {
@@ -19,20 +21,20 @@ import {
 } from 'firebase/auth';
 
 /*
-  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 24)
+  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 25)
 
   Olá, Implementador!
 
-  Implementei o "Modal de Visualização" de evento.
+  Implementei o "Editar Evento". Esta foi uma grande atualização.
 
   ATUALIZAÇÃO:
-  - Mudei o título "Dashboard de Eventos" para "Eventos".
-  - A lista de eventos agora é clicável.
-  - Criei um novo estado `selectedEvento` para controlar o modal.
-  - Criei um novo componente `ViewEventModal`.
-  - Este modal exibe TODOS os dados do evento, incluindo os
-    campos financeiros (Pacote, Valor, Cachets).
-  - Adicionei helpers de formatação para Data e Moeda (R$).
+  - Adicionado ícone de Lápis na lista de eventos.
+  - Adicionado estado `eventoParaEditar` para controlar o modal.
+  - O `AddEventModal` agora funciona para CRIAR ou EDITAR.
+  - O modal se preenche sozinho ao editar.
+  - `handleSubmit` agora tem lógica dupla:
+    1. (CRIAR): Salva no Firestore, Salva no Google, Salva o ID do Google de volta no Firestore.
+    2. (EDITAR): Atualiza o Firestore, Atualiza o Google Calendar.
 */
 
 // **********************************************************
@@ -104,6 +106,24 @@ const formatCurrency = (valor) => {
   return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 };
 
+// NOVO HELPER (EDIÇÃO): Formata ISO (2025-11-26T09:00:00) para YYYY-MM-DD
+const formatDateForInput = (isoDate) => {
+  if (!isoDate) return '';
+  try {
+    return isoDate.split('T')[0];
+  } catch (e) {
+    return '';
+  }
+};
+
+// NOVO HELPER (EDIÇÃO): Constrói o mapa de cachets a partir do array de músicos
+const buildCachetsMap = (musicosArray = []) => {
+  return musicosArray.reduce((acc, musico) => {
+    acc[musico.id] = musico.cachet;
+    return acc;
+  }, {});
+};
+
 
 function App() {
   // --- Estados da Autenticação ---
@@ -121,10 +141,11 @@ function App() {
   const [loadingMusicos, setLoadingMusicos] = useState(true);
   const [eventos, setEventos] = useState([]);
   const [loadingEventos, setLoadingEventos] = useState(true);
-  const [showEventModal, setShowEventModal] = useState(false);
   
-  // NOVO ESTADO: Controla o modal de visualização
-  const [selectedEvento, setSelectedEvento] = useState(null);
+  // --- Estados dos Modais (ATUALIZADO) ---
+  const [showAddModal, setShowAddModal] = useState(false); // (Era showEventModal)
+  const [selectedEvento, setSelectedEvento] = useState(null); // Para Visualização
+  const [eventoParaEditar, setEventoParaEditar] = useState(null); // NOVO: Para Edição
 
   // --- Caminhos das Coleções ---
   const getMusicosCollectionPath = () => {
@@ -384,7 +405,7 @@ function App() {
         
         {/* Botão: w-full no celular, w-auto no desktop, tamanho de texto/padding reduzido */}
         <button
-          onClick={() => setShowEventModal(true)}
+          onClick={() => setShowAddModal(true)} // ATUALIZADO: showAddModal
           className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1"
         >
           [+] Novo Evento
@@ -400,9 +421,9 @@ function App() {
           {eventos.map(evento => (
             // NOVO: A `li` agora é um `button` clicável
             <li key={evento.id}>
-              <button
+              <div
+                className="py-4 flex justify-between items-center w-full text-left hover:bg-gray-50 rounded-lg cursor-pointer"
                 onClick={() => setSelectedEvento(evento)}
-                className="py-4 flex justify-between items-center w-full text-left hover:bg-gray-50 rounded-lg"
               >
                 {/* Informações do Evento */}
                 <div>
@@ -414,21 +435,35 @@ function App() {
                   </p>
                 </div>
                 
-                {/* Botão de Deletar (Lixeira) */}
-                <button
-                  // NOVO: Adicionado e.stopPropagation() para
-                  // não abrir o modal ao clicar em deletar.
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteEvento(evento.id);
-                  }}
-                  className="flex-shrink-0 bg-red-100 hover:bg-red-200 text-red-700 p-2 ml-2 rounded-full text-sm transition duration-300"
-                  title="Deletar evento do app"
-                >
-                  {/* SVG da lixeira */}
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                </button>
-              </button>
+                {/* Container para os botões de ação */}
+                <div className="flex flex-shrink-0 ml-2">
+                  {/* NOVO: Botão de Editar (Lápis) */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation(); // Não abre o modal de view
+                      setEventoParaEditar(evento); // Abre o modal de EDIÇÃO
+                    }}
+                    className="bg-blue-100 hover:bg-blue-200 text-blue-700 p-2 rounded-full text-sm transition duration-300"
+                    title="Editar evento"
+                  >
+                    {/* SVG do Lápis */}
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg>
+                  </button>
+
+                  {/* Botão de Deletar (Lixeira) */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteEvento(evento.id);
+                    }}
+                    className="bg-red-100 hover:bg-red-200 text-red-700 p-2 ml-2 rounded-full text-sm transition duration-300"
+                    title="Deletar evento do app"
+                  >
+                    {/* SVG da lixeira */}
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                  </button>
+                </div>
+              </div>
             </li>
           ))}
         </ul>
@@ -498,18 +533,21 @@ function App() {
         {page === 'musicos' && renderMusicosPage()}
       </main>
 
-      {/* O Modal de Adicionar Evento */}
-      {showEventModal && (
+      {/* O Modal de Adicionar/Editar Evento (LÓGICA ATUALIZADA) */}
+      {(showAddModal || eventoParaEditar) && (
         <AddEventModal
-          onClose={() => setShowEventModal(false)}
+          onClose={() => {
+            setShowAddModal(false);
+            setEventoParaEditar(null); // Fecha ambos os modos
+          }}
           musicosCadastrados={musicos}
           gapiClient={gapiClient}
           eventosCollectionPath={getEventosCollectionPath()}
-          // Não passa mais o `setError` global
+          eventoParaEditar={eventoParaEditar} // Passa o evento para preencher
         />
       )}
       
-      {/* NOVO: O Modal de Visualizar Evento */}
+      {/* O Modal de Visualizar Evento */}
       {selectedEvento && (
         <ViewEventModal
           evento={selectedEvento}
@@ -610,21 +648,24 @@ const ViewEventModal = ({ evento, onClose }) => {
 };
 
 
-// Modal de Adicionar Evento (ATUALIZADO COM FINANÇAS)
-const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollectionPath }) => {
-  // Estados do Evento
-  const [nome, setNome] = useState('');
-  const [data, setData] = useState('');
-  const [horaInicio, setHoraInicio] = useState('09:00');
-  const [horaFim, setHoraFim] = useState('10:00');
-  const [cidade, setCidade] = useState('');
-  const [status, setStatus] = useState('A Confirmar');
+// Modal de Adicionar Evento (AGORA SERVE PARA ADICIONAR E EDITAR)
+const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollectionPath, eventoParaEditar }) => {
   
-  // Estados de Finanças
-  const [pacote, setPacote] = useState(pacotesOptions[0]); // Padrão 'Harmonie'
-  const [valorEvento, setValorEvento] = useState(''); // Valor total
-  const [selectedMusicos, setSelectedMusicos] = useState([]); // Array de IDs
-  const [cachets, setCachets] = useState({}); // Objeto de cachets { musicoId: '250' }
+  const isEditMode = eventoParaEditar !== null;
+
+  // Estados do Evento (Preenchidos se for Edição)
+  const [nome, setNome] = useState(isEditMode ? eventoParaEditar.nome : '');
+  const [data, setData] = useState(isEditMode ? formatDateForInput(eventoParaEditar.dataInicio) : '');
+  const [horaInicio, setHoraInicio] = useState(isEditMode ? eventoParaEditar.dataInicio.split('T')[1].substring(0, 5) : '09:00');
+  const [horaFim, setHoraFim] = useState(isEditMode ? eventoParaEditar.dataFim.split('T')[1].substring(0, 5) : '10:00');
+  const [cidade, setCidade] = useState(isEditMode ? eventoParaEditar.cidade : '');
+  const [status, setStatus] = useState(isEditMode ? eventoParaEditar.status : 'A Confirmar');
+  
+  // Estados de Finanças (Preenchidos se for Edição)
+  const [pacote, setPacote] = useState(isEditMode ? eventoParaEditar.pacote : pacotesOptions[0]);
+  const [valorEvento, setValorEvento] = useState(isEditMode ? eventoParaEditar.valorEvento : '');
+  const [selectedMusicos, setSelectedMusicos] = useState(isEditMode ? eventoParaEditar.musicos.map(m => m.id) : []);
+  const [cachets, setCachets] = useState(isEditMode ? buildCachetsMap(eventoParaEditar.musicos) : {});
 
   const [saving, setSaving] = useState(false);
   const [modalError, setModalError] = useState(null);
@@ -640,12 +681,11 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
     setSaving(true);
 
     try {
-      // 1. Combina data e hora
+      // 1. Prepara dados comuns
       const dataInicioISO = `${data}T${horaInicio}:00`;
       const dataFimISO = `${data}T${horaFim}:00`;
       const fusoHorario = getLocalTimeZone();
 
-      // 2. Prepara lista de músicos com cachets (para Firestore)
       const musicosConvidados = selectedMusicos.map(musicoId => {
         const musico = musicosCadastrados.find(m => m.id === musicoId);
         return {
@@ -653,11 +693,11 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
           nome: musico.nome,
           email: musico.email,
           instrumento: musico.instrumento,
-          cachet: cachets[musicoId] || '0', // Adiciona o cachet
+          cachet: cachets[musicoId] || '0',
         };
       });
 
-      // 3. Objeto para o FIRESTORE (Com todos os dados financeiros)
+      // 2. Objeto para o FIRESTORE (Com todos os dados financeiros)
       const eventoParaFirestore = {
         nome,
         cidade,
@@ -665,38 +705,66 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
         dataInicio: dataInicioISO,
         dataFim: dataFimISO,
         fusoHorario,
-        // Novos campos financeiros
         pacote: pacote,
         valorEvento: valorEvento,
-        musicos: musicosConvidados, // Salva a lista de músicos com cachet
+        musicos: musicosConvidados,
       };
       
-      // 4. Salva no Firestore
-      await addDoc(collection(db, eventosCollectionPath), eventoParaFirestore);
-
-      // 5. Prepara lista de attendees (para Google)
-      // (Sem dados financeiros, apenas e-mails)
+      // 3. Objeto para o GOOGLE CALENDAR (Limpo, sem finanças)
       const attendees = musicosConvidados.map(musico => ({ email: musico.email }));
-
-      // 6. Objeto para o GOOGLE CALENDAR (Limpo, sem finanças)
       const eventoParaGoogle = {
         summary: nome,
         location: cidade,
-        description: `Status: ${status}`, // Sem pacote, sem valor, sem cachet
+        description: `Status: ${status}`,
         start: { dateTime: dataInicioISO, timeZone: fusoHorario },
         end: { dateTime: dataFimISO, timeZone: fusoHorario },
         attendees: attendees,
         reminders: { useDefault: true },
       };
       
-      // 7. Salva no Google Calendar
-      await gapiClient.client.calendar.events.insert({
-        calendarId: 'primary',
-        resource: eventoParaGoogle,
-        sendNotifications: true, // Isso envia o e-mail para os músicos
-      });
+      // 4. LÓGICA DE SALVAR (CRIAR vs EDITAR)
+      if (isEditMode) {
+        // --- MODO DE ATUALIZAÇÃO ---
+        
+        // 1. Atualiza Firestore
+        const eventoRef = doc(db, eventosCollectionPath, eventoParaEditar.id);
+        await setDoc(eventoRef, {
+          ...eventoParaFirestore,
+          // Garante que o googleEventId (se existir) seja preservado
+          googleEventId: eventoParaEditar.googleEventId || null 
+        });
+        
+        // 2. Atualiza Google Calendar (se possível)
+        if (eventoParaEditar.googleEventId) {
+          await gapiClient.client.calendar.events.update({
+            calendarId: 'primary',
+            eventId: eventoParaEditar.googleEventId,
+            resource: eventoParaGoogle,
+          });
+        } else {
+          console.warn("Evento antigo sem googleEventId. Apenas o Firestore foi atualizado.");
+        }
+        
+      } else {
+        // --- MODO DE CRIAÇÃO ---
+        
+        // 1. Cria no Firestore PRIMEIRO (para ter o ID)
+        // (Deixamos o googleEventId de fora por enquanto)
+        const docRef = await addDoc(collection(db, eventosCollectionPath), eventoParaFirestore);
+        
+        // 2. Cria no Google Calendar
+        const googleResponse = await gapiClient.client.calendar.events.insert({
+          calendarId: 'primary',
+          resource: eventoParaGoogle,
+          sendNotifications: true,
+        });
+        const googleEventId = googleResponse.result.id;
 
-      console.log("Evento salvo com sucesso no Firestore e Google Calendar!");
+        // 3. Atualiza o Firestore com o ID do Google
+        await updateDoc(docRef, { googleEventId: googleEventId });
+      }
+
+      console.log("Evento salvo/atualizado com sucesso!");
       setSaving(false);
       onClose();
 
@@ -741,7 +809,8 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
         <form onSubmit={handleSubmit}>
           <div className="flex justify-between items-center p-6 border-b border-gray-200">
             <h3 className="text-2xl font-bold text-gray-900">
-              Adicionar Novo Evento
+              {/* Título dinâmico */}
+              {isEditMode ? 'Editar Evento' : 'Adicionar Novo Evento'}
             </h3>
             <button
               type="button"
@@ -872,7 +941,8 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
               disabled={saving}
               className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 disabled:opacity-50"
             >
-              {saving ? 'Salvando...' : 'Salvar Evento'}
+              {/* Texto dinâmico */}
+              {saving ? 'Salvando...' : (isEditMode ? 'Atualizar Evento' : 'Salvar Evento')}
             </button>
           </div>
         </form>
