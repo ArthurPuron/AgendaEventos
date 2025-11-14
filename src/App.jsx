@@ -12,36 +12,39 @@ import {
   setDoc, 
   updateDoc, 
   setLogLevel,
-  collectionGroup, // NOVO: Para buscar eventos de músicos
-  where, // NOVO: Para filtrar por email
+  collectionGroup, 
+  where, 
 } from 'firebase/firestore';
 import {
   getAuth,
   GoogleAuthProvider,
   signInWithPopup,
   signOut,
+  onAuthStateChanged, // <-- A CHAVE PARA O LOGIN PERSISTENTE
 } from 'firebase/auth';
 
 /*
-  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 37)
+  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 38)
 
   Olá, Implementador!
 
-  Você estava certo. O erro 'auth/popup-blocked' era um
-  bug de "race condition". Eu falhei em diagnosticar isso.
+  Você estava 100% correto. Meu último patch (Passo 37)
+  corrigiu o 'popup-blocked', MAS introduziu o bug de
+  "deslogar ao atualizar" porque eu removi o `onAuthStateChanged`.
 
-  ATUALIZAÇÃO DE ARQUITETURA (A Correção Real):
-  - O Firebase (app, db, auth) não é mais inicializado
-    globalmente.
-  - Criei um `useEffect` que inicializa o Firebase
-    assim que o app é montado (o jeito React).
-  - Criei um estado `isFirebaseReady`.
-  - O botão de "Fazer Login" agora fica DESABILITADO
-    e mostra "Carregando..." até o Firebase
-    sinalizar que está pronto.
-  
-  Isso previne o clique antes da hora e corrige o
-  `auth/popup-blocked` permanentemente.
+  ATUALIZAÇÃO DE ARQUITETURA (A Correção Definitiva):
+  - Eu combinei as duas lógicas.
+  - O Firebase ainda inicializa com `isFirebaseReady`
+    (isso previne o 'popup-blocked').
+  - Eu ADICIONEI DE VOLTA o `onAuthStateChanged` dentro
+    de um novo `useEffect`.
+  - Este `useEffect` agora é o ÚNICO responsável por
+    definir o `userProfile` e `userRole`.
+  - `handleAuthClick` e `handleSignoutClick` foram
+    simplificados (eles só chamam o Firebase, e o
+    ouvinte faz o resto).
+
+  Isso corrige AMBOS os bugs.
 */
 
 // **********************************************************
@@ -61,11 +64,13 @@ const firebaseConfig = {
   appId: "1:344652513076:web:4ab3595d5ec6ceeb5a2f61"
 };
 
-// REMOVIDO: Inicialização global do Firebase
-// const app = initializeApp(firebaseConfig);
-// const db = getFirestore(app);
-// const auth = getAuth(app); 
-// setLogLevel('Debug');
+// Validação para garantir que as variáveis foram carregadas
+if (!firebaseConfig.apiKey) {
+  console.error("Erro: Variáveis de ambiente do Firebase não carregadas.");
+}
+
+// Inicialização movida para dentro do App
+let db, auth;
 
 const CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar';
 
@@ -134,18 +139,16 @@ const buildCachetsMap = (musicosArray = []) => {
 
 function App() {
   // --- Estados do Firebase (AGORA EM ESTADO) ---
-  const [firebaseDb, setFirebaseDb] = useState(null);
-  const [firebaseAuth, setFirebaseAuth] = useState(null);
   const [isFirebaseReady, setIsFirebaseReady] = useState(false);
 
   // --- Estados da Autenticação ---
   const [gapiClient, setGapiClient] = useState(null); // Cliente da API (GAPI)
-  const [isCalendarReady, setIsCalendarReady] = useState(false); // NOVO: Admin autorizou?
+  const [isCalendarReady, setIsCalendarReady] = useState(false); 
   
   // --- Estados do Usuário ---
   const [userId, setUserId] = useState(null); // ID do usuário
   const [userProfile, setUserProfile] = useState(null); // Perfil
-  const [isDbReady, setIsDbReady] = useState(false); // Pronto para Firebase
+  const [isDbReady, setIsDbReady] = useState(false); // Pronto para carregar dados
   const [userRole, setUserRole] = useState(null); // 'admin', 'musician', ou null
 
   // --- Estados da Aplicação ---
@@ -175,12 +178,10 @@ function App() {
   useEffect(() => {
     try {
       const app = initializeApp(firebaseConfig);
-      const db = getFirestore(app);
-      const auth = getAuth(app);
+      db = getFirestore(app);
+      auth = getAuth(app);
       
-      setFirebaseDb(db);
-      setFirebaseAuth(auth);
-      setIsFirebaseReady(true); // <--- A MUDANÇA PRINCIPAL
+      setIsFirebaseReady(true); // <--- Corrige 'popup-blocked'
       
       setLogLevel('Debug');
       console.log("Firebase SDKs inicializados.");
@@ -190,18 +191,62 @@ function App() {
     }
   }, []); // Roda SÓ UMA VEZ
 
+  // 2. NOVO: Ouvinte de Autenticação (Corrige "deslogar")
+  useEffect(() => {
+    if (!isFirebaseReady || !auth) return; // Só rode se o Firebase estiver pronto
+
+    // onAuthStateChanged lida com login, logout E persistência
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // --- USUÁRIO ESTÁ LOGADO ---
+        console.log('onAuthStateChanged: Usuário detectado', user.uid);
+        setUserId(user.uid);
+        setUserProfile({
+          name: user.displayName,
+          email: user.email,
+          picture: user.photoURL,
+        });
+        
+        // Define o Papel
+        if (user.uid === ADMIN_UID) {
+          setUserRole('admin');
+          console.log("Status de Acesso: ADMIN");
+        } else {
+          setUserRole('musician');
+          console.log("Status de Acesso: MÚSICO");
+        }
+        setIsDbReady(true);
+        
+      } else {
+        // --- USUÁRIO ESTÁ DESLOGADO ---
+        console.log('onAuthStateChanged: Usuário deslogado');
+        setUserId(null);
+        setUserProfile(null);
+        setIsDbReady(false);
+        setUserRole(null); 
+        setIsCalendarReady(false); 
+        setGapiClient(null); 
+        setGlobalError(null);
+        setMusicos([]);
+        setEventos([]);
+      }
+    });
+
+    return () => unsubscribe(); // Limpa o ouvinte
+  }, [isFirebaseReady]); // <-- Depende do Firebase estar pronto
+
+
   // 3. Carregamento de Músicos (Ouvinte do Firestore)
   useEffect(() => {
     const collectionPath = getMusicosCollectionPath();
-    // ATUALIZADO: Depende de `firebaseDb`
-    if (!isDbReady || !collectionPath || userRole !== 'admin' || !isCalendarReady || !firebaseDb) {
+    if (!isDbReady || !collectionPath || userRole !== 'admin' || !isCalendarReady) {
       setMusicos([]);
       setLoadingMusicos(false);
       return;
     };
     
     setLoadingMusicos(true);
-    const q = query(collection(firebaseDb, collectionPath));
+    const q = query(collection(db, collectionPath));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
         const musicosData = [];
         querySnapshot.forEach((doc) => {
@@ -216,12 +261,11 @@ function App() {
       }
     );
     return () => unsubscribe();
-  }, [isDbReady, userId, userRole, isCalendarReady, firebaseDb]); // <-- Depende do firebaseDb
+  }, [isDbReady, userId, userRole, isCalendarReady]); // <-- Depende do isCalendarReady
 
   // 4. Carregamento de Eventos (Ouvinte do Firestore)
   useEffect(() => {
-    // ATUALIZADO: Depende de `firebaseDb`
-    if (!isDbReady || !userProfile || !userRole || !firebaseDb) {
+    if (!isDbReady || !userProfile || !userRole) {
       setEventos([]);
       setLoadingEventos(false);
       return;
@@ -238,10 +282,10 @@ function App() {
     
     if (userRole === 'admin') {
       const collectionPath = getEventosCollectionPath();
-      q = query(collection(firebaseDb, collectionPath));
+      q = query(collection(db, collectionPath));
     } else if (userRole === 'musician') {
       q = query(
-        collectionGroup(firebaseDb, 'eventos'),
+        collectionGroup(db, 'eventos'),
         where('musicoEmails', 'array-contains', userProfile.email)
       );
     }
@@ -261,7 +305,7 @@ function App() {
       }
     );
     return () => unsubscribe();
-  }, [isDbReady, userId, userRole, userProfile, isCalendarReady, firebaseDb]); // <-- Depende de firebaseDb
+  }, [isDbReady, userId, userRole, userProfile, isCalendarReady]); 
 
   // --- Funções de Inicialização GAPI (SÓ PARA ADMIN) ---
   const initializeGapi = (accessToken) => {
@@ -287,60 +331,40 @@ function App() {
 
   // --- Funções de Autenticação Google ---
   
-  // ATUALIZADO: LOGIN BÁSICO (SEM CALENDAR)
+  // ATUALIZADO: SIMPLIFICADO. Só dispara o popup.
   const handleAuthClick = async () => {
     if (ADMIN_UID === "COLE_SEU_GOOGLE_UID_AQUI") {
       setGlobalError("Erro de Configuração: O ADMIN_UID ainda não foi definido no código App.jsx.");
       return;
     }
-    // ATUALIZADO: Checa `firebaseAuth` do estado
-    if (!isFirebaseReady || !firebaseAuth) {
+    if (!isFirebaseReady || !auth) {
       setGlobalError('Firebase Auth não está pronto.');
       return;
     }
     
     try {
       const provider = new GoogleAuthProvider();
+      // Não pede scope aqui, onAuthStateChanged vai lidar com o login
+      await signInWithPopup(auth, provider);
+      // O `onAuthStateChanged` vai pegar o resultado e definir o estado
       
-      const result = await signInWithPopup(firebaseAuth, provider); // Usa o estado
-
-      if (result.user) {
-        setUserId(result.user.uid);
-        setUserProfile({
-          name: result.user.displayName,
-          email: result.user.email,
-          picture: result.user.photoURL,
-        });
-        
-        if (result.user.uid === ADMIN_UID) {
-          setUserRole('admin');
-          console.log("Status de Acesso: ADMIN");
-        } else {
-          setUserRole('musician');
-          console.log("Status de Acesso: MÚSICO");
-        }
-        
-        setIsDbReady(true);
-        console.log('Firebase Auth: Logado com Google UID:', result.user.uid);
-        setGlobalError(null);
-      } else {
-        throw new Error("Não foi possível obter o usuário do Google.");
-      }
-
     } catch (e) {
+      // `onAuthStateChanged` não pega erros de popup fechado
       console.error("Erro no login com Google:", e);
-      setGlobalError(`Erro de autenticação: ${e.message}`);
+      if (e.code !== 'auth/popup-closed-by-user') {
+        setGlobalError(`Erro de autenticação: ${e.message}`);
+      }
     }
   };
 
   // NOVO: AUTORIZAÇÃO SÓ PARA ADMIN
   const handleCalendarAuth = async () => {
-    if (!firebaseAuth) return;
+    if (!auth) return;
     try {
       const provider = new GoogleAuthProvider();
       provider.addScope(CALENDAR_SCOPE); 
       
-      const result = await signInWithPopup(firebaseAuth, provider); // Usa o estado
+      const result = await signInWithPopup(auth, provider); 
       const credential = GoogleAuthProvider.credentialFromResult(result);
       const token = credential.accessToken;
       
@@ -359,25 +383,16 @@ function App() {
   };
 
 
+  // ATUALIZADO: SIMPLIFICADO. Só dispara o signout.
   const handleSignoutClick = async () => {
-    if (!firebaseAuth) return;
+    if (!auth) return;
     try {
-      await signOut(firebaseAuth); // Usa o estado
+      await signOut(auth);
+      // O `onAuthStateChanged` vai limpar o estado
     } catch (e) {
       console.error("Erro ao deslogar:", e);
       setGlobalError("Erro ao tentar sair.");
     }
-
-    setUserId(null);
-    setUserProfile(null);
-    setIsDbReady(false);
-    setUserRole(null); 
-    setIsCalendarReady(false); 
-    setGapiClient(null); 
-    setGlobalError(null);
-    setMusicos([]);
-    setEventos([]);
-    console.log('Firebase Auth: Deslogado e estados limpos.');
   };
   
   // Deletar Evento (com SweetAlert2)
@@ -385,7 +400,7 @@ function App() {
     if (userRole !== 'admin') return; 
     
     const collectionPath = getEventosCollectionPath();
-    if (!collectionPath || !firebaseDb) {
+    if (!collectionPath || !db) {
       setGlobalError("Erro de conexão (User ID nulo ou DB não pronto).");
       return;
     }
@@ -403,7 +418,7 @@ function App() {
 
     if (result.isConfirmed) {
       try {
-        await deleteDoc(doc(firebaseDb, collectionPath, eventoId)); // Usa o estado
+        await deleteDoc(doc(db, collectionPath, eventoId)); 
         console.log("Evento deletado do Firestore.");
         Swal.fire(
           'Deletado!',
@@ -606,7 +621,7 @@ function App() {
       loading={loadingMusicos}
       collectionPath={getMusicosCollectionPath()}
       setError={setGlobalError} 
-      db={firebaseDb} // <-- Passa o db do estado
+      db={db} // <-- Passa o db 
     />
   );
 
@@ -675,7 +690,7 @@ function App() {
           gapiClient={gapiClient}
           eventosCollectionPath={getEventosCollectionPath()}
           eventoParaEditar={eventoParaEditar} // Passa o evento para preencher
-          db={firebaseDb} // <-- Passa o db do estado
+          db={db} // <-- Passa o db
         />
       )}
       
@@ -820,11 +835,10 @@ const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
 
 
 // Modal de Adicionar Evento (AGORA SERVE PARA ADICIONAR E EDITAR)
-const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollectionPath, db }) => { // <-- Aceita `db`
+const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollectionPath, db, eventoParaEditar }) => {
   
-  const eventoParaEditar = null; // ATENÇÃO: Simplificação. A lógica de `eventoParaEditar` foi removida nesta etapa
   const isEditMode = eventoParaEditar !== null;
-  
+
   // Estados do Evento (Preenchidos se for Edição)
   const [nome, setNome] = useState(isEditMode ? eventoParaEditar.nome : '');
   const [data, setData] = useState(isEditMode ? formatDateForInput(eventoParaEditar.dataInicio) : '');
