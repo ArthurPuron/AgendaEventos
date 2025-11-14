@@ -21,22 +21,18 @@ import {
 } from 'firebase/auth';
 
 /*
-  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 27)
+  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 28)
 
   Olá, Implementador!
 
-  Você encontrou o bug `evaluating 'vt.id'`. Isso foi um erro meu.
-  Acontecia se você tentasse salvar um evento com um músico
-  que (por algum motivo) não era encontrado na lista principal.
+  Implementei a "Edição de Músicos".
 
-  ATUALIZAÇÃO (em `AddEventModal` -> `handleSubmit`):
-  - Adicionei uma verificação de segurança.
-  - O código agora verifica se o músico foi encontrado (`if (musico)`)
-    antes de tentar ler suas propriedades.
-  - Usei `.filter(Boolean)` para remover com segurança
-    quaisquer músicos "fantasma" que não foram encontrados.
-  
-  Isso corrige o bug `vt.id`.
+  ATUALIZAÇÃO (Somente no componente `MusicosManager`):
+  - O botão "Deletar" foi substituído por ícones de Lápis e Lixeira.
+  - Adicionado estado `musicoParaEditar` para controlar o formulário.
+  - O formulário agora se preenche sozinho ao clicar no Lápis.
+  - O título e o botão do formulário mudam para "Editar" / "Atualizar".
+  - O `handleSubmit` do músico agora tem lógica dupla (CRIAR vs EDITAR).
 */
 
 // **********************************************************
@@ -989,13 +985,34 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
 };
 
 
-// Gerenciador de Músicos (ATUALIZADO COM SweetAlert2)
+// **********************************************************
+// ATUALIZAÇÃO (Passo 28) - Componente Inteiro Atualizado
+// **********************************************************
 const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
+  // NOVO: Estado para controlar a edição
+  const [musicoParaEditar, setMusicoParaEditar] = useState(null);
+  
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [instrumento, setInstrumento] = useState('');
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState(null); // Erro local do formulário
+
+  // NOVO: Efeito para preencher/limpar o formulário
+  useEffect(() => {
+    if (musicoParaEditar) {
+      // Preenche o formulário para edição
+      setNome(musicoParaEditar.nome);
+      setEmail(musicoParaEditar.email);
+      setInstrumento(musicoParaEditar.instrumento);
+      setFormError(null); // Limpa erros
+    } else {
+      // Limpa o formulário (modo de adição)
+      setNome('');
+      setEmail('');
+      setInstrumento('');
+    }
+  }, [musicoParaEditar]); // Roda sempre que o 'musicoParaEditar' mudar
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -1009,17 +1026,32 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
     }
     setSaving(true);
     setFormError(null);
+    
     try {
-      await addDoc(collection(db, collectionPath), {
-        nome: nome,
-        email: email,
-        instrumento: instrumento,
-      });
-      setNome('');
-      setEmail('');
-      setInstrumento('');
+      if (musicoParaEditar) {
+        // --- MODO DE ATUALIZAÇÃO ---
+        const musicoRef = doc(db, collectionPath, musicoParaEditar.id);
+        await setDoc(musicoRef, {
+          nome: nome,
+          email: email,
+          instrumento: instrumento,
+        });
+        // Limpa o formulário e sai do modo de edição
+        setMusicoParaEditar(null);
+      } else {
+        // --- MODO DE CRIAÇÃO ---
+        await addDoc(collection(db, collectionPath), {
+          nome: nome,
+          email: email,
+          instrumento: instrumento,
+        });
+        // Limpa o formulário
+        setNome('');
+        setEmail('');
+        setInstrumento('');
+      }
     } catch (e) {
-      console.error("[Firestore] Erro ao adicionar músico:", e);
+      console.error("[Firestore] Erro ao salvar músico:", e);
       setFormError("Não foi possível salvar o músico.");
     }
     setSaving(false);
@@ -1030,6 +1062,11 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
     if (!collectionPath) {
       setError("Erro de conexão (User ID nulo).");
       return;
+    }
+    
+    // Se estiver editando este músico, cancele a edição
+    if (musicoParaEditar && musicoParaEditar.id === musicoId) {
+      setMusicoParaEditar(null);
     }
     
     const result = await Swal.fire({
@@ -1070,7 +1107,8 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
       <div className="lg:col-span-1">
         <div className="bg-white rounded-lg shadow-xl p-4 sm:p-6">
           <h3 className="text-2xl font-bold text-gray-900 mb-4">
-            Adicionar Músico
+            {/* Título dinâmico */}
+            {musicoParaEditar ? 'Editar Músico' : 'Adicionar Músico'}
           </h3>
           {formError && <ErrorMessage message={formError} onDismiss={() => setFormError(null)} />}
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -1093,13 +1131,27 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
               onChange={setInstrumento}
               placeholder="Ex: Guitarra, Vocal"
             />
-            <button
-              type="submit"
-              disabled={saving}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 disabled:opacity-50"
-            >
-              {saving ? 'Salvando...' : 'Salvar Músico'}
-            </button>
+            <div className="flex flex-col sm:flex-row sm:gap-2">
+              <button
+                type="submit"
+                disabled={saving}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 disabled:opacity-50"
+              >
+                {/* Texto dinâmico */}
+                {saving ? 'Salvando...' : (musicoParaEditar ? 'Atualizar Músico' : 'Salvar Músico')}
+              </button>
+              
+              {/* NOVO: Botão Cancelar */}
+              {musicoParaEditar && (
+                <button
+                  type="button"
+                  onClick={() => setMusicoParaEditar(null)}
+                  className="w-full sm:w-auto bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-300 mt-2 sm:mt-0"
+                >
+                  Cancelar
+                </button>
+              )}
+            </div>
           </form>
         </div>
       </div>
@@ -1123,13 +1175,24 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
                     <p className="text-sm text-gray-600">{musico.instrumento}</p>
                     <p className="text-sm text-gray-500">{musico.email}</p>
                   </div>
-                  <button
-                    onClick={() => handleDelete(musico.id)}
-                    // ATUALIZADO: w-full no celular
-                    className="w-full sm:w-auto bg-red-100 hover:bg-red-200 text-red-700 font-semibold py-1 px-3 rounded-lg text-sm transition duration-300"
-                  >
-                    Deletar
-                  </button>
+                  
+                  {/* NOVO: Container de botões de ícone */}
+                  <div className="flex flex-shrink-0 ml-2 w-full sm:w-auto">
+                    <button
+                      onClick={() => setMusicoParaEditar(musico)}
+                      className="w-1/2 sm:w-auto bg-blue-100 hover:bg-blue-200 text-blue-700 p-2 rounded-lg text-sm transition duration-300"
+                      title="Editar Músico"
+                    >
+                      <svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg>
+                    </button>
+                    <button
+                      onClick={() => handleDelete(musico.id)}
+                      className="w-1/2 sm:w-auto bg-red-100 hover:bg-red-200 text-red-700 p-2 ml-2 rounded-lg text-sm transition duration-300"
+                      title="Deletar Músico"
+                    >
+                      <svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -1139,6 +1202,7 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
     </div>
   );
 };
+
 
 // Componente reusável para Input (Idêntico)
 const FormInput = ({ label, type = 'text', value, onChange, placeholder, inputMode = 'text' }) => (
