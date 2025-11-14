@@ -23,45 +23,26 @@ import {
 } from 'firebase/auth';
 
 /*
-  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 29)
+  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 30)
 
   Olá, Implementador!
 
-  Implementei a separação de "Admin" vs "Músico".
+  Você encontrou o bug da "tela branca". Era um erro meu.
+  `ReferenceError: RenderHeader is not defined`
 
   ATUALIZAÇÃO:
-  - Adicionado `ADMIN_UID`: Cole seu UID do Google aqui (veja o console).
-  - Adicionado `userRole`: O app agora sabe se você é 'admin' ou 'musician'.
-  - `handleAuthClick`: Define o `userRole` no login.
-  - `App()` (Render): Mostra `AdminDashboard` ou `MusicianDashboard`
-    baseado no `userRole`.
-  - `MusicianDashboard`: Novo componente que busca eventos usando
-    `collectionGroup` (veja AVISO 2).
-  - `AddEventModal`: Agora salva um campo `musicoEmails` para
-    permitir a busca dos músicos.
-  - `ViewEventModal`: Agora esconde dados financeiros se o `userRole`
-    for 'musician' (mostra apenas o cachet do próprio músico).
-
-  AVISO 1: COLE SEU UID
-  - Encontre o `ADMIN_UID` no console do seu navegador ao logar
-    (procure por "Firebase Auth: Logado com Google UID:")
-    e cole na constante `ADMIN_UID` abaixo.
-
-  AVISO 2: ÍNDICE DO FIRESTORE (OBRIGATÓRIO)
-  - Ao logar como MÚSICO, o app vai falhar.
-  - Abra o Console (F12). O Firestore vai gerar um ERRO
-    com um LINK longo.
-  - Clique nesse link. Ele te levará ao Firebase para
-    criar o Índice necessário para esta busca.
-  - Clique em "Salvar" e aguarde o índice ser construído.
+  - Corrigi um erro de digitação (case-sensitive) na
+    renderização principal (linha 507).
+  - Mudei a chamada de `<RenderHeader />` (quebrado)
+    para `{renderHeader()}` (correto).
 */
 
 // **********************************************************
 // AÇÃO OBRIGATÓRIA: Cole seu UID de Admin aqui
 // (Encontre no console do navegador ao logar)
 // **********************************************************
-const ADMIN_UID = "b2XJT8OqQ7SezDjU3WtWv6MwYVa2"; 
-// Ex: "yokRgR[...]Z5I3"
+const ADMIN_UID = "b2XfTBCeQyOYJflhW6TwfuNwMvH2"; // <-- Seu UID que vi no screenshot
+// (Se não for esse, troque pelo UID do console)
 
 // **********************************************************
 // Chaves de Configuração (Base Correta)
@@ -629,7 +610,13 @@ function App() {
   return (
     // Código de layout limpo (sem hacks w-full)
     <div className="min-h-screen bg-gray-100 font-sans">
-      <RenderHeader />
+      {/* **********************************
+        A CORREÇÃO (Passo 30)
+        Era `RenderHeader` (quebrado)
+        Mudei para `{renderHeader()}` (correto)
+        **********************************
+      */}
+      {renderHeader()}
       
       <main className="py-6 px-4 sm:px-6 lg:px-8">
         {globalError && <ErrorMessage message={globalError} onDismiss={() => setGlobalError(null)} />}
@@ -817,22 +804,30 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
       const fusoHorario = getLocalTimeZone();
 
       // 2. Prepara lista de músicos com cachets (para Firestore)
+      // **********************************************************
+      // ATUALIZAÇÃO (Passo 27) - Correção do bug 'vt.id'
+      // **********************************************************
       const musicosConvidados = selectedMusicos
         .map(musicoId => {
           const musico = musicosCadastrados.find(m => m.id === musicoId);
+          // SE o músico for encontrado, retorna o objeto dele
           if (musico) {
             return {
               id: musico.id,
               nome: musico.nome,
               email: musico.email,
               instrumento: musico.instrumento,
-              cachet: cachets[musicoId] || '0', 
+              cachet: cachets[musicoId] || '0', // Adiciona o cachet
             };
           }
+          // SE não for encontrado (ex: deletado), retorna null
           console.warn(`Músico com ID ${musicoId} não encontrado. Será removido do evento.`);
           return null;
         })
-        .filter(Boolean); // Remove nulos
+        .filter(Boolean); // Remove qualquer entrada nula (músicos não encontrados)
+      // **********************************************************
+      // FIM DA CORREÇÃO
+      // **********************************************************
 
 
       // 3. Objeto para o FIRESTORE (Com todos os dados financeiros)
@@ -866,6 +861,9 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
         // --- MODO DE ATUALIZAÇÃO ---
         const eventoRef = doc(db, eventosCollectionPath, eventoParaEditar.id);
         
+        // **********************************************************
+        // ATUALIZAÇÃO (Passo 26) - Lógica de Edição Corrigida
+        // **********************************************************
         if (eventoParaEditar.googleEventId) {
           // CASO 1: Evento MODERNO (Tem ID do Google)
           console.log("Atualizando evento existente no Google Calendar...");
