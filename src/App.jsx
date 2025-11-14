@@ -9,48 +9,45 @@ import {
   onSnapshot,
   deleteDoc,
   doc,
-  setDoc,
-  updateDoc,
+  setDoc, 
+  updateDoc, 
   setLogLevel,
-  collectionGroup,
-  where,
+  collectionGroup, // NOVO: Para buscar eventos de músicos
+  where, // NOVO: Para filtrar por email
 } from 'firebase/firestore';
 import {
   getAuth,
   GoogleAuthProvider,
   signInWithPopup,
   signOut,
-  onAuthStateChanged, // <-- A CHAVE PARA O LOGIN PERSISTENTE
 } from 'firebase/auth';
 
 /*
-  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 41)
+  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 36)
 
   Olá, Implementador!
 
-  Identifiquei e corrigi o bug que você descreveu (F5 levando
-  a uma tela de autorização "travada").
+  Implementei sua ideia do "Avatar".
 
-  O problema era que, ao recarregar com um token salvo (no
-  localStorage), o app carregava o GAPI (para usar o token),
-  mas esquecia de carregar o GSI (para o botão "Autorizar").
+  ATUALIZAÇÃO:
+  - Não podemos (por segurança) pegar a foto real
+    do Google de um músico só com o e-mail.
+  - MAS, criei uma solução "igual ao Google":
+    um Avatar com as INICIAIS do nome.
 
-  Se o token estivesse expirado, o GAPI falhava, o app
-  mostrava a tela de autorização, mas o botão "Autorizar"
-  ficava "Carregando..." para sempre, pois o GSI (tokenClient)
-  nunca foi inicializado.
-
-  A CORREÇÃO (Abaixo, no useEffect 3):
-  Agora, o app (como admin) SEMPRE carrega o GSI (para
-  garantir que o 'tokenClient' do botão "Autorizar" esteja
-  pronto) E, em paralelo, se houver um token salvo, ele
-  tenta carregar o GAPI.
+  - `MusicosManager`: A lista de músicos agora
+    mostra um círculo com as iniciais (ex: "AF")
+    ao lado do nome, como você pediu.
+  
+  - `Avatar` (NOVO Componente): Um novo helper
+    foi adicionado no final do arquivo para
+    gerar esses avatares.
 */
 
 // **********************************************************
 // UID DE ADMIN (Corrigido no Passo 33)
 // **********************************************************
-const ADMIN_UID = "b2XJT8OqQ7SezDjU3WtWv6MwYVa2";
+const ADMIN_UID = "b2XJT8OqQ7SezDjU3WtWv6MwYVa2"; 
 
 // **********************************************************
 // Chaves de Configuração (Base Correta)
@@ -64,15 +61,16 @@ const firebaseConfig = {
   appId: "1:344652513076:web:4ab3595d5ec6ceeb5a2f61"
 };
 
-// Chave para o localStorage
-const GAPI_TOKEN_KEY = 'gapi_access_token';
+// Validação para garantir que as variáveis foram carregadas
+if (!firebaseConfig.apiKey) {
+  console.error("Erro: Variáveis de ambiente do Firebase não carregadas.");
+}
 
-// ATENÇÃO: Use o Client ID do Google Cloud, não a API Key do Firebase
-// Este é o ID do seu projeto `agenda-musicos-f6f01` no Google Cloud
-const GOOGLE_CLIENT_ID_GSI = "1033560928889-uel0855k0v713oqkqf4ktqa2j80burad.apps.googleusercontent.com";
-
-// Inicialização movida para dentro do App
-let db, auth;
+// Inicializa o Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app); // O Auth do Firebase
+setLogLevel('Debug');
 
 const CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar';
 
@@ -140,18 +138,16 @@ const buildCachetsMap = (musicosArray = []) => {
 
 
 function App() {
-  // --- Estados do Firebase (AGORA EM ESTADO) ---
-  const [isFirebaseReady, setIsFirebaseReady] = useState(false);
-
   // --- Estados da Autenticação ---
   const [gapiClient, setGapiClient] = useState(null); // Cliente da API (GAPI)
-  const [tokenClient, setTokenClient] = useState(null); // NOVO: Cliente GSI Token
-  const [isCalendarReady, setIsCalendarReady] = useState(false);
+  const [isCalendarReady, setIsCalendarReady] = useState(false); // NOVO: Admin autorizou?
   
-  // --- Estados do Usuário ---
+  // --- Estados do Firebase ---
   const [userId, setUserId] = useState(null); // ID do usuário
   const [userProfile, setUserProfile] = useState(null); // Perfil
-  const [isDbReady, setIsDbReady] = useState(false); // Pronto para carregar dados
+  const [isDbReady, setIsDbReady] = useState(false); // Pronto para Firebase
+
+  // --- NOVO ESTADO DE AUTORIZAÇÃO ---
   const [userRole, setUserRole] = useState(null); // 'admin', 'musician', ou null
 
   // --- Estados da Aplicação ---
@@ -177,99 +173,13 @@ function App() {
     return `users/${userId}/eventos`;
   };
 
-  // 1. NOVO: Inicialização do Firebase
-  useEffect(() => {
-    try {
-      const app = initializeApp(firebaseConfig);
-      db = getFirestore(app);
-      auth = getAuth(app);
-      
-      setIsFirebaseReady(true); // <--- Corrige 'popup-blocked'
-      
-      setLogLevel('Debug');
-      console.log("Firebase SDKs inicializados.");
-    } catch (e) {
-      console.error("Erro fatal ao inicializar Firebase:", e);
-      setGlobalError("Não foi possível conectar ao banco de dados.");
-    }
-  }, []); // Roda SÓ UMA VEZ
+  // 1. Carregamento GAPI (REMOVIDO - Agora só carrega sob demanda para o admin)
 
-  // 2. NOVO: Ouvinte de Autenticação (Corrige "deslogar")
-  useEffect(() => {
-    if (!isFirebaseReady || !auth) return; // Só rode se o Firebase estiver pronto
-
-    // onAuthStateChanged lida com login, logout E persistência
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        // --- USUÁRIO ESTÁ LOGADO ---
-        console.log('onAuthStateChanged: Usuário detectado', user.uid);
-        setUserId(user.uid);
-        setUserProfile({
-          name: user.displayName,
-          email: user.email,
-          picture: user.photoURL,
-        });
-        
-        // Define o Papel
-        if (user.uid === ADMIN_UID) {
-          setUserRole('admin');
-          console.log("Status de Acesso: ADMIN");
-        } else {
-          setUserRole('musician');
-          console.log("Status de Acesso: MÚSICO");
-        }
-        setIsDbReady(true);
-        
-      } else {
-        // --- USUÁRIO ESTÁ DESLOGADO ---
-        console.log('onAuthStateChanged: Usuário deslogado');
-        setUserId(null);
-        setUserProfile(null);
-        setIsDbReady(false);
-        setUserRole(null);
-        setIsCalendarReady(false);
-        setGapiClient(null);
-        setTokenClient(null); // Limpa cliente GSI
-        setGlobalError(null);
-        setMusicos([]);
-        setEventos([]);
-        // Limpa o token da sessão
-        localStorage.removeItem(GAPI_TOKEN_KEY);
-      }
-    });
-
-    return () => unsubscribe(); // Limpa o ouvinte
-  }, [isFirebaseReady]); // <-- Depende do Firebase estar pronto
-
-
-  // 3. NOVO: Carregador de GAPI/GSI (só para Admin) - CORRIGIDO
-  useEffect(() => {
-    // Roda se o usuário for admin E os scripts ainda não estiverem carregados
-    if (userRole === 'admin' && !gapiClient) {
-      
-      // CORREÇÃO: Carrega o GSI (para o botão "Autorizar")
-      // em TODAS as circunstâncias de admin.
-      console.log("Admin logado. Carregando GSI para o TokenClient...");
-      loadGsiScript(); 
-      
-      // Agora, verifica se já temos um token salvo para TENTAR
-      // pular a tela de autorização.
-      const storedToken = localStorage.getItem(GAPI_TOKEN_KEY);
-      
-      if (storedToken) {
-        console.log("Token GAPI encontrado no localStorage. Tentando usar...");
-        loadGapiScripts(storedToken, true); // Tenta carregar com o token salvo
-      } else {
-        console.log("Nenhum token GAPI salvo. GAPI não será carregado até a autorização.");
-        // Não precisa fazer nada, o GSI já está carregando.
-      }
-    }
-  }, [userRole, gapiClient]); // Depende do role e do gapiClient
-  
-  
-  // 4. Carregamento de Músicos (Ouvinte do Firestore)
+  // 3. Carregamento de Músicos (Ouvinte do Firestore)
+  // SÓ RODA SE FOR ADMIN
   useEffect(() => {
     const collectionPath = getMusicosCollectionPath();
+    // ATUALIZADO: Agora também depende do `isCalendarReady`
     if (!isDbReady || !collectionPath || userRole !== 'admin' || !isCalendarReady) {
       setMusicos([]);
       setLoadingMusicos(false);
@@ -292,9 +202,10 @@ function App() {
       }
     );
     return () => unsubscribe();
-  }, [isDbReady, userId, userRole, isCalendarReady]);
+  }, [isDbReady, userId, userRole, isCalendarReady]); // <-- Depende do isCalendarReady
 
-  // 5. Carregamento de Eventos (Ouvinte do Firestore)
+  // 4. Carregamento de Eventos (Ouvinte do Firestore)
+  // RODA PARA ADMIN OU MÚSICO, MAS COM QUERIES DIFERENTES
   useEffect(() => {
     if (!isDbReady || !userProfile || !userRole) {
       setEventos([]);
@@ -302,6 +213,7 @@ function App() {
       return;
     };
     
+    // Admin precisa de autorização do calendário para carregar
     if (userRole === 'admin' && !isCalendarReady) {
       setEventos([]);
       setLoadingEventos(false);
@@ -312,9 +224,12 @@ function App() {
     let q;
     
     if (userRole === 'admin') {
+      // --- Lógica de Admin ---
       const collectionPath = getEventosCollectionPath();
       q = query(collection(db, collectionPath));
+      
     } else if (userRole === 'musician') {
+      // --- Lógica de Músico ---
       q = query(
         collectionGroup(db, 'eventos'),
         where('musicoEmails', 'array-contains', userProfile.email)
@@ -326,6 +241,7 @@ function App() {
         querySnapshot.forEach((doc) => {
           eventosData.push({ id: doc.id, ...doc.data() });
         });
+        // Ordena os eventos por data de início
         eventosData.sort((a, b) => new Date(a.dataInicio) - new Date(b.dataInicio));
         setEventos(eventosData);
         setLoadingEventos(false);
@@ -336,38 +252,10 @@ function App() {
       }
     );
     return () => unsubscribe();
-  }, [isDbReady, userId, userRole, userProfile, isCalendarReady]);
+  }, [isDbReady, userId, userRole, userProfile, isCalendarReady]); // <-- Depende de tudo
 
-  // --- Funções de Inicialização GAPI/GSI (NOVAS) ---
-  
-  // Carrega GAPI (para usar o Calendar)
-  const loadGapiScripts = (accessToken, useToken) => {
-    const scriptGapi = document.createElement('script');
-    scriptGapi.src = 'https://apis.google.com/js/api.js';
-    scriptGapi.async = true;
-    scriptGapi.defer = true;
-    scriptGapi.onload = () => initializeGapi(accessToken, useToken);
-    document.body.appendChild(scriptGapi);
-  };
-  
-  // Carrega GSI (para pedir o token)
-  const loadGsiScript = () => {
-    const scriptGsi = document.createElement('script');
-    scriptGsi.src = 'https://accounts.google.com/gsi/client';
-    scriptGsi.async = true;
-    scriptGsi.defer = true;
-    scriptGsi.onload = initializeGsi;
-    document.body.appendChild(scriptGsi);
-  };
-
-  const initializeGapi = (accessToken, useToken) => {
-    // Adiciona uma verificação para `window.gapi`
-    if (typeof window.gapi === 'undefined') {
-      console.error("GAPI script não carregou a tempo.");
-      setGlobalError("Não foi possível carregar a API do Google.");
-      return;
-    }
-
+  // --- Funções de Inicialização GAPI (AGORA É SÓ PARA ADMIN) ---
+  const initializeGapi = (accessToken) => {
     window.gapi.load('client', () => {
       window.gapi.client
         .init({
@@ -376,125 +264,121 @@ function App() {
           ],
         })
         .then(() => {
-          if (useToken) {
-            window.gapi.client.setToken({ access_token: accessToken });
-            console.log("GAPI client inicializado COM token (localStorage).");
-          } else {
-             console.log("GAPI client inicializado SEM token.");
-          }
-          setGapiClient(window.gapi);
-          // Se usamos o token, o calendário está pronto!
-          if(useToken) setIsCalendarReady(true);
+          // Define o token IMEDIATAMENTE após inicializar
+          window.gapi.client.setToken({ access_token: accessToken });
+          setGapiClient(window.gapi); // GAPI está pronto
+          setIsCalendarReady(true); // Calendário está autorizado
+          console.log("GAPI client inicializado E autorizado.");
         })
         .catch((e) => {
-          console.error('Erro ao inicializar GAPI client (provavelmente token expirado):', e);
-          // Se o token falhar, limpa ele
-          localStorage.removeItem(GAPI_TOKEN_KEY);
-          setIsCalendarReady(false); // FORÇA A TELA DE AUTORIZAÇÃO
+          console.error('Erro ao inicializar GAPI client:', e);
+          setGlobalError('Erro ao inicializar GAPI client.');
         });
     });
-  };
-  
-  const initializeGsi = () => {
-    if (!auth.currentUser || typeof window.google === 'undefined') {
-      console.warn("GSI script carregou, mas usuário deslogou ou 'google' não está no window.");
-      // Tenta de novo se o auth.currentUser ainda não estiver pronto
-      if (typeof window.google === 'undefined') {
-        setTimeout(initializeGsi, 500); // Tenta de novo
-      }
-      return;
-    }
-    
-    // **********************************
-    // A CORREÇÃO (Passo 39)
-    // O erro `invalid_client` (401) foi causado por eu
-    // ter usado `firebaseConfig.apiKey` aqui.
-    // O correto é usar o Client ID OAuth 2.0
-    // do Google Cloud (o mesmo que você usou no início).
-    // **********************************
-    try {
-      const client = window.google.accounts.oauth2.initTokenClient({
-        client_id: GOOGLE_CLIENT_ID_GSI, // <-- Corrigido
-        scope: CALENDAR_SCOPE,
-        login_hint: auth.currentUser.email,
-        callback: (tokenResponse) => {
-          if (tokenResponse && tokenResponse.access_token) {
-            const token = tokenResponse.access_token;
-            // Salva o token para persistência!
-            localStorage.setItem(GAPI_TOKEN_KEY, token);
-            // Carrega o GAPI (agora que temos o token)
-            loadGapiScripts(token, true);
-          }
-        },
-        error_callback: (error) => {
-          console.error('Erro de autorização GSI:', error);
-          setGlobalError("Não foi possível autorizar o Google Calendar.");
-        }
-      });
-      console.log("Cliente GSI (TokenClient) inicializado com sucesso.");
-      setTokenClient(client);
-    } catch (e) {
-      console.error("Erro ao inicializar GSI token client:", e);
-      setGlobalError("Falha ao inicializar cliente de autorização.");
-    }
   };
 
   // --- Funções de Autenticação Google ---
   
-  // Login BÁSICO (sem scope)
+  // ATUALIZADO: LOGIN BÁSICO (SEM CALENDAR)
   const handleAuthClick = async () => {
     if (ADMIN_UID === "COLE_SEU_GOOGLE_UID_AQUI") {
       setGlobalError("Erro de Configuração: O ADMIN_UID ainda não foi definido no código App.jsx.");
       return;
     }
-    if (!isFirebaseReady || !auth) {
-      setGlobalError('Firebase Auth não está pronto.');
-      return;
-    }
     
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-      // O `onAuthStateChanged` vai pegar o resultado.
+      // NENHUM SCOPE SENSÍVEL PEDIDO AQUI
+      
+      const result = await signInWithPopup(auth, provider);
+
+      if (result.user) {
+        setUserId(result.user.uid);
+        setUserProfile({
+          name: result.user.displayName,
+          email: result.user.email,
+          picture: result.user.photoURL,
+        });
+        
+        // Define o Papel do Usuário
+        if (result.user.uid === ADMIN_UID) {
+          setUserRole('admin');
+          console.log("Status de Acesso: ADMIN");
+        } else {
+          setUserRole('musician');
+          console.log("Status de Acesso: MÚSICO");
+        }
+        
+        setIsDbReady(true);
+        console.log('Firebase Auth: Logado com Google UID:', result.user.uid);
+        setGlobalError(null);
+      } else {
+        throw new Error("Não foi possível obter o usuário do Google.");
+      }
+
     } catch (e) {
       console.error("Erro no login com Google:", e);
-      if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/popup-blocked') {
-        setGlobalError(`Erro de autenticação: ${e.message}`);
-      }
+      setGlobalError(`Erro de autenticação: ${e.message}`);
     }
   };
 
-  // Autorização SÓ PARA ADMIN (usando GSI)
-  const handleCalendarAuth = () => {
-    if (tokenClient) {
-      // Pede o token (força o popup)
-      tokenClient.requestAccessToken();
-    } else {
-      setGlobalError("Cliente de autorização não está pronto. Tente novamente.");
-      // Tenta carregar o GSI de novo
-      loadGsiScript();
+  // NOVO: AUTORIZAÇÃO SÓ PARA ADMIN
+  const handleCalendarAuth = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      // AGORA SIM, PEDE O SCOPE SENSÍVEL
+      provider.addScope(CALENDAR_SCOPE); 
+      
+      // Força o re-login (ou pop-up de permissão)
+      const result = await signInWithPopup(auth, provider); 
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      const token = credential.accessToken;
+      
+      if (token) {
+        // Carrega os scripts do GAPI (só o admin faz isso)
+        const scriptGapi = document.createElement('script');
+        scriptGapi.src = 'https://apis.google.com/js/api.js';
+        scriptGapi.async = true;
+        scriptGapi.defer = true;
+        // Passa o token para a função onload
+        scriptGapi.onload = () => initializeGapi(token); 
+        document.body.appendChild(scriptGapi);
+      }
+    } catch (e) {
+      console.error("Erro ao autorizar calendário:", e);
+      setGlobalError("Não foi possível autorizar o Google Calendar.");
     }
   };
 
 
   const handleSignoutClick = async () => {
-    if (!auth) return;
     try {
       await signOut(auth);
-      // O `onAuthStateChanged` vai limpar tudo
     } catch (e) {
       console.error("Erro ao deslogar:", e);
       setGlobalError("Erro ao tentar sair.");
     }
+
+    setUserId(null);
+    setUserProfile(null);
+    setIsDbReady(false);
+    setUserRole(null); // Limpa o papel
+    setIsCalendarReady(false); // Limpa autorização
+    setGapiClient(null); // Limpa GAPI
+    setGlobalError(null);
+    setMusicos([]);
+    setEventos([]);
+    console.log('Firebase Auth: Deslogado e estados limpos.');
   };
   
   // Deletar Evento (com SweetAlert2)
   const handleDeleteEvento = async (eventoId) => {
-    if (userRole !== 'admin') return;
+    // Apenas Admins podem deletar
+    if (userRole !== 'admin') return; 
     
     const collectionPath = getEventosCollectionPath();
-    if (!collectionPath || !db) {
-      setGlobalError("Erro de conexão (User ID nulo ou DB não pronto).");
+    if (!collectionPath) {
+      setGlobalError("Erro de conexão (User ID nulo).");
       return;
     }
     
@@ -503,8 +387,8 @@ function App() {
       text: "(Isso NÃO o removerá do Google Calendar, apenas da lista do app.)",
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
+      confirmButtonColor: '#3085d6', // Azul
+      cancelButtonColor: '#d33', // Vermelho
       confirmButtonText: 'Sim, deletar!',
       cancelButtonText: 'Cancelar'
     });
@@ -532,6 +416,7 @@ function App() {
 
   // --- Componente: Cabeçalho (com Abas) ---
   const renderHeader = () => (
+    // Código de layout limpo (sem hacks w-full)
     <header className="bg-white shadow-md">
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
@@ -557,6 +442,7 @@ function App() {
         </div>
       </div>
       
+      {/* ATUALIZADO: Abas só aparecem para o ADMIN */}
       {userRole === 'admin' && (
         <nav className="bg-gray-50 border-t border-gray-200">
           <div className="px-4 sm:px-6 lg:px-8 flex space-x-4">
@@ -587,13 +473,13 @@ function App() {
       </p>
       <button
         onClick={handleCalendarAuth}
-        // Desabilita o botão até o GSI estar pronto
-        disabled={!tokenClient}
-        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1 disabled:opacity-50"
+        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1"
       >
-        {tokenClient ? 'Autorizar Google Calendar' : 'Carregando...'}
+        Autorizar Google Calendar
       </button>
-      {/* ATUALIZADO (Passo 39): Texto removido */}
+      <p className="text-sm text-gray-500 mt-4">
+        (Os músicos não verão esta etapa.)
+      </p>
     </div>
   );
 
@@ -679,7 +565,7 @@ function App() {
                 <div className="flex flex-shrink-0 ml-2">
                   <button
                     onClick={(e) => {
-                      e.stopPropagation();
+                      e.stopPropagation(); 
                       setEventoParaEditar(evento);
                     }}
                     className="bg-blue-100 hover:bg-blue-200 text-blue-700 p-2 rounded-full text-sm transition duration-300"
@@ -713,25 +599,15 @@ function App() {
       musicos={musicos}
       loading={loadingMusicos}
       collectionPath={getMusicosCollectionPath()}
-      setError={setGlobalError}
-      db={db} // <-- Passa o db
+      setError={setGlobalError} 
     />
   );
 
 
   // --- Renderização Principal ---
 
-  // Tela de Loading (Enquanto O FIREBASE não está pronto)
-  if (!isFirebaseReady) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
-        <div className="text-xl font-semibold text-gray-700">
-          Conectando...
-        </div>
-      </div>
-    );
-  }
-
+  // Tela de Loading (REMOVIDA - GAPI SÓ CARREGA PARA ADMIN)
+  
   // Tela de Login (Se o Firebase não tiver usuário)
   if (!userProfile) {
     return (
@@ -744,13 +620,11 @@ function App() {
             Faça login com sua conta Google para gerenciar os eventos.
           </p>
           {globalError && <ErrorMessage message={globalError} />}
-          {/* ATUALIZAÇÃO (Passo 37): Botão desabilitado */}
           <button
             onClick={handleAuthClick}
-            disabled={!isFirebaseReady}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-wait"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1"
           >
-            {isFirebaseReady ? 'Fazer Login com Google' : 'Carregando...'}
+            Fazer Login com Google
           </button>
         </div>
       </div>
@@ -783,7 +657,6 @@ function App() {
           gapiClient={gapiClient}
           eventosCollectionPath={getEventosCollectionPath()}
           eventoParaEditar={eventoParaEditar} // Passa o evento para preencher
-          db={db} // <-- Passa o db
         />
       )}
       
@@ -812,8 +685,8 @@ const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
   const startDate = new Date(evento.dataInicio);
   const endDate = new Date(evento.dataFim);
   // Helper 1: Data
-  const dateString = startDate.toLocaleDateString('pt-BR', {
-    day: '2-digit', month: '2-digit', year: 'numeric'
+  const dateString = startDate.toLocaleDateString('pt-BR', { 
+    day: '2-digit', month: '2-digit', year: 'numeric' 
   });
   // Helper 2: Horário
   const timeString = `${startDate.toLocaleTimeString('pt-BR', { timeStyle: 'short' })} - ${endDate.toLocaleTimeString('pt-BR', { timeStyle: 'short' })}`;
@@ -893,7 +766,11 @@ const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
                         <p className="text-sm text-gray-500">{musico.instrumento}</p>
                       </div>
                       
-                      {/* (Correção - Passo 35) */}
+                      {/* **********************************
+                        A CORREÇÃO (Passo 35)
+                        Lógica atualizada para (isAdmin)
+                        **********************************
+                      */}
                       {isAdmin && (
                         <p className="text-gray-700 font-semibold">
                           {formatCurrency(musico.cachet)}
@@ -928,7 +805,7 @@ const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
 
 
 // Modal de Adicionar Evento (AGORA SERVE PARA ADICIONAR E EDITAR)
-const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollectionPath, db, eventoParaEditar }) => {
+const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollectionPath, eventoParaEditar }) => {
   
   const isEditMode = eventoParaEditar !== null;
 
@@ -951,14 +828,10 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setModalError(null);
+    setModalError(null); 
     
     if (!nome || !data || !horaInicio || !horaFim || !cidade) {
-      setModalError("Por favor, preencha todos os campos obrigatórios.");
-      return;
-    }
-    if (!db) { // Checa o db do prop
-      setModalError("Conexão com banco de dados perdida.");
+      setModalError("Por favor, preencha todos os campos obrigatórios."); 
       return;
     }
     setSaving(true);
@@ -980,7 +853,7 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
               nome: musico.nome,
               email: musico.email,
               instrumento: musico.instrumento,
-              cachet: cachets[musicoId] || '0',
+              cachet: cachets[musicoId] || '0', 
             };
           }
           console.warn(`Músico com ID ${musicoId} não encontrado. Será removido do evento.`);
@@ -1018,7 +891,7 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
       // 5. LÓGICA DE SALVAR (CRIAR vs EDITAR)
       if (isEditMode) {
         // --- MODO DE ATUALIZAÇÃO ---
-        const eventoRef = doc(db, eventosCollectionPath, eventoParaEditar.id); // Usa o `db` do prop
+        const eventoRef = doc(db, eventosCollectionPath, eventoParaEditar.id);
         
         // (Correção de Edição - Passo 26)
         if (eventoParaEditar.googleEventId) {
@@ -1060,7 +933,7 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
         // --- MODO DE CRIAÇÃO ---
         
         // 1. Cria no Firestore PRIMEIRO (para ter o ID)
-        const docRef = await addDoc(collection(db, eventosCollectionPath), eventoParaFirestore); // Usa o `db` do prop
+        const docRef = await addDoc(collection(db, eventosCollectionPath), eventoParaFirestore);
         
         // 2. Cria no Google Calendar
         const googleResponse = await gapiClient.client.calendar.events.insert({
@@ -1227,7 +1100,7 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
                             value={cachets[musico.id] || ''}
                             onChange={(e) => handleCachetChange(musico.id, e.target.value)}
                             // Impede que clicar no input desmarque o músico
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={(e) => e.stopPropagation()} 
                           />
                         </div>
                       )}
@@ -1265,7 +1138,7 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
 // **********************************************************
 // ATUALIZAÇÃO (Passo 28) - Componente Inteiro Atualizado
 // **********************************************************
-const MusicosManager = ({ musicos, loading, collectionPath, setError, db }) => { // <-- Aceita `db`
+const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
   // NOVO: Estado para controlar a edição
   const [musicoParaEditar, setMusicoParaEditar] = useState(null);
   
@@ -1297,8 +1170,8 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError, db }) => {
       setFormError("Por favor, preencha todos os campos.");
       return;
     }
-    if (!collectionPath || !db) { // Checa o `db` do prop
-      setError("Erro de conexão (User ID nulo ou DB não pronto).");
+    if (!collectionPath) {
+      setError("Erro de conexão (User ID nulo).");
       return;
     }
     setSaving(true);
@@ -1307,7 +1180,7 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError, db }) => {
     try {
       if (musicoParaEditar) {
         // --- MODO DE ATUALIZAÇÃO ---
-        const musicoRef = doc(db, collectionPath, musicoParaEditar.id); // Usa o `db` do prop
+        const musicoRef = doc(db, collectionPath, musicoParaEditar.id);
         await setDoc(musicoRef, {
           nome: nome,
           email: email,
@@ -1317,7 +1190,7 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError, db }) => {
         setMusicoParaEditar(null);
       } else {
         // --- MODO DE CRIAÇÃO ---
-        await addDoc(collection(db, collectionPath), { // Usa o `db` do prop
+        await addDoc(collection(db, collectionPath), {
           nome: nome,
           email: email,
           instrumento: instrumento,
@@ -1336,8 +1209,8 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError, db }) => {
 
   // Deletar Músico (com SweetAlert2)
   const handleDelete = async (musicoId) => {
-    if (!collectionPath || !db) { // Checa o `db` do prop
-      setError("Erro de conexão (User ID nulo ou DB não pronto).");
+    if (!collectionPath) {
+      setError("Erro de conexão (User ID nulo).");
       return;
     }
     
@@ -1359,7 +1232,7 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError, db }) => {
     
     if (result.isConfirmed) {
       try {
-        await deleteDoc(doc(db, collectionPath, musicoId)); // Usa o `db` do prop
+        await deleteDoc(doc(db, collectionPath, musicoId));
         Swal.fire(
           'Deletado!',
           'O músico foi removido da sua lista.',
@@ -1448,7 +1321,11 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError, db }) => {
               {musicos.map(musico => (
                 <li key={musico.id} className="py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
                   
-                  {/* (Passo 36) Avatar adicionado */}
+                  {/* **********************************
+                    ATUALIZAÇÃO (Passo 36)
+                    Adicionado Avatar e flex layout
+                    **********************************
+                  */}
                   <div className="mb-2 sm:mb-0 flex items-center">
                     <Avatar name={musico.nome} />
                     <div className="ml-3">
@@ -1582,7 +1459,9 @@ const StatusBadge = ({ status }) => (
   </span>
 );
 
-// (Passo 36): Componente Avatar
+// **********************************
+// NOVO (Passo 36): Componente Avatar
+// **********************************
 const getInitials = (name = '') => {
   const names = name.split(' ').filter(Boolean); // Filtra espaços extras
   if (names.length === 0) return '?';
