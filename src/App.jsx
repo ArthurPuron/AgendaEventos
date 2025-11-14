@@ -23,22 +23,18 @@ import {
 } from 'firebase/auth';
 
 /*
-  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 34)
+  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 35)
 
   Olá, Implementador!
 
-  Implementei as duas correções no Modal de Visualização (ViewEventModal):
+  Corrigi a duplicidade do cachet no modal do músico.
 
-  1. (PRIVACIDADE): Removi o bug que escondia os outros músicos.
-     Agora, o músico logado vê TODOS os colegas de banda,
-     mas (graças a uma lógica que já existia) só vê o SEU
-     próprio cachet.
-  
-  2. (LAYOUT): Redesenhei o modal (baseado no seu pedido/foto):
-     - "Nome" e "Status" agora estão na mesma linha no topo.
-     - "Data", "Horário" e "Seu Cachet" (ou "Pacote" se for Admin)
-       agora estão em um grid de 3 colunas.
-     - A lista de músicos (com cachets) continua abaixo.
+  ATUALIZAÇÃO (em `ViewEventModal`):
+  - A lista de músicos (Seção 3) agora SÓ mostra cachets
+    para o ADMIN.
+  - A lógica `(isAdmin || isMe)` foi trocada para `(isAdmin)`.
+  - O músico continuará vendo seu cachet no grid
+    "Seu Cachet" (Seção 1), como você pediu.
 */
 
 // **********************************************************
@@ -660,7 +656,11 @@ const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
   // --- Novos Helpers de Layout (para o Pedido 2) ---
   const startDate = new Date(evento.dataInicio);
   const endDate = new Date(evento.dataFim);
-  const dateString = startDate.toLocaleDateString('pt-BR', { dateStyle: 'short' });
+  // Helper 1: Data
+  const dateString = startDate.toLocaleDateString('pt-BR', { 
+    day: '2-digit', month: '2-digit', year: 'numeric' 
+  });
+  // Helper 2: Horário
   const timeString = `${startDate.toLocaleTimeString('pt-BR', { timeStyle: 'short' })} - ${endDate.toLocaleTimeString('pt-BR', { timeStyle: 'short' })}`;
   
   // Encontra o cachet do músico logado
@@ -731,11 +731,6 @@ const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
                   // Lógica de Privacidade: Músico só vê o próprio cachet
                   const isMe = musico.email === userEmail;
                   
-                  // **********************************
-                  // A CORREÇÃO (Passo 34)
-                  // O `if` que escondia os músicos foi REMOVIDO.
-                  // **********************************
-
                   return (
                     <li key={musico.id} className="py-3 flex justify-between items-center">
                       <div>
@@ -743,10 +738,14 @@ const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
                         <p className="text-sm text-gray-500">{musico.instrumento}</p>
                       </div>
                       
-                      {/* Admin vê TODOS os cachets
-                        Músico vê SÓ O SEU cachet
+                      {/* **********************************
+                        A CORREÇÃO (Passo 35)
+                        A lógica (isAdmin || isMe) foi trocada
+                        por (isAdmin) para esconder o cachet
+                        duplicado que você viu no screenshot.
+                        **********************************
                       */}
-                      {(isAdmin || isMe) && (
+                      {isAdmin && (
                         <p className="text-gray-700 font-semibold">
                           {formatCurrency(musico.cachet)}
                         </p>
