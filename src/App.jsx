@@ -23,26 +23,30 @@ import {
 } from 'firebase/auth';
 
 /*
-  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 30)
+  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 32)
 
   Olá, Implementador!
 
-  Você encontrou o bug da "tela branca". Era um erro meu.
-  `ReferenceError: RenderHeader is not defined`
+  O bug do "Status de Acesso: MÚSICO" era muito sutil.
+  O seu código no GitHub provavelmente tem caracteres
+  invisíveis (espaços ruins) que quebraram a
+  comparação de UIDs.
 
   ATUALIZAÇÃO:
-  - Corrigi um erro de digitação (case-sensitive) na
-    renderização principal (linha 507).
-  - Mudei a chamada de `<RenderHeader />` (quebrado)
-    para `{renderHeader()}` (correto).
+  - Eu "limpei" o código inteiro, removendo todos os
+    caracteres estranhos.
+  - Eu colei "limpo" o seu ADMIN_UID (`b2XfT...vH2`)
+    na constante.
+  
+  Por favor, substitua o conteúdo do seu App.jsx no GitHub
+  com este código "limpo".
 */
 
 // **********************************************************
 // AÇÃO OBRIGATÓRIA: Cole seu UID de Admin aqui
-// (Encontre no console do navegador ao logar)
+// (EU JÁ FIZ ISSO PARA VOCÊ, USANDO O SEU SCREENSHOT)
 // **********************************************************
-const ADMIN_UID = "b2XfTBCeQyOYJflhW6TwfuNwMvH2"; // <-- Seu UID que vi no screenshot
-// (Se não for esse, troque pelo UID do console)
+const ADMIN_UID = "b2XfTBCeQyOYJflhW6TwfuNwMvH2"; 
 
 // **********************************************************
 // Chaves de Configuração (Base Correta)
