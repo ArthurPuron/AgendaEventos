@@ -19,22 +19,23 @@ import {
 } from 'firebase/auth';
 
 /*
-  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 13 - Layout e Erros)
+  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 14 - Finanças)
 
   Olá, Implementador!
 
-  Esta versão corrige os dois problemas que você apontou:
-  1. O layout no celular (botões grandes, quebra de linha feia).
-  2. A mensagem de erro do modal, que aparecia fora do modal.
+  Esta é uma grande atualização.
+  1. Adiciona campos "Pacote" e "Valor do Evento" (apenas para o Firestore).
+  2. Adiciona um campo de input "Cachet" para cada músico (apenas para o Firestore).
 
   ATUALIZAÇÃO:
-  - `renderEventosPage`: Layout agora é responsivo (flex-col no celular).
-  - `renderEventosPage`: Botão "[+] Novo Evento" redimensionado.
-  - `AddEventModal`: Agora tem seu próprio estado de erro (`modalError`).
-  - `AddEventModal`: A mensagem de erro agora aparece DENTRO do modal.
-  - `AddEventModal`: Botão "Salvar Evento" redimensionado.
-
-  O código-base anterior está 100% preservado.
+  - `AddEventModal`: Adicionados novos estados `pacote`, `valorEvento`, `cachets`.
+  - `AddEventModal`: Atualizado o formulário (JSX) para incluir os novos campos.
+  - `AddEventModal`: Atualizada a lista de músicos para incluir um input de R$ (cachet)
+    quando um músico é selecionado.
+  - `handleSubmit`: Atualizado para salvar os novos dados (`pacote`, `valorEvento`,
+    e `musicos` com cachet) no Firestore.
+  - `handleSubmit`: O `eventoParaGoogle` permanece "limpo" (sem dados financeiros),
+    respeitando sua regra de privacidade.
 */
 
 // **********************************************************
@@ -79,6 +80,8 @@ const generateTimeOptions = () => {
 };
 const timeOptions = generateTimeOptions();
 
+// Lista de Pacotes (Nova)
+const pacotesOptions = ['Harmonie', 'Intimist', 'Essence'];
 
 function App() {
   // --- Estados da Autenticação ---
@@ -381,6 +384,9 @@ function App() {
                 <p className="text-sm text-gray-500">
                   {new Date(evento.dataInicio).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
                 </p>
+                {/* TODO (Próxima feature): Mostrar os dados financeiros aqui
+                  <p className="text-xs text-gray-500">{evento.pacote} | R$ {evento.valorEvento}</p>
+                */}
               </div>
               
               {/* Botão de Deletar (Lixeira) */}
@@ -474,43 +480,57 @@ function App() {
 
 // --- Componentes Auxiliares ---
 
-// Modal de Adicionar Evento (ERRO AGORA É LOCAL)
+// Modal de Adicionar Evento (ATUALIZADO COM FINANÇAS)
 const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollectionPath }) => {
+  // Estados do Evento
   const [nome, setNome] = useState('');
   const [data, setData] = useState('');
-  const [horaInicio, setHoraInicio] = useState('09:00'); // Valor padrão
-  const [horaFim, setHoraFim] = useState('10:00'); // Valor padrão
+  const [horaInicio, setHoraInicio] = useState('09:00');
+  const [horaFim, setHoraFim] = useState('10:00');
   const [cidade, setCidade] = useState('');
   const [status, setStatus] = useState('A Confirmar');
-  const [selectedMusicos, setSelectedMusicos] = useState([]);
-  const [saving, setSaving] = useState(false);
   
   // **********************************************************
-  // ATUALIZADO: Estado de erro local para o modal
+  // NOVOS ESTADOS (FINANÇAS)
   // **********************************************************
+  const [pacote, setPacote] = useState(pacotesOptions[0]); // Padrão 'Harmonie'
+  const [valorEvento, setValorEvento] = useState(''); // Valor total
+  const [selectedMusicos, setSelectedMusicos] = useState([]); // Array de IDs
+  const [cachets, setCachets] = useState({}); // Objeto de cachets { musicoId: '250' }
+  // **********************************************************
+
+  const [saving, setSaving] = useState(false);
   const [modalError, setModalError] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setModalError(null); // Limpa o erro local
+    setModalError(null); 
     
     if (!nome || !data || !horaInicio || !horaFim || !cidade) {
-      setModalError("Por favor, preencha todos os campos obrigatórios."); // Seta o erro local
+      setModalError("Por favor, preencha todos os campos obrigatórios."); 
       return;
     }
     setSaving(true);
 
     try {
-      // Combina data e hora, e adiciona :00 para os segundos (formato ISO)
+      // 1. Combina data e hora
       const dataInicioISO = `${data}T${horaInicio}:00`;
       const dataFimISO = `${data}T${horaFim}:00`;
       const fusoHorario = getLocalTimeZone();
 
+      // 2. Prepara lista de músicos com cachets (para Firestore)
       const musicosConvidados = selectedMusicos.map(musicoId => {
-        return musicosCadastrados.find(m => m.id === musicoId);
+        const musico = musicosCadastrados.find(m => m.id === musicoId);
+        return {
+          id: musico.id,
+          nome: musico.nome,
+          email: musico.email,
+          instrumento: musico.instrumento,
+          cachet: cachets[musicoId] || '0', // Adiciona o cachet
+        };
       });
-      const attendees = musicosConvidados.map(musico => ({ email: musico.email }));
 
+      // 3. Objeto para o FIRESTORE (Com todos os dados financeiros)
       const eventoParaFirestore = {
         nome,
         cidade,
@@ -518,21 +538,31 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
         dataInicio: dataInicioISO,
         dataFim: dataFimISO,
         fusoHorario,
-        musicos: musicosConvidados,
+        // Novos campos financeiros
+        pacote: pacote,
+        valorEvento: valorEvento,
+        musicos: musicosConvidados, // Salva a lista de músicos com cachet
       };
-      // 1. Salva no Firestore
+      
+      // 4. Salva no Firestore
       await addDoc(collection(db, eventosCollectionPath), eventoParaFirestore);
 
-      // 2. Salva no Google Calendar
+      // 5. Prepara lista de attendees (para Google)
+      // (Sem dados financeiros, apenas e-mails)
+      const attendees = musicosConvidados.map(musico => ({ email: musico.email }));
+
+      // 6. Objeto para o GOOGLE CALENDAR (Limpo, sem finanças)
       const eventoParaGoogle = {
         summary: nome,
         location: cidade,
-        description: `Status: ${status}`,
+        description: `Status: ${status}`, // Sem pacote, sem valor, sem cachet
         start: { dateTime: dataInicioISO, timeZone: fusoHorario },
         end: { dateTime: dataFimISO, timeZone: fusoHorario },
         attendees: attendees,
         reminders: { useDefault: true },
       };
+      
+      // 7. Salva no Google Calendar
       await gapiClient.client.calendar.events.insert({
         calendarId: 'primary',
         resource: eventoParaGoogle,
@@ -562,11 +592,20 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
   };
 
   const handleMusicoToggle = (musicoId) => {
+    // Adiciona ou remove o músico do array de selecionados
     setSelectedMusicos(prev =>
       prev.includes(musicoId)
         ? prev.filter(id => id !== musicoId)
         : [...prev, musicoId]
     );
+  };
+  
+  const handleCachetChange = (musicoId, valor) => {
+    // Atualiza o valor do cachet no objeto `cachets`
+    setCachets(prev => ({
+      ...prev,
+      [musicoId]: valor
+    }));
   };
 
   return (
@@ -588,9 +627,6 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
 
           <div className="p-6 space-y-4">
             
-            {/* ********************************************************** */}
-            {/* ATUALIZADO: Mensagem de erro local renderizada DENTRO do modal */}
-            {/* ********************************************************** */}
             {modalError && <ErrorMessage message={modalError} onDismiss={() => setModalError(null)} />}
 
             <FormInput
@@ -625,33 +661,77 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
                 options={timeOptions}
               />
             </div>
-            <FormSelect
-              label="Status"
-              value={status}
-              onChange={setStatus}
-              options={['A Confirmar', 'Confirmado']}
-            />
+            
+            {/* --- SEÇÃO DE FINANÇAS (NOVOS CAMPOS) --- */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <FormSelect
+                label="Status"
+                value={status}
+                onChange={setStatus}
+                options={['A Confirmar', 'Confirmado']}
+              />
+              <FormSelect
+                label="Pacote"
+                value={pacote}
+                onChange={setPacote}
+                options={pacotesOptions}
+              />
+              <FormInput
+                label="Valor do Evento (R$)"
+                type="text" // Usamos text para permitir "1.500,00"
+                inputMode="numeric" // Melhora teclado no celular
+                value={valorEvento}
+                onChange={setValorEvento}
+                placeholder="Ex: 1500"
+              />
+            </div>
+            {/* --- FIM DA SEÇÃO DE FINANÇAS --- */}
+
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Selecionar Músicos
+                Selecionar Músicos (e definir cachet)
               </label>
               <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-2 space-y-2">
                 {musicosCadastrados.length === 0 && (
                   <p className="text-gray-500 text-sm">Nenhum músico cadastrado. Vá para a aba "Músicos" para adicionar.</p>
                 )}
                 {musicosCadastrados.map(musico => (
-                  <label key={musico.id} className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg">
-                    <input
-                      type="checkbox"
-                      checked={selectedMusicos.includes(musico.id)}
-                      onChange={() => handleMusicoToggle(musico.id)}
-                      className="h-5 w-5 rounded text-blue-600 border-gray-300 focus:ring-blue-500"
-                    />
-                    <span className="text-gray-800">
-                      {musico.nome} <span className="text-gray-500 text-sm">({musico.instrumento})</span>
-                    </span>
-                  </label>
+                  <div key={musico.id} className="p-2 hover:bg-gray-50 rounded-lg">
+                    <label className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedMusicos.includes(musico.id)}
+                        onChange={() => handleMusicoToggle(musico.id)}
+                        className="h-5 w-5 rounded text-blue-600 border-gray-300 focus:ring-blue-500"
+                      />
+                      <span className="text-gray-800">
+                        {musico.nome} <span className="text-gray-500 text-sm">({musico.instrumento})</span>
+                      </span>
+
+                      {/* ********************************************************** */}
+                      {/* NOVO: Input de Cachet (aparece se selecionado) */}
+                      {/* ********************************************************** */}
+                      {selectedMusicos.includes(musico.id) && (
+                        <div className="ml-auto flex items-center pl-2">
+                          <span className="text-sm text-gray-600 mr-1">R$</span>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="Cachet"
+                            className="w-24 p-1 border border-gray-300 rounded-md shadow-sm text-sm"
+                            value={cachets[musico.id] || ''}
+                            onChange={(e) => handleCachetChange(musico.id, e.target.value)}
+                            // Impede que clicar no input desmarque o músico
+                            onClick={(e) => e.stopPropagation()} 
+                          />
+                        </div>
+                      )}
+                      {/* ********************************************************** */}
+                      {/* FIM DO INPUT DE CACHET */}
+                      {/* ********************************************************** */}
+                    </label>
+                  </div>
                 ))}
               </div>
             </div>
@@ -668,7 +748,6 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
             <button
               type="submit"
               disabled={saving}
-              // ATUALIZADO: Tamanho do botão reduzido de px-6 para px-4
               className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 disabled:opacity-50"
             >
               {saving ? 'Salvando...' : 'Salvar Evento'}
@@ -833,13 +912,14 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
 };
 
 // Componente reusável para Input (Idêntico)
-const FormInput = ({ label, type = 'text', value, onChange, placeholder }) => (
+const FormInput = ({ label, type = 'text', value, onChange, placeholder, inputMode = 'text' }) => (
   <div>
     <label className="block text-sm font-medium text-gray-700 mb-1">
       {label}
     </label>
     <input
       type={type}
+      inputMode={inputMode} // Adicionado para teclado numérico
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
@@ -873,7 +953,6 @@ const TabButton = ({ label, isActive, onClick }) => (
     className={`py-3 px-4 font-medium text-sm rounded-t-lg transition-colors duration-200
       ${isActive
         ? 'bg-white border-b-2 border-blue-600 text-blue-600'
-        // Correção de bug visual: Corrigido o hover da aba inativa
         : 'text-gray-500 hover:text-gray-700 border-b-2 border-transparent hover:border-gray-300'
       }
     `}
