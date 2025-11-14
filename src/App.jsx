@@ -20,13 +20,13 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   signOut,
-  onAuthStateChanged,
+  onAuthStateChanged, // <-- A CHAVE PARA O LOGIN PERSISTENTE
 } from 'firebase/auth';
 
 /*
   LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 39)
 
-  Olá, Implementador.
+  Olá, Implementador!
 
   Você estava 100% certo. Minhas correções anteriores falharam.
   Esta é uma nova arquitetura que resolve TODOS os problemas
@@ -140,7 +140,7 @@ const buildCachetsMap = (musicosArray = []) => {
 
 
 function App() {
-  // --- Estados do Firebase ---
+  // --- Estados do Firebase (AGORA EM ESTADO) ---
   const [isFirebaseReady, setIsFirebaseReady] = useState(false);
 
   // --- Estados da Autenticação ---
@@ -356,6 +356,13 @@ function App() {
   };
 
   const initializeGapi = (accessToken, useToken) => {
+    // Adiciona uma verificação para `window.gapi`
+    if (typeof window.gapi === 'undefined') {
+      console.error("GAPI script não carregou a tempo.");
+      setGlobalError("Não foi possível carregar a API do Google.");
+      return;
+    }
+
     window.gapi.load('client', () => {
       window.gapi.client
         .init({
@@ -385,27 +392,41 @@ function App() {
   };
   
   const initializeGsi = () => {
-    if (!auth.currentUser) return;
+    if (!auth.currentUser || typeof window.google === 'undefined') {
+      console.warn("GSI script carregou, mas usuário deslogou ou 'google' não está no window.");
+      return;
+    }
     
-    const client = window.google.accounts.oauth2.initTokenClient({
-      client_id: firebaseConfig.apiKey, // Reutiliza a API key como Client ID
-      scope: CALENDAR_SCOPE,
-      login_hint: auth.currentUser.email,
-      callback: (tokenResponse) => {
-        if (tokenResponse && tokenResponse.access_token) {
-          const token = tokenResponse.access_token;
-          // Salva o token para persistência!
-          localStorage.setItem(GAPI_TOKEN_KEY, token); 
-          // Carrega o GAPI (agora que temos o token)
-          loadGapiScripts(token, true);
+    // ATENÇÃO: Use o Client ID do Google Cloud, não a API Key do Firebase
+    // Vá para https://console.cloud.google.com/apis/credentials
+    // Selecione seu projeto `agenda-musicos-f6f01`
+    // Copie o "ID do cliente" de "IDs do cliente OAuth 2.0"
+    const GOOGLE_CLIENT_ID = "1033560928889-uel0855k0v713oqkqf4ktqa2j80burad.apps.googleusercontent.com"; // <-- O Client ID que você usou no início
+
+    try {
+      const client = window.google.accounts.oauth2.initTokenClient({
+        client_id: GOOGLE_CLIENT_ID,
+        scope: CALENDAR_SCOPE,
+        login_hint: auth.currentUser.email,
+        callback: (tokenResponse) => {
+          if (tokenResponse && tokenResponse.access_token) {
+            const token = tokenResponse.access_token;
+            // Salva o token para persistência!
+            localStorage.setItem(GAPI_TOKEN_KEY, token); 
+            // Carrega o GAPI (agora que temos o token)
+            loadGapiScripts(token, true);
+          }
+        },
+        error_callback: (error) => {
+          console.error('Erro de autorização GSI:', error);
+          setGlobalError("Não foi possível autorizar o Google Calendar.");
         }
-      },
-      error_callback: (error) => {
-        console.error('Erro de autorização GSI:', error);
-        setGlobalError("Não foi possível autorizar o Google Calendar.");
-      }
-    });
-    setTokenClient(client);
+      });
+      setTokenClient(client);
+    } catch (e) {
+      console.error("Erro ao inicializar GSI token client:", e);
+      setGlobalError("Falha ao inicializar cliente de autorização.");
+    }
   };
 
   // --- Funções de Autenticação Google ---
