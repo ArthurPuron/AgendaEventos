@@ -19,35 +19,32 @@ import {
 } from 'firebase/auth';
 
 /*
-  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 20 - A Correção Real)
+  LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 22 - Limpeza)
 
   Olá, Implementador!
 
-  O bug do layout persistiu porque eu estava corrigindo os "filhos"
-  (<header> e <main>) em vez de corrigir o "PAI".
-
-  O seu feedback ("a tela de login fica certo, mas o dashboard não")
-  foi a chave.
+  O bug do layout (espaço em branco) estava no `index.css`.
+  A correção real foi aplicada no `index.html`.
 
   ATUALIZAÇÃO:
-  - Adicionei `w-full max-w-none` ao <div className="min-h-screen...">
-    que envolve a tela principal APÓS o login.
-  - Isso força o container do dashboard a ignorar o index.css,
-    assim como a tela de login já fazia.
-
-  Esta é a correção definitiva para o espaço em branco.
+  - Eu reverti as mudanças de layout (w-full max-w-none)
+    que eu tinha adicionado neste arquivo. Elas eram "hacks"
+    desnecessários e agora o código está limpo.
+  
+  - O código do `firebaseConfig` foi mantido como
+    estava na última versão (Passo 21).
 */
 
 // **********************************************************
-// ATUALIZAÇÃO DE SEGURANÇA: Lendo chaves das Variáveis de Ambiente
+// Chaves de Configuração (Corrigido no Passo 21)
 // **********************************************************
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
+  apiKey: "AIzaSyBlmPHXVo0isazUuPN7R76f1Y3Xcohad94",
+  authDomain: "agenda-musicos-f6f01.firebaseapp.com",
+  projectId: "agenda-musicos-f6f01",
+  storageBucket: "agenda-musicos-f6f01.firebasestorage.app",
+  messagingSenderId: "344652513076",
+  appId: "1:344652513076:web:4ab3595d5ec6ceeb5a2f61"
 };
 
 // Validação para garantir que as variáveis foram carregadas
@@ -216,7 +213,6 @@ function App() {
       const token = credential.accessToken;
 
       if (token && result.user) {
-        // CORREÇÃO: Removido `setAccessToken(token);`
         gapiClient.client.setToken({ access_token: token });
         console.log("GAPI autorizado com token.");
 
@@ -252,7 +248,6 @@ function App() {
     setUserId(null);
     setUserProfile(null);
     setIsDbReady(false);
-    // CORREÇÃO: Removido `setAccessToken(null);`
     if (gapiClient) {
       gapiClient.client.setToken(null);
     }
@@ -270,7 +265,6 @@ function App() {
       return;
     }
     
-    // Troca `window.confirm` por `Swal.fire`
     const result = await Swal.fire({
       title: 'Tem certeza que deseja deletar?',
       text: "(Isso NÃO o removerá do Google Calendar, apenas da lista do app.)",
@@ -305,8 +299,9 @@ function App() {
 
   // --- Componente: Cabeçalho (com Abas) ---
   const renderHeader = () => (
+    // Código de layout limpo (sem hacks w-full)
     <header className="bg-white shadow-md">
-      <div className="w-full max-w-none px-4 sm:px-6 lg:px-8">
+      <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <h1 className="text-2xl font-bold text-gray-800">
             Agenda de Músicos
@@ -330,7 +325,7 @@ function App() {
         </div>
       </div>
       <nav className="bg-gray-50 border-t border-gray-200">
-        <div className="w-full max-w-none px-4 sm:px-6 lg:px-8 flex space-x-4">
+        <div className="px-4 sm:px-6 lg:px-8 flex space-x-4">
           <TabButton
             label="Eventos"
             isActive={page === 'eventos'}
@@ -418,6 +413,7 @@ function App() {
   // Tela de Loading (Enquanto GAPI não está pronto)
   if (!gapiClient) {
     return (
+      // O `index.html` agora força este a ter 100% de largura
       <div className="flex items-center justify-center min-h-screen bg-gray-100">
         <div className="text-xl font-semibold text-gray-700">
           Carregando bibliotecas do Google...
@@ -451,14 +447,11 @@ function App() {
 
   // Tela Principal (Logado e Autorizado)
   return (
-    // **********************************************************
-    // ATUALIZAÇÃO DE LAYOUT (Passo 20 - A Correção Real)
-    // Adicionado `w-full max-w-none` AQUI, no PAI.
-    // **********************************************************
-    <div className="min-h-screen bg-gray-100 font-sans w-full max-w-none">
+    // Código de layout limpo (sem hacks w-full)
+    <div className="min-h-screen bg-gray-100 font-sans">
       {renderHeader()}
       
-      <main className="w-full max-w-none py-6 px-4 sm:px-6 lg:px-8">
+      <main className="py-6 px-4 sm:px-6 lg:px-8">
         {globalError && <ErrorMessage message={globalError} onDismiss={() => setGlobalError(null)} />}
 
         {page === 'eventos' && renderEventosPage()}
