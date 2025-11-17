@@ -385,7 +385,7 @@ function App() {
         scriptGapi.defer = true;
         // Passa o token para a função onload
         scriptGapi.onload = () => initializeGapi(token); 
-        document.body.appendChild(scriptGapi);
+        document.body.appendChild(scriptGpi);
       }
     } catch (e) {
       console.error("Erro ao autorizar calendário:", e);
@@ -654,15 +654,24 @@ function App() {
 
   // --- Renderização Principal ---
 
-  // <<< NOVO: Tela de Loading da Autenticação >>>
-  // Mostra isso ANTES de decidir se mostra Login ou o App
+  // **********************************************************
+  // <<< MUDANÇA: Tela de Loading da Autenticação >>>
+  // **********************************************************
+  // Agora usa as classes do index.css e suas imagens
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[--color-bg-main] flex items-center justify-center p-4"> {/* MUDANÇA: bg-gradient -> bg-main */}
-        <div className="max-w-md w-full text-center">
-          <h1 className="text-2xl font-bold text-[--color-text-light] font-title"> {/* MUDANÇA: text-gray-700 -> text-light, add font-title */}
-            Carregando sua sessão...
-          </h1>
+      <div className="loading-screen">
+        <div className="loading-logo-container">
+          <img 
+            src="/clave.png" 
+            className="loading-logo-static" 
+            alt="Logo Agenda de Músicos" 
+          />
+          <img 
+            src="/roda.png" 
+            className="loading-logo-spin" 
+            alt="Carregando..." 
+          />
         </div>
       </div>
     );
