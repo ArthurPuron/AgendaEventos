@@ -3,7 +3,8 @@
 @tailwind components;
 @tailwind utilities;
 
-/* * NOVO: Tema Dark Mode Padrão 
+/* * ATUALIZAÇÃO: Tema Dark Mode Padrão
+ * A cor de fundo foi corrigida para o tom mais claro de cinza-azulado
  */
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
@@ -12,7 +13,7 @@
 
   color-scheme: dark; /* Força o tema escuro */
   color: #f3f4f6; /* text-gray-100 */
-  background-color: #0f172a; /* bg-slate-900 (Fundo principal) */
+  background-color: #1f2937; /* <-- ESTA É A COR CORRETA (bg-gray-800) */
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -29,14 +30,14 @@ a:hover {
   color: #e0c8b3;
 }
 
-/* * CORREÇÃO: Removemos o 'display: flex' e 'place-items: center'
- * para permitir que o app ocupe 100% da tela.
+/* * ATUALIZAÇÃO: Cor do body
+ * Também corrigida para bater com o :root
  */
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background-color: #0f172a; /* Garante o fundo */
+  background-color: #1f2937; /* <-- ESTA É A COR CORRETA (bg-gray-800) */
 }
 
 h1 {
@@ -57,8 +58,8 @@ button {
 }
 
 /* -------------------------------------------------
-  NOVO: ESTILOS DA TELA DE CARREGAMENTO
-  (Adicionados de volta para corrigir o bug)
+  ESTILOS DA TELA DE CARREGAMENTO (Adicionados de volta)
+  Isso corrige o bug da tela de carregamento.
 -------------------------------------------------
 */
 
@@ -79,7 +80,7 @@ button {
   justify-content: center;
   position: fixed;
   inset: 0;
-  background-color: #0f172a; /* Cor do novo dark mode */
+  background-color: #1f2937; /* Cor do novo dark mode */
   min-height: 100vh;
   z-index: 100;
 }
