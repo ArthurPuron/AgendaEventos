@@ -370,29 +370,39 @@ function App() {
     }
   };
 
- // --- Componente: Cabeçalho (com Abas) ---
+// --- Componente: Cabeçalho (com Abas) ---
 const renderHeader = () => (
-    // ATUALIZAÇÃO: Fundo para Azul Marinho
     <header className="bg-[#162A3A] shadow-md">
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* ATUALIZAÇÃO: Título para Branco-Gelo */}
           <h1 className="text-2xl font-bold text-[#F5F0ED]">
             Agenda de Músicos
           </h1>
           <div className="flex items-center">
-            {/* ATUALIZAÇÃO: Subtítulo para Cinza-Bege */}
             <span className="text-[#A9B4BD] mr-3 hidden sm:block">
               Olá, {userProfile.name.split(' ')[0]}
           	</span>
-{/* ... (código do avatar e botão Sair) ... */}
+            {userProfile.picture ? (
+              <img
+                className="h-10 w-10 rounded-full"
+                src={userProfile.picture}
+                alt="Foto do Perfil"
+              />
+            ) : (
+              <Avatar name={userProfile.name} />
+            )}
+            <button
+              onClick={handleSignoutClick}
+              className="ml-4 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300"
+          	>
+              Sair
+          	</button>
         	</div>
       	</div>
     	</div>
     	
     	{/* Abas com novo estilo dark */}
     	{userRole === 'admin' && (
-      	// ATUALIZAÇÃO: Fundo Azul Marinho e borda Azul-Sombra
       	<nav className="bg-[#162A3A] border-t border-[#2A3E4D]">
         	<div className="px-4 sm:px-6 lg:px-8 flex space-x-4">
           	<TabButton
@@ -411,27 +421,23 @@ const renderHeader = () => (
   	</header>
 );
 
-  // --- NOVO: Tela de Autorização do Admin (Atualizada com a Paleta) ---
+ // --- NOVO: Tela de Autorização do Admin (Atualizada com a Paleta) ---
   const AdminAuthScreen = () => (
-    // ATUALIZAÇÃO: Fundo para Azul-Sombra
     <div className="bg-[#2A3E4D] rounded-lg shadow-xl p-4 sm:p-8 text-center">
-      // ATUALIZAÇÃO: Título para Branco-Gelo
       <h2 className="text-2xl sm:text-3xl font-bold text-[#F5F0ED] mb-4">
         Autorização Necessária
     	</h2>
-      // ATUALIZAÇÃO: Texto para Branco-Gelo
       <p className="text-[#F5F0ED] mb-6">
         Para gerenciar eventos, você precisa autorizar o acesso ao seu Google Calendar.
     	</p>
-      // ATUALIZAÇÃO: Botão para Rose Gold com texto preto
       <button
         onClick={handleCalendarAuth}
         className="bg-[#C9A798] hover:opacity-90 text-black font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1"
     	>
         Autorizar Google Calendar
     	</button>
-      // ATUALIZAÇÃO: Texto secundário para Cinza-Bege
       <p className="text-sm text-[#A9B4BD] mt-4">
+        (Os músicos não verão esta etapa.)
     	</p>
   	</div>
   );
