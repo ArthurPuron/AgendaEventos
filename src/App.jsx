@@ -489,17 +489,16 @@ function App() {
   );
 
 // --- Componente: Aba de Eventos (ADMIN) ---
-  const renderEventosPage = () => (
-    <div className="bg-gray-800 rounded-lg shadow-xl p-4 sm:p-8">
-      {/*         * ATUALIZAÇÃO: Título H2 removido.
-        * Div container simplificada (sem justify-between) para alinhar o botão à esquerda.
-        */}
+const renderEventosPage = () => (
+    // ATUALIZAÇÃO: Removemos o 'div' com 'bg-gray-800', 'rounded-lg', 'shadow-xl', 'p-4', 'sm:p-8'
+    // Este 'div' agora é apenas um container lógico, sem fundo ou painel.
+    <div>
       <div className="mb-6">
-        {/*           * ATUALIZAÇÃO: Botão com fundo bege, texto BRANCO e tamanho fixo (w-auto).
-          */}
         <button
           onClick={() => setShowAddModal(true)}
-          className="w-auto bg-[#d4b79b] hover:opacity-90 text-white font-bold py-2 px-6 rounded-full shadow-lg transition duration-300"
+          // ATUALIZAÇÃO: Mudamos 'text-white' para 'text-black' (texto preto)
+          // e 'rounded-full' para 'rounded-lg' (bordas retangulares/arredondadas)
+          className="w-auto bg-[#d4b79b] hover:opacity-90 text-black font-bold py-2 px-6 rounded-lg shadow-lg transition duration-300"
       	>
           + Novo Evento
       	</button>
@@ -517,8 +516,8 @@ function App() {
           	// Card principal do evento
           	<li 
             	key={evento.id}
-            	className="bg-gray-700/30 backdrop-blur-lg border border-gray-700 p-4 rounded-lg shadow-md cursor-pointer"
-            	onClick={() => setSelectedEvento(evento)}
+className="bg-gray-700 p-4 rounded-lg shadow-md cursor-pointer"
+				onClick={() => setSelectedEvento(evento)}
           	>
             	{/* Seção 1: Informações (Nome, Cidade, Data) */}
             	<div>
@@ -637,7 +636,7 @@ function App() {
   // Tela Principal (Logado e Autorizado)
   // (Só chega aqui se authLoading = false E userProfile = true)
   return (
-<div className="min-h-screen bg-slate-900 text-gray-100 font-sans">
+<div className="min-h-screen bg-gray-800 text-gray-100 font-sans">
 	{renderHeader()}
     	
     	<main className="py-6 px-4 sm:px-6 lg:px-8">
