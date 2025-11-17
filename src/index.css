@@ -1,90 +1,97 @@
-/* * IMPORTANTE: Adicionado para carregar os estilos do Tailwind
+/*
+ * IMPORTANTE: Adicionado para carregar os estilos do Tailwind
  * que são usados em todo o resto do App.jsx
-*/
+ */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* * Seu CSS original do Vite (abaixo)
-*/
+/* * =======================================================
+ * 🎨 NOVA PALETA DE CORES (TEMA DARK) 🎨
+ * =======================================================
+ * Estes são os "apelidos" das cores que usaremos
+ * em todo o aplicativo para aplicar o novo design.
+ */
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+  /* Cores de Fundo */
+  --color-bg-main: #1a3b3a;    /* O fundo principal do app (azul-petróleo bem escuro) */
+  --color-bg-card: #203B3A;    /* O fundo dos cards e modais (um pouco mais claro) */
+  --color-bg-input: #2E4A49;   /* O fundo dos campos de formulário (inputs) */
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  /* Cores de Destaque (Bege/Marrom) */
+  --color-accent-primary: #B98F78; /* Botões principais (Salvar, Sair) */
+  --color-accent-secondary: #D4B39A;/* Destaques mais claros (ex: "+ Novo Evento") */
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* Cores de Texto */
+  --color-text-light: #E0D4C5;   /* Texto principal (claro) */
+  --color-text-medium: #A89B8F;  /* Texto secundário (labels, datas) */
+  --color-text-dark: #1a3b3a;    /* Texto para usar em cima dos botões claros */
+
+  /* Outros */
+  --color-border: #4A605F;     /* Bordas sutis (divisórias, inputs) */
+
+  /* Configurações de Fonte (Base) */
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
+  font-weight: 500;
+  color: var(--color-accent-primary);
+  text-decoration: inherit;
 }
 a:hover {
-  color: #535bf2;
+  color: var(--color-accent-secondary);
 }
 
 /*
- *
- * AQUI ESTÁ A CORREÇÃO:
- * Removemos 'display: flex' e 'place-items: center'
- * para permitir que o body se comporte como um bloco
- * normal e o #root (seu app) possa ocupar 100% da tela.
- *
-*/
+ * =======================================================
+ * 🖌️ ESTILOS GLOBAIS ATUALIZADOS
+ * =======================================================
+ */
 body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  /* Define os padrões do app com as novas cores */
+  background-color: var(--color-bg-main);
+  color: var(--color-text-light);
 }
 
 h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+  font-size: 3.2em;
+  line-height: 1.1;
 }
 
+/* * Removemos os botões padrão do Vite para usar 
+ * os botões do Tailwind customizados no App.jsx 
+ */
 button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  /* Resetar estilos do Vite */
+  border-radius: 0;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+  font-weight: inherit;
+  font-family: inherit;
+  background-color: transparent;
+  cursor: pointer;
+  transition: all 0.25s;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
-}
+/* Removemos o @media (prefers-color-scheme: light) 
+   pois agora o app tem seu próprio tema. */
+
 
 /* -------------------------------------------------
-  NOVO: ESTILOS DA TELA DE CARREGAMENTO
-  (Adicionados ao seu index.css)
+   SEUS ESTILOS DA TELA DE CARREGAMENTO (Mantidos)
+   (A cor #1a3b3a é perfeita para o novo tema!)
 -------------------------------------------------
 */
 
