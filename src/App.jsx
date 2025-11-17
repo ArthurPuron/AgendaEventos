@@ -371,39 +371,50 @@ function App() {
   };
 
   // --- Componente: Cabeçalho (com Abas) (Idêntico) ---
+ // --- Componente: Cabeçalho (com Abas) ---
   const renderHeader = () => (
-  	<header className="bg-white shadow-md">
-  		{/* ... (código idêntico) ... */}
-    	<div className="px-4 sm:px-6 lg:px-8">
-      	<div className="flex justify-between items-center h-16">
-        	<h1 className="text-2xl font-bold text-gray-800">
-          	Agenda de Músicos
-        	</h1>
-        	<div className="flex items-center">
-          	<span className="text-gray-700 mr-3 hidden sm:block">
-            	Olá, {userProfile.name.split(' ')[0]}
+    <header className="bg-gray-800 shadow-md">
+      <div className="px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          <h1 className="text-2xl font-bold text-white">
+            Agenda de Músicos
+          </h1>
+          <div className="flex items-center">
+            <span className="text-gray-300 mr-3 hidden sm:block">
+              Olá, {userProfile.name.split(' ')[0]}
           	</span>
-          	<img
-            	className="h-10 w-10 rounded-full"
-            	src={userProfile.picture}
-            	alt="Foto do Perfil"
-          	/>
-          	<button
-            	onClick={handleSignoutClick}
-            	className="ml-4 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300"
+            
+            {/*              * ATUALIZAÇÃO: Se a foto do perfil não existir (ex: novo usuário),
+             * usamos o componente Avatar que já criamos.
+             */}
+            {userProfile.picture ? (
+              <img
+                className="h-10 w-10 rounded-full"
+                src={userProfile.picture}
+                alt="Foto do Perfil"
+              />
+            ) : (
+              <Avatar name={userProfile.name} />
+            )}
+            
+            <button
+              onClick={handleSignoutClick}
+              className="ml-4 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300"
           	>
-            	Sair
+              Sair
           	</button>
         	</div>
       	</div>
     	</div>
+    	
+    	{/* Abas com novo estilo dark */}
     	{userRole === 'admin' && (
-      	<nav className="bg-gray-50 border-t border-gray-200">
+      	<nav className="bg-gray-800 border-t border-gray-700">
         	<div className="px-4 sm:px-6 lg:px-8 flex space-x-4">
           	<TabButton
             	label="Eventos"
             	isActive={page === 'eventos'}
-  	        	onClick={() => setPage('eventos')}
+            	onClick={() => setPage('eventos')}
           	/>
           	<TabButton
             	label="Músicos"
@@ -414,7 +425,7 @@ function App() {
       	</nav>
     	)}
   	</header>
-  );
+);
 
   // --- Componentes de Telas (Idênticos) ---
   const AdminAuthScreen = () => (
@@ -476,61 +487,75 @@ function App() {
       )}
     </div>
   );
+
+// --- Componente: Aba de Eventos (ADMIN) ---
   const renderEventosPage = () => (
-  	// ... (código idêntico)
-    <div className="bg-white rounded-lg shadow-xl p-4 sm:p-8">
+    <div className="bg-gray-800 rounded-lg shadow-xl p-4 sm:p-8">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6">
-        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-0">
+        <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4 sm:mb-0">
           Eventos
-        </h2>
+      	</h2>
+        {/* O BOTÃO MUDOU DE LUGAR E ESTILO (conforme Imagem 3) */}
         <button
           onClick={() => setShowAddModal(true)}
-          className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1"
-section       >
-          [+] Novo Evento
-        </button>
-      </div>
-      {loadingEventos && <p>Carregando eventos...</p>}
-      {!loadingEventos && eventos.length === 0 && (
-        <p className="text-gray-600">Nenhum evento cadastrado ainda.</p>
-      )}
-      {!loadingEventos && eventos.length > 0 && (
-        <ul className="divide-y divide-gray-200">
-          {eventos.map(evento => (
-            <li key={evento.id}>
-              <div
-                className="py-4 flex justify-between items-center w-full text-left hover:bg-gray-50 rounded-lg cursor-pointer"
-                onClick={() => setSelectedEvento(evento)}
-              >
-                <div>
-                  <p className="text-lg font-medium text-gray-900">{evento.nome}</p>
-                  <p className="text-sm text-gray-600">{evento.cidade} - <StatusBadge status={evento.status} /></p>
-                  <p className="text-sm text-gray-500">
-                    {formatDisplayDate(evento.dataInicio, evento.dataFim)}
-                  </p>
-                </div>
-                <div className="flex flex-shrink-0 ml-2">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation(); 
-                      setEventoParaEditar(evento);
-                    }}
-                    className="bg-blue-100 hover:bg-blue-200 text-blue-700 p-2 rounded-full text-sm transition duration-300"
-                    title="Editar evento"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg>
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
+          className="w-full sm:w-auto bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-full shadow-lg transition duration-300"
+      	>
+          + Novo Evento
+      	</button>
+    	</div>
+
+    	{loadingEventos && <p>Carregando eventos...</p>}
+    	{!loadingEventos && eventos.length === 0 && (
+      	<p className="text-gray-400">Nenhum evento cadastrado ainda.</p>
+    	)}
+    	{!loadingEventos && eventos.length > 0 && (
+      	// NOVO LAYOUT: Lista de cards em vez de "divide-y"
+      	<ul className="space-y-4">
+        	{eventos.map(evento => (
+          	// Card principal do evento
+          	<li 
+            	key={evento.id}
+            	className="bg-gray-900 p-4 rounded-lg shadow-md cursor-pointer"
+            	onClick={() => setSelectedEvento(evento)}
+          	>
+            	{/* Seção 1: Informações (Nome, Cidade, Data) */}
+            	<div>
+              	<p className="text-xl font-bold text-white">{evento.nome}</p>
+              	<p className="text-sm text-gray-300">{evento.cidade}</p>
+              	<p className="text-sm text-gray-400 mt-1">
+                	{formatDisplayDate(evento.dataInicio, evento.dataFim)}
+              	</p>
+            	</div>
+            	
+            	{/* Seção 2: Ações (Status, Editar, Deletar) */}
+            	<div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-700">
+              	{/* Status (agora é um componente) */}
+              	<StatusBadge status={evento.status} />
+              	
+              	{/* Botões de Ação */}
+              	<div className="flex flex-shrink-0 ml-2">
+                	<button
+                  	onClick={(e) => {
+                    	e.stopPropagation(); 
+                    	setEventoParaEditar(evento);
+                  	}}
+                  	className="text-gray-400 hover:text-white p-2 rounded-full transition duration-300"
+                  	title="Editar evento"
+                	>
+                  	<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg>
+                	</button>
+
+                	<button
+                  	onClick={(e) => {
+                    	e.stopPropagation();
                     	handleDeleteEvento(evento.id);
-                    }}
-                    className="bg-red-100 hover:bg-red-200 text-red-700 p-2 ml-2 rounded-full text-sm transition duration-300"
-                    title="Deletar evento do app"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                  </button>
-                </div>
+                  	}}
+                  	className="text-gray-400 hover:text-red-500 p-2 ml-2 rounded-full transition duration-300"
+                  	title="Deletar evento do app"
+                	>
+                  	<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                	</button>
+              	</div>
             	</div>
           	</li>
         	))}
@@ -538,6 +563,8 @@ section       >
     	)}
   	</div>
   );
+	
+	
   const renderMusicosPage = () => (
   	// ... (código idêntico)
     <MusicosManager
@@ -608,8 +635,8 @@ section       >
   // Tela Principal (Logado e Autorizado)
   // (Só chega aqui se authLoading = false E userProfile = true)
   return (
-    <div className="min-h-screen bg-gray-100 font-sans">
-    	{renderHeader()}
+<div className="min-h-screen bg-slate-900 text-gray-100 font-sans">
+	{renderHeader()}
     	
     	<main className="py-6 px-4 sm:px-6 lg:px-8">
       	{globalError && <ErrorMessage message={globalError} onDismiss={() => setGlobalError(null)} />}
@@ -893,22 +920,23 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
   };
 
   return (
-  	<div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
-    	{/* ... (código idêntico) ... */}
-    	<div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-      	<form onSubmit={handleSubmit}>
-        	<div className="flex justify-between items-center p-6 border-b border-gray-200">
-          	<h3 className="text-2xl font-bold text-gray-900">
-            	{isEditMode ? 'Editar Evento' : 'Adicionar Novo Evento'}
-          	</h3>
-          	<button
-            	type="button"
-            	onClick={onClose}
-            	className="text-gray-400 hover:text-gray-600"
-          	>
+    <div className="fixed inset-0 bg-black bg-opacity-70 z-40 flex items-center justify-center p-4">
+      <div className="bg-gray-800 rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <form onSubmit={handleSubmit}>
+          <div className="flex justify-between items-center p-6 border-b border-gray-700">
+            <h3 className="text-2xl font-bold text-white">
+              {/* Título dinâmico */}
+              {isEditMode ? 'Editar Evento' : 'Adicionar Novo Evento'}
+            </h3>
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-gray-400 hover:text-white"
+            >
             	<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
           	</button>
         	</div>
+			
         	<div className="p-6 space-y-4">
           	{modalError && <ErrorMessage message={modalError} onDismiss={() => setModalError(null)} />}
           	<FormInput
@@ -966,61 +994,70 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
           	/>
         	</div>
         	<div>
-          	<label className="block text-sm font-medium text-gray-700 mb-2">
-            	Selecionar Músicos (e definir cachet)
-          	</label>
-          	<div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-2 space-y-2">
-            	{musicosCadastrados.length === 0 && (
-              	<p className="text-gray-500 text-sm">Nenhum músico cadastrado. Vá para a aba "Músicos" para adicionar.</p>
-            	)}
-            	{musicosCadastrados.map(musico => (
-              	<div key={musico.id} className="p-2 hover:bg-gray-50 rounded-lg">
-                	<label className="flex items-center space-x-3">
-                  	<input
-                    	type="checkbox"
-  	              	checked={selectedMusicos.includes(musico.id)}
-                    	onChange={() => handleMusicoToggle(musico.id)}
-                    	className="h-5 w-5 rounded text-blue-600 border-gray-300 focus:ring-blue-500"
-                  	/>
-                  	<span className="text-gray-800">
-                    	{musico.nome} <span className="text-gray-500 text-sm">({musico.instrumento})</span>
-                  	</span>
-                  	{selectedMusicos.includes(musico.id) && (
-                    	<div className="ml-auto flex items-center pl-2">
-                      	<span className="text-sm text-gray-600 mr-1">R$</span>
+            	<label className="block text-sm font-medium text-gray-400 mb-2">
+              	Selecionar Músicos (e definir cachet)
+            	</label>
+            	<div className="max-h-48 overflow-y-auto border border-gray-700 rounded-lg p-2 space-y-2">
+              	{musicosCadastrados.length === 0 && (
+                	<p className="text-gray-400 text-sm">Nenhum músico cadastrado. Vá para a aba "Músicos" para adicionar.</p>
+              	)}
+              	{musicosCadastrados.map(musico => (
+                	<div key={musico.id} className="p-2 hover:bg-gray-700 rounded-lg">
+                  	{/*                      * NOVO LAYOUT: justify-between para empurrar o cachet para a direita
+                     */}
+                  	<div className="flex justify-between items-center">
+                    	{/* Checkbox e Nome */}
+                    	<label className="flex items-center space-x-3 cursor-pointer">
                       	<input
-                        	type="text"
-                        	inputMode="numeric"
-                        	placeholder="Cachet"
-                        	className="w-24 p-1 border border-gray-300 rounded-md shadow-sm text-sm"
-                        	value={cachets[musico.id] || ''}
-                        	onChange={(e) => handleCachetChange(musico.id, e.target.value)}
-                        	onClick={(e) => e.stopPropagation()} 
+                        	type="checkbox"
+                        	checked={selectedMusicos.includes(musico.id)}
+                        	onChange={() => handleMusicoToggle(musico.id)}
+                        	className="h-5 w-5 rounded text-[#d4b79b] bg-gray-600 border-gray-500 focus:ring-[#d4b79b]"
                       	/>
-                    	</div>
-                  	)}
-                	</label>
-              	</div>
-            	))}
+                      	<span className="text-gray-100">
+                        	{musico.nome} <span className="text-gray-400 text-sm">({musico.instrumento})</span>
+                      	</span>
+                    	</label>
+
+                    	{/* Input de Cachet (agora alinhado à direita) */}
+                    	{selectedMusicos.includes(musico.id) && (
+                      	<div className="flex items-center pl-2">
+                        	<span className="text-sm text-gray-400 mr-1">R$</span>
+                        	<input
+                          	type="text"
+                          	inputMode="numeric"
+                          	placeholder="Cachet"
+                          	className="w-24 p-1 bg-gray-900 border border-gray-600 rounded-md shadow-sm text-sm text-gray-100"
+                          	value={cachets[musico.id] || ''}
+                          	onChange={(e) => handleCachetChange(musico.id, e.target.value)}
+                        	/>
+                      	</div>
+                    	)}
+                  	</div>
+                	</div>
+              	))}
+            	</div>
           	</div>
+      	</div>
+<div className="p-6 bg-gray-800 border-t border-gray-700 rounded-b-2xl flex justify-end space-x-3">
+          	{/* Botão Cancelar (Estilo Dark) */}
+          	<button
+            	type="button"
+            	onClick={onClose}
+            	className="bg-gray-700 hover:bg-gray-600 text-gray-100 font-semibold py-2 px-4 rounded-lg shadow-sm transition duration-300"
+          	>
+            	Cancelar
+          	</button>
+          	{/* Botão Salvar (Estilo Bege) */}
+          	<button
+            	type="submit"
+            	disabled={saving}
+            	className="bg-[#d4b79b] hover:opacity-90 text-gray-900 font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 disabled:opacity-50"
+          	>
+            	{/* Texto dinâmico */}
+            	{saving ? 'Salvando...' : (isEditMode ? 'Atualizar Evento' : 'Salvar Evento')}
+          	</button>
         	</div>
-      	</div>
-      	<div className="p-6 bg-gray-50 border-t border-gray-200 rounded-b-2xl flex justify-end space-x-3">
-        	<button
-          	type="button"
-          	onClick={onClose}
-          	className="bg-white hover:bg-gray-100 text-gray-700 font-semibold py-2 px-4 rounded-lg border border-gray-300 shadow-sm transition duration-300"
-        	>
-          	Cancelar
-        	</button>
-        	<button
-          	type="submit"
-          	disabled={saving}
-          	className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 disabled:opacity-50"
-        	>
-          	{saving ? 'Salvando...' : (isEditMode ? 'Atualizar Evento' : 'Salvar Evento')}
-        	</button>
-      	</div>
     	</form>
   	</div>
   </div>
@@ -1217,33 +1254,35 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
   );
 };
 
+// Componente reusável para Input (NOVO ESTILO)
 const FormInput = ({ label, type = 'text', value, onChange, placeholder, inputMode = 'text' }) => (
-  // ... (código idêntico)
   <div>
-    <label className="block text-sm font-medium text-gray-700 mb-1">
+    <label className="block text-sm font-medium text-gray-400 mb-1">
       {label}
     </label>
     <input
       type={type}
-  	  inputMode={inputMode}
+      inputMode={inputMode}
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+      // Usa a nova classe CSS para o estilo sublinhado
+      className="w-full py-2 form-input-dark"
     />
   </div>
 );
 
+// Componente reusável para Select (NOVO ESTILO)
 const FormSelect = ({ label, value, onChange, options }) => (
-  // ... (código idêntico)
   <div>
-    <label className="block text-sm font-medium text-gray-700 mb-1">
+    <label className="block text-sm font-medium text-gray-400 mb-1">
       {label}
     </label>
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+  	<select
+    	value={value}
+    	onChange={(e) => onChange(e.target.value)}
+    	// Usa as novas classes CSS
+    	className="w-full py-2 form-select-dark"
   	>
     	{options.map(option => (
       	<option key={option} value={option}>{option}</option>
@@ -1252,14 +1291,14 @@ const FormSelect = ({ label, value, onChange, options }) => (
   </div>
 );
 
+// Componente reusável para Botão de Aba (NOVO ESTILO)
 const TabButton = ({ label, isActive, onClick }) => (
-  // ... (código idêntico)
   <button
     onClick={onClick}
     className={`py-3 px-4 font-medium text-sm rounded-t-lg transition-colors duration-200
     	${isActive
-      	? 'bg-white border-b-2 border-blue-600 text-blue-600'
-      	: 'text-gray-500 hover:text-gray-700 border-b-2 border-transparent hover:border-gray-300'
+      	? 'border-b-2 border-[#d4b79b] text-[#d4b79b]' // Cor de destaque (bege)
+      	: 'text-gray-400 hover:text-gray-100 border-b-2 border-transparent hover:border-gray-600'
     	}
   	`}
   >
@@ -1298,20 +1337,20 @@ const InfoItem = ({ label, value, children }) => (
   </div>
 );
 
+import './App.css';
+// Componente Helper (NOVO ESTILO DARK)
 const StatusBadge = ({ status }) => (
-  // ... (código idêntico)
   <span
-    className={`px-2 py-0.5 rounded-full text-xs font-semibold
+    className={`px-3 py-1 rounded-full text-xs font-bold
     	${status === 'Confirmado'
-      	? 'bg-green-100 text-green-800'
-      	: 'bg-yellow-100 text-yellow-800'
+      	? 'bg-[#d4b79b] text-gray-900' // Bege com texto escuro
+      	: 'bg-gray-700 text-gray-100' // Cinza escuro com texto claro
     	}
   	`}
   >
   	{status}
   </span>
 );
-
 const Avatar = ({ name }) => {
   // ... (código idêntico)
   const initials = getInitials(name);
