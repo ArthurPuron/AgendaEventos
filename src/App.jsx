@@ -376,12 +376,12 @@ const renderHeader = () => (
     <header className="bg-[#162A3A] shadow-md">
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          // ATUALIZAÇÃO: Título para Branco-Gelo
+          {/* ATUALIZAÇÃO: Título para Branco-Gelo */}
           <h1 className="text-2xl font-bold text-[#F5F0ED]">
             Agenda de Músicos
           </h1>
           <div className="flex items-center">
-            // ATUALIZAÇÃO: Subtítulo para Cinza-Bege
+            {/* ATUALIZAÇÃO: Subtítulo para Cinza-Bege */}
             <span className="text-[#A9B4BD] mr-3 hidden sm:block">
               Olá, {userProfile.name.split(' ')[0]}
           	</span>
@@ -411,26 +411,29 @@ const renderHeader = () => (
   	</header>
 );
 
-  // --- Componentes de Telas (Idênticos) ---
+  // --- NOVO: Tela de Autorização do Admin (Atualizada com a Paleta) ---
   const AdminAuthScreen = () => (
-  	// ... (código idêntico)
-    <div className="bg-white rounded-lg shadow-xl p-4 sm:p-8 text-center">
-      <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
+    // ATUALIZAÇÃO: Fundo para Azul-Sombra
+    <div className="bg-[#2A3E4D] rounded-lg shadow-xl p-4 sm:p-8 text-center">
+      // ATUALIZAÇÃO: Título para Branco-Gelo
+      <h2 className="text-2xl sm:text-3xl font-bold text-[#F5F0ED] mb-4">
         Autorização Necessária
-      </h2>
-      <p className="text-gray-700 mb-6">
+    	</h2>
+      // ATUALIZAÇÃO: Texto para Branco-Gelo
+      <p className="text-[#F5F0ED] mb-6">
         Para gerenciar eventos, você precisa autorizar o acesso ao seu Google Calendar.
-      </p>
+    	</p>
+      // ATUALIZAÇÃO: Botão para Rose Gold com texto preto
       <button
         onClick={handleCalendarAuth}
-        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1"
-      >
+        className="bg-[#C9A798] hover:opacity-90 text-black font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1"
+    	>
         Autorizar Google Calendar
-      </button>
-      <p className="text-sm text-gray-500 mt-4">
-        (Os músicos não verão esta etapa.)
-      </p>
-    </div>
+    	</button>
+      // ATUALIZAÇÃO: Texto secundário para Cinza-Bege
+      <p className="text-sm text-[#A9B4BD] mt-4">
+    	</p>
+  	</div>
   );
   const AdminDashboard = () => (
   	// ... (código idêntico)
