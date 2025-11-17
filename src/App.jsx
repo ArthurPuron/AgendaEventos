@@ -239,7 +239,7 @@ function App() {
       return;
     }
     setLoadingEventos(true);
-    let q;
+  	let q;
     if (userRole === 'admin') {
       const collectionPath = getEventosCollectionPath();
       q = query(collection(db, collectionPath));
@@ -486,7 +486,7 @@ function App() {
         <button
           onClick={() => setShowAddModal(true)}
           className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1"
-section       >
+        >
           [+] Novo Evento
         </button>
       </div>
@@ -520,17 +520,17 @@ section       >
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg>
                   </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
+                	<button
+                  	onClick={(e) => {
+                    	e.stopPropagation();
                     	handleDeleteEvento(evento.id);
-                    }}
-                    className="bg-red-100 hover:bg-red-200 text-red-700 p-2 ml-2 rounded-full text-sm transition duration-300"
-                    title="Deletar evento do app"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                  </button>
-                </div>
+                  	}}
+                  	className="bg-red-100 hover:bg-red-200 text-red-700 p-2 ml-2 rounded-full text-sm transition duration-300"
+                  	title="Deletar evento do app"
+                	>
+                  	<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                	</button>
+              	</div>
             	</div>
           	</li>
         	))}
@@ -552,21 +552,19 @@ section       >
   // --- Renderização Principal ---
 
   // **********************************************************
-  // <<< INÍCIO DA ATUALIZAÇÃO DA TELA DE LOADING >>>
+  // <<< TELA DE LOADING ANIMADA >>>
+  // (Idêntica, funcional)
   // **********************************************************
   
-  // Mostra a NOVA tela de loading animada
   if (authLoading) {
     return (
       <div className="loading-screen">
         <div className="loading-logo-container">
-          {/* Imagem estática (Clave) - Fica por cima */}
           <img 
             src={claveLogo} 
             alt="Clave de Sol" 
           	className="loading-logo-static" 
           />
-          {/* Imagem giratória (Roda) - Fica por baixo */}
           <img 
             src={rodaLogo} 
           	alt="Carregando..." 
@@ -577,11 +575,7 @@ section       >
     );
   }
   
-  // **********************************************************
-  // <<< FIM DA ATUALIZAÇÃO DA TELA DE LOADING >>>
-  // **********************************************************
-  
-  // Tela de Login (Se o Firebase não tiver usuário E o loading terminou)
+  // Tela de Login (Idêntica)
   if (!userProfile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -596,7 +590,7 @@ section       >
         	{globalError && <ErrorMessage message={globalError} />}
         	<button
           	onClick={handleAuthClick}
-          	className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1"
+section         	className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1"
         	>
           	Fazer Login com Google
         	</button>
@@ -605,8 +599,7 @@ section       >
     );
   }
 
-  // Tela Principal (Logado e Autorizado)
-  // (Só chega aqui se authLoading = false E userProfile = true)
+  // Tela Principal (Idêntica)
   return (
     <div className="min-h-screen bg-gray-100 font-sans">
     	{renderHeader()}
@@ -614,33 +607,30 @@ section       >
     	<main className="py-6 px-4 sm:px-6 lg:px-8">
       	{globalError && <ErrorMessage message={globalError} onDismiss={() => setGlobalError(null)} />}
 
-      	{/* ATUALIZADO: Renderização condicional de Painel */}
       	{userRole === 'admin' && !isCalendarReady && <AdminAuthScreen />}
       	{userRole === 'admin' && isCalendarReady && <AdminDashboard />}
       	{userRole === 'musician' && <MusicianDashboard />}
     	</main>
 
-    	{/* O Modal de Adicionar/Editar Evento (SÓ PARA ADMIN) */}
     	{(showAddModal || eventoParaEditar) && userRole === 'admin' && isCalendarReady && (
       	<AddEventModal
         	onClose={() => {
           	setShowAddModal(false);
-          	setEventoParaEditar(null); // Fecha ambos os modos
+          	setEventoParaEditar(null);
         	}}
         	musicosCadastrados={musicos}
         	gapiClient={gapiClient}
         	eventosCollectionPath={getEventosCollectionPath()}
-        	eventoParaEditar={eventoParaEditar} // Passa o evento para preencher
+        	eventoParaEditar={eventoParaEditar}
       	/>
     	)}
     	
-  	{/* O Modal de Visualizar Evento (ADMIN E MÚSICO) */}
   	{selectedEvento && (
     	<ViewEventModal
       	evento={selectedEvento}
       	onClose={() => setSelectedEvento(null)}
-      	userRole={userRole} // NOVO: Passa o papel
-      	userEmail={userProfile.email} // NOVO: Passa o email
+      	userRole={userRole}
+      	userEmail={userProfile.email}
     	/>
   	)}
   	</div>
@@ -649,14 +639,9 @@ section       >
 
 // --- Componentes Auxiliares ---
 
-// (Todos os componentes auxiliares, como ViewEventModal, AddEventModal,
-// MusicosManager, FormInput, FormSelect, TabButton, ErrorMessage,
-// InfoItem, StatusBadge, e Avatar são IDÊNTICOS ao código anterior.
-// Eles estão corretos e não precisam de mudança.)
+// (Todos os componentes como ViewEventModal, AddEventModal, etc.
+// são idênticos ao código anterior)
 
-// **********************************************************
-// ATUALIZAÇÃO (Passo 34/35) - Componente Inteiro Atualizado
-// **********************************************************
 const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
   const isAdmin = userRole === 'admin';
   // ... (código idêntico)
@@ -722,7 +707,7 @@ const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
                     <li key={musico.id} className="py-3 flex justify-between items-center">
                       <div>
                         <p className="font-medium text-gray-900">{musico.nome}</p>
-                        <p className="text-sm text-gray-500">{musico.instrumento}</p>
+line                   <p className="text-sm text-gray-500">{musico.instrumento}</p>
                       </div>
                       {isAdmin && (
                         <p className="text-gray-700 font-semibold">
@@ -830,7 +815,7 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
           	sendUpdates: 'all'
           });
           await setDoc(eventoRef, {
-            ...eventoParaFirestore,
+section           ...eventoParaFirestore,
           	googleEventId: eventoParaEditar.googleEventId
           });
         } else {
@@ -954,11 +939,11 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
             	label="Pacote"
             	value={pacote}
   	        	onChange={setPacote}
-            	options={pacotesOptions}
+    	      	options={pacotesOptions}
           	/>
           	<FormInput
             	label="Valor do Evento (R$)"
-            	type="text"
+button           	type="text"
             	inputMode="numeric"
             	value={valorEvento}
   	        	onChange={setValorEvento}
@@ -989,7 +974,7 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
                     	<div className="ml-auto flex items-center pl-2">
                       	<span className="text-sm text-gray-600 mr-1">R$</span>
                       	<input
-                        	type="text"
+                t       	type="text"
                         	inputMode="numeric"
                         	placeholder="Cachet"
                         	className="w-24 p-1 border border-gray-300 rounded-md shadow-sm text-sm"
@@ -1312,8 +1297,28 @@ const StatusBadge = ({ status }) => (
   </span>
 );
 
+// **********************************************************
+// <<< INÍCIO DA CORREÇÃO: COMPONENTES FALTANDO >>>
+// **********************************************************
+
+// (Estes componentes foram apagados por mim acidentalmente na
+//  limpeza do deploy anterior. Estou adicionando-os de volta.)
+
+// **********************************
+// NOVO (Passo 36): Componente Avatar
+// **********************************
+const getInitials = (name = '') => {
+  const names = name.split(' ').filter(Boolean); // Filtra espaços extras
+  if (names.length === 0) return '?';
+  // Pega a primeira letra do primeiro nome
+  const first = names[0][0];
+  // Pega a primeira letra do último nome (se houver mais de 1 nome)
+  const last = names.length > 1 ? names[names.length - 1][0] : '';
+  return `${first}${last}`.toUpperCase();
+};
+
+// Gera uma cor consistente baseada no nome
 const Avatar = ({ name }) => {
-  // ... (código idêntico)
   const initials = getInitials(name);
   const colors = [
   	'bg-red-200 text-red-800',
@@ -1324,6 +1329,7 @@ const Avatar = ({ name }) => {
   	'bg-pink-200 text-pink-800',
   	'bg-indigo-200 text-indigo-800',
   ];
+  // Cria um hash simples para pegar uma cor consistente
   const charCodeSum = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
   const color = colors[charCodeSum % colors.length];
 
@@ -1335,6 +1341,10 @@ const Avatar = ({ name }) => {
   	</div>
   );
 };
+
+// **********************************************************
+// <<< FIM DA CORREÇÃO >>>
+// **********************************************************
 
 
 export default App;
