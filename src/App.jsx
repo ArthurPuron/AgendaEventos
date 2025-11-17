@@ -370,46 +370,30 @@ function App() {
     }
   };
 
-  // --- Componente: Cabeçalho (com Abas) (Idêntico) ---
  // --- Componente: Cabeçalho (com Abas) ---
-  const renderHeader = () => (
-    <header className="bg-gray-800 shadow-md">
+const renderHeader = () => (
+    // ATUALIZAÇÃO: Fundo para Azul Marinho
+    <header className="bg-[#162A3A] shadow-md">
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <h1 className="text-2xl font-bold text-white">
+          // ATUALIZAÇÃO: Título para Branco-Gelo
+          <h1 className="text-2xl font-bold text-[#F5F0ED]">
             Agenda de Músicos
           </h1>
           <div className="flex items-center">
-            <span className="text-gray-300 mr-3 hidden sm:block">
+            // ATUALIZAÇÃO: Subtítulo para Cinza-Bege
+            <span className="text-[#A9B4BD] mr-3 hidden sm:block">
               Olá, {userProfile.name.split(' ')[0]}
           	</span>
-            
-            {/*              * ATUALIZAÇÃO: Se a foto do perfil não existir (ex: novo usuário),
-             * usamos o componente Avatar que já criamos.
-             */}
-            {userProfile.picture ? (
-              <img
-                className="h-10 w-10 rounded-full"
-                src={userProfile.picture}
-                alt="Foto do Perfil"
-              />
-            ) : (
-              <Avatar name={userProfile.name} />
-            )}
-            
-            <button
-              onClick={handleSignoutClick}
-              className="ml-4 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300"
-          	>
-              Sair
-          	</button>
+{/* ... (código do avatar e botão Sair) ... */}
         	</div>
       	</div>
     	</div>
     	
     	{/* Abas com novo estilo dark */}
     	{userRole === 'admin' && (
-      	<nav className="bg-gray-800 border-t border-gray-700">
+      	// ATUALIZAÇÃO: Fundo Azul Marinho e borda Azul-Sombra
+      	<nav className="bg-[#162A3A] border-t border-[#2A3E4D]">
         	<div className="px-4 sm:px-6 lg:px-8 flex space-x-4">
           	<TabButton
             	label="Eventos"
@@ -496,9 +480,8 @@ const renderEventosPage = () => (
       <div className="mb-6">
         <button
           onClick={() => setShowAddModal(true)}
-          // ATUALIZAÇÃO: Mudamos 'text-white' para 'text-black' (texto preto)
-          // e 'rounded-full' para 'rounded-lg' (bordas retangulares/arredondadas)
-          className="w-auto bg-[#d4b79b] hover:opacity-90 text-black font-bold py-2 px-6 rounded-lg shadow-lg transition duration-300"
+          // ATUALIZAÇÃO: Cor de fundo para Rose Gold
+          className="w-auto bg-[#C9A798] hover:opacity-90 text-black font-bold py-2 px-6 rounded-lg shadow-lg transition duration-300"
       	>
           + Novo Evento
       	</button>
@@ -514,23 +497,29 @@ const renderEventosPage = () => (
         	{eventos.map(evento => (
           	// Card principal do evento
           	// Card principal do evento
-          	<li 
+
+
+			<li 
             	key={evento.id}
-className="bg-gray-700 p-4 rounded-lg shadow-md cursor-pointer"
+            	// ATUALIZAÇÃO: Fundo do Card para Azul-Sombra
+            	className="bg-[#2A3E4D] p-4 rounded-lg shadow-md cursor-pointer"
 				onClick={() => setSelectedEvento(evento)}
           	>
             	{/* Seção 1: Informações (Nome, Cidade, Data) */}
             	<div>
-              	<p className="text-xl font-bold text-white">{evento.nome}</p>
-              	<p className="text-sm text-gray-300">{evento.cidade}</p>
-              	<p className="text-sm text-gray-400 mt-1">
+              	{/* ATUALIZAÇÃO: Título para Branco-Gelo */}
+              	<p className="text-xl font-bold text-[#F5F0ED]">{evento.nome}</p>
+              	{/* ATUALIZAÇÃO: Subtítulos para Cinza-Bege */}
+              	<p className="text-sm text-[#A9B4BD]">{evento.cidade}</p>
+              	<p className="text-sm text-[#A9B4BD] mt-1">
                 	{formatDisplayDate(evento.dataInicio, evento.dataFim)}
               	</p>
             	</div>
             	
             	{/* Seção 2: Ações (Status, Editar, Deletar) */}
-            	<div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-700">
-              	{/* Status (agora é um componente) */}
+            	{/* ATUALIZAÇÃO: Borda divisória para Azul Marinho (fundo) */}
+            	<div className="flex items-center justify-between mt-4 pt-4 border-t border-[#162A3A]">
+              	{/* Status (será atualizado no componente StatusBadge) */}
               	<StatusBadge status={evento.status} />
               	
               	{/* Botões de Ação */}
@@ -540,7 +529,8 @@ className="bg-gray-700 p-4 rounded-lg shadow-md cursor-pointer"
                     	e.stopPropagation(); 
                     	setEventoParaEditar(evento);
                   	}}
-                  	className="text-gray-400 hover:text-white p-2 rounded-full transition duration-300"
+                  	// ATUALIZAÇÃO: Ícone para Cinza-Bege, hover para Branco-Gelo
+                  	className="text-[#A9B4BD] hover:text-[#F5F0ED] p-2 rounded-full transition duration-300"
                   	title="Editar evento"
                 	>
                   	<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg>
@@ -549,9 +539,10 @@ className="bg-gray-700 p-4 rounded-lg shadow-md cursor-pointer"
                 	<button
                   	onClick={(e) => {
                     	e.stopPropagation();
-                    	handleDeleteEvento(evento.id);
+        _eventos/ag(evento.id);
                   	}}
-                  	className="text-gray-400 hover:text-red-500 p-2 ml-2 rounded-full transition duration-300"
+                  	// ATUALIZAÇÃO: Ícone para Cinza-Bege
+                  	className="text-[#A9B4BD] hover:text-red-500 p-2 ml-2 rounded-full transition duration-300"
                   	title="Deletar evento do app"
                 	>
                   	<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
@@ -636,7 +627,7 @@ className="bg-gray-700 p-4 rounded-lg shadow-md cursor-pointer"
   // Tela Principal (Logado e Autorizado)
   // (Só chega aqui se authLoading = false E userProfile = true)
   return (
-<div className="min-h-screen bg-gray-800 text-gray-100 font-sans">
+<div className="min-h-screen bg-[#162A3A] text-[#F5F0ED] font-sans">
 	{renderHeader()}
     	
     	<main className="py-6 px-4 sm:px-6 lg:px-8">
@@ -1049,11 +1040,11 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
           	>
             	Cancelar
           	</button>
-          	{/* Botão Salvar (Estilo Bege) */}
+          	{/* Botão Salvar (Estilo Rose Gold) */}
           	<button
             	type="submit"
             	disabled={saving}
-            	className="bg-[#d4b79b] hover:opacity-90 text-gray-900 font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 disabled:opacity-50"
+            	className="bg-[#C9A798] hover:opacity-90 text-black font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 disabled:opacity-50"
           	>
             	{/* Texto dinâmico */}
             	{saving ? 'Salvando...' : (isEditMode ? 'Atualizar Evento' : 'Salvar Evento')}
@@ -1298,8 +1289,10 @@ const TabButton = ({ label, isActive, onClick }) => (
     onClick={onClick}
     className={`py-3 px-4 font-medium text-sm rounded-t-lg transition-colors duration-200
     	${isActive
-      	? 'border-b-2 border-[#d4b79b] text-[#d4b79b]' // Cor de destaque (bege)
-      	: 'text-gray-400 hover:text-gray-100 border-b-2 border-transparent hover:border-gray-600'
+      	// ATUALIZAÇÃO: Borda Rose Gold e texto Branco-Gelo
+      	? 'border-b-2 border-[#C9A798] text-[#F5F0ED]'
+      	// ATUALIZAÇÃO: Texto Cinza-Bege e hover para Branco-Gelo
+      	: 'text-[#A9B4BD] hover:text-[#F5F0ED] border-b-2 border-transparent hover:border-gray-600'
     	}
   	`}
   >
@@ -1344,28 +1337,22 @@ const StatusBadge = ({ status }) => (
   <span
     className={`px-3 py-1 rounded-full text-xs font-bold
     	${status === 'Confirmado'
-      	? 'bg-[#d4b79b] text-gray-900' // Bege com texto escuro
-      	: 'bg-gray-700 text-gray-100' // Cinza escuro com texto claro
+      	// ATUALIZAÇÃO: Confirmado usa Rose Gold
+      	? 'bg-[#C9A798] text-black'
+      	// ATUALIZAÇÃO: A Confirmar usa Azul-Sombra e texto Cinza-Bege
+      	: 'bg-[#2A3E4D] text-[#A9B4BD]'
     	}
   	`}
   >
   	{status}
   </span>
 );
+// ATUALIZAÇÃO: Avatar usa a cor Rose Gold
 const Avatar = ({ name }) => {
-  // ... (código idêntico)
   const initials = getInitials(name);
-  const colors = [
-  	'bg-red-200 text-red-800',
-  	'bg-blue-200 text-blue-800',
-  	'bg-green-200 text-green-800',
-  	'bg-yellow-200 text-yellow-800',
-  	'bg-purple-200 text-purple-800',
-  	'bg-pink-200 text-pink-800',
-  	'bg-indigo-200 text-indigo-800',
-  ];
-  const charCodeSum = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  const color = colors[charCodeSum % colors.length];
+  // ATUALIZAÇÃO: Removemos a lógica de cores aleatórias
+  // e aplicamos o Rose Gold diretamente.
+  const color = 'bg-[#C9A798] text-black'; // Fundo Rose Gold, texto preto
 
   return (
   	<div
