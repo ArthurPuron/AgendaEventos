@@ -1,39 +1,11 @@
-/*
- * IMPORTANTE: Adicionado para carregar os estilos do Tailwind
- * que são usados em todo o resto do App.jsx
- */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/* * =======================================================
- * 🎨 NOVA PALETA DE CORES (TEMA DARK) 🎨
- * =======================================================
- * Estes são os "apelidos" das cores que usaremos
- * em todo o aplicativo para aplicar o novo design.
- */
 :root {
-  /* Cores de Fundo */
-  --color-bg-main: #1a3b3a;    /* O fundo principal do app (azul-petróleo bem escuro) */
-  --color-bg-card: #203B3A;    /* O fundo dos cards e modais (um pouco mais claro) */
-  --color-bg-input: #2E4A49;   /* O fundo dos campos de formulário (inputs) */
-
-  /* Cores de Destaque (Bege/Marrom) */
-  --color-accent-primary: #B98F78; /* Botões principais (Salvar, Sair) */
-  --color-accent-secondary: #D4B39A;/* Destaques mais claros (ex: "+ Novo Evento") */
-
-  /* Cores de Texto */
-  --color-text-light: #E0D4C5;   /* Texto principal (claro) */
-  --color-text-medium: #A89B8F;  /* Texto secundário (labels, datas) */
-  --color-text-dark: #1a3b3a;    /* Texto para usar em cima dos botões claros */
-
-  /* Outros */
-  --color-border: #4A605F;     /* Bordas sutis (divisórias, inputs) */
-
-  /* Configurações de Fonte (Base) */
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -43,25 +15,19 @@
 
 a {
   font-weight: 500;
-  color: var(--color-accent-primary);
+  color: #646cff;
   text-decoration: inherit;
 }
 a:hover {
-  color: var(--color-accent-secondary);
+  color: #535bf2;
 }
 
-/*
- * =======================================================
- * 🖌️ ESTILOS GLOBAIS ATUALIZADOS
- * =======================================================
- */
 body {
   margin: 0;
+  display: flex;
+  place-items: center;
   min-width: 320px;
   min-height: 100vh;
-  /* Define os padrões do app com as novas cores */
-  background-color: var(--color-bg-main);
-  color: var(--color-text-light);
 }
 
 h1 {
@@ -69,84 +35,34 @@ h1 {
   line-height: 1.1;
 }
 
-/* * Removemos os botões padrão do Vite para usar 
- * os botões do Tailwind customizados no App.jsx 
- */
 button {
-  /* Resetar estilos do Vite */
-  border-radius: 0;
-  border: none;
-  padding: 0;
-  font-size: inherit;
-  font-weight: inherit;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
   font-family: inherit;
-  background-color: transparent;
+  background-color: #1a1a1a;
   cursor: pointer;
-  transition: all 0.25s;
+  transition: border-color 0.25s;
+}
+button:hover {
+  border-color: #646cff;
+}
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
 }
 
-/* Removemos o @media (prefers-color-scheme: light) 
-   pois agora o app tem seu próprio tema. */
-
-
-/* -------------------------------------------------
-   SEUS ESTILOS DA TELA DE CARREGAMENTO (Mantidos)
-   (A cor #1a3b3a é perfeita para o novo tema!)
--------------------------------------------------
-*/
-
-/* 1. Define a animação de rotação (sentido horário) */
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #ffffff;
   }
-  to {
-    transform: rotate(360deg);
+  a:hover {
+    color: #747bff;
   }
-}
-
-/* 2. Estilo do container principal da tela de loading */
-.loading-screen {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: fixed; /* Ocupa a tela inteira */
-  inset: 0;
-  background-color: #1a3b3a; /* Sua cor de fundo (verde-petróleo) */
-  min-height: 100vh;
-  z-index: 100; /* Garante que fique por cima de tudo */
-}
-
-/* 3. Container para empilhar as duas imagens */
-.loading-logo-container {
-  position: relative;
-  width: 200px; /* Ajuste o tamanho conforme necessário */
-  height: 200px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* 4. Estilo da Clave (Estática, no centro) */
-.loading-logo-static {
-  position: absolute;
-  width: 40%; /* Ajuste o tamanho da clave (menor que a roda) */
-  height: 40%;
-  object-fit: contain;
-  /* z-index: 10; (Opcional, garante que fique por cima) */
-}
-
-/* 5. Estilo da Roda (Girando) */
-.loading-logo-spin {
-  position: absolute;
-  width: 100%; /* Roda ocupa o container inteiro */
-  height: 100%;
-  object-fit: contain;
-  
-  /* Aplica a animação 'spin'
-     duração: 10s (10 segundos por volta)
-     timing: linear (velocidade constante)
-     iteration: infinite (para sempre) 
-  */
-  animation: spin 10s linear infinite;
+  button {
+    background-color: #f9f9f9;
+  }
 }
