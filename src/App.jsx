@@ -491,14 +491,15 @@ function App() {
 // --- Componente: Aba de Eventos (ADMIN) ---
   const renderEventosPage = () => (
     <div className="bg-gray-800 rounded-lg shadow-xl p-4 sm:p-8">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6">
-        <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4 sm:mb-0">
-          Eventos
-      	</h2>
-        {/* O BOTÃO MUDOU DE LUGAR E ESTILO (conforme Imagem 3) */}
+      {/*         * ATUALIZAÇÃO: Título H2 removido.
+        * Div container simplificada (sem justify-between) para alinhar o botão à esquerda.
+        */}
+      <div className="mb-6">
+        {/*           * ATUALIZAÇÃO: Botão com fundo bege, texto BRANCO e tamanho fixo (w-auto).
+          */}
         <button
           onClick={() => setShowAddModal(true)}
-          className="w-full sm:w-auto bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-full shadow-lg transition duration-300"
+          className="w-auto bg-[#d4b79b] hover:opacity-90 text-white font-bold py-2 px-6 rounded-full shadow-lg transition duration-300"
       	>
           + Novo Evento
       	</button>
@@ -513,9 +514,10 @@ function App() {
       	<ul className="space-y-4">
         	{eventos.map(evento => (
           	// Card principal do evento
-          	<li 
+          	// Card principal do evento
+          	<li 
             	key={evento.id}
-            	className="bg-gray-900 p-4 rounded-lg shadow-md cursor-pointer"
+            	className="bg-gray-700/30 backdrop-blur-lg border border-gray-700 p-4 rounded-lg shadow-md cursor-pointer"
             	onClick={() => setSelectedEvento(evento)}
           	>
             	{/* Seção 1: Informações (Nome, Cidade, Data) */}
