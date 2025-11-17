@@ -12,24 +12,37 @@ import {
   setDoc, 
   updateDoc, 
   setLogLevel,
-  collectionGroup,
-  where,
+  collectionGroup, // NOVO: Para buscar eventos de músicos
+  where, // NOVO: Para filtrar por email
 } from 'firebase/firestore';
 import {
   getAuth,
   GoogleAuthProvider,
   signInWithPopup,
   signOut,
-  onAuthStateChanged,
+  onAuthStateChanged, // <<< NOVO: A SOLUÇÃO PARA PERSISTÊNCIA
 } from 'firebase/auth';
-
-// --- NOVO: Importação dos seus arquivos de logo ---
-import claveLogo from './assets/clave.png';
-import rodaLogo from './assets/roda.png'; // (Assumindo que o nome do arquivo da roda é 'roda.png')
 
 /*
   LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 36)
-  ... (comentários omitidos para brevidade) ...
+
+  Olá, Implementador!
+
+  Implementei sua ideia do "Avatar".
+
+  ATUALIZAÇÃO:
+  - Não podemos (por segurança) pegar a foto real
+    do Google de um músico só com o e-mail.
+  - MAS, criei uma solução "igual ao Google":
+    um Avatar com as INICIAIS do nome.
+
+  - `MusicosManager`: A lista de músicos agora
+    mostra um círculo com as iniciais (ex: "AF")
+    ao lado do nome, como você pediu.
+  
+  - `Avatar` (NOVO Componente): Um novo helper
+    foi adicionado no final do arquivo para
+    gerar esses avatares.
 */
 
 // **********************************************************
@@ -63,10 +76,11 @@ setLogLevel('Debug');
 const CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar';
 
 // --- Funções Helper ---
-// ... (Todo o código helper como getLocalTimeZone, formatDisplayDate, etc. está idêntico) ...
 const getLocalTimeZone = () => {
   return Intl.DateTimeFormat().resolvedOptions().timeZone;
 };
+
+// GERA OS HORÁRIOS DE 30 EM 30 MINUTOS
 const generateTimeOptions = () => {
   const options = [];
   for (let h = 0; h < 24; h++) {
@@ -77,24 +91,35 @@ const generateTimeOptions = () => {
   return options;
 };
 const timeOptions = generateTimeOptions();
+
+// Lista de Pacotes (Nova)
 const pacotesOptions = ['Harmonie', 'Intimist', 'Essence'];
+
+// HELPER: Formata data/hora para exibição (USADO NA LISTA PRINCIPAL)
 const formatDisplayDate = (dataInicioISO, dataFimISO) => {
   try {
     const start = new Date(dataInicioISO);
     const end = new Date(dataFimISO);
+    
     const dateStr = start.toLocaleDateString('pt-BR', { dateStyle: 'short' });
     const startTimeStr = start.toLocaleTimeString('pt-BR', { timeStyle: 'short' });
     const endTimeStr = end.toLocaleTimeString('pt-BR', { timeStyle: 'short' });
+    
     return `${dateStr}, ${startTimeStr} - ${endTimeStr}`;
   } catch (e) {
     console.error("Erro ao formatar data:", e);
     return "Data inválida";
   }
 };
+
+// HELPER: Formata valores monetários
 const formatCurrency = (valor) => {
+  // Converte string (ex: "1.500,00" ou "1500") para número
   const num = parseFloat(String(valor).replace(/\./g, '').replace(',', '.')) || 0;
   return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 };
+
+// HELPER (EDIÇÃO): Formata ISO (2025-11-26T09:00:00) para YYYY-MM-DD
 const formatDateForInput = (isoDate) => {
   if (!isoDate) return '';
   try {
@@ -103,6 +128,8 @@ const formatDateForInput = (isoDate) => {
     return '';
   }
 };
+
+// HELPER (EDIÇÃO): Constrói o mapa de cachets a partir do array de músicos
 const buildCachetsMap = (musicosArray = []) => {
   return musicosArray.reduce((acc, musico) => {
     acc[musico.id] = musico.cachet;
@@ -113,20 +140,20 @@ const buildCachetsMap = (musicosArray = []) => {
 
 function App() {
   // --- Estados da Autenticação ---
-  const [gapiClient, setGapiClient] = useState(null);
-  const [isCalendarReady, setIsCalendarReady] = useState(false);
+  const [gapiClient, setGapiClient] = useState(null); // Cliente da API (GAPI)
+  const [isCalendarReady, setIsCalendarReady] = useState(false); // NOVO: Admin autorizou?
   
   // --- Estados do Firebase ---
-  const [userId, setUserId] = useState(null);
-  const [userProfile, setUserProfile] = useState(null);
-  const [isDbReady, setIsDbReady] = useState(false);
-  const [authLoading, setAuthLoading] = useState(true); // Este estado é a chave
+  const [userId, setUserId] = useState(null); // ID do usuário
+  const [userProfile, setUserProfile] = useState(null); // Perfil
+  const [isDbReady, setIsDbReady] = useState(false); // Pronto para Firebase
+  const [authLoading, setAuthLoading] = useState(true); // <<< NOVO: Estado de loading da autenticação
 
   // --- NOVO ESTADO DE AUTORIZAÇÃO ---
-  const [userRole, setUserRole] = useState(null);
+  const [userRole, setUserRole] = useState(null); // 'admin', 'musician', ou null
 
   // --- Estados da Aplicação ---
-  const [globalError, setGlobalError] = useState(null);
+  const [globalError, setGlobalError] = useState(null); // Erro para o app (fora do modal)
   const [page, setPage] = useState('eventos');
   const [musicos, setMusicos] = useState([]);
   const [loadingMusicos, setLoadingMusicos] = useState(true);
@@ -134,9 +161,9 @@ function App() {
   const [loadingEventos, setLoadingEventos] = useState(true);
   
   // --- Estados dos Modais (ATUALIZADO) ---
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedEvento, setSelectedEvento] = useState(null);
-  const [eventoParaEditar, setEventoParaEditar] = useState(null);
+  const [showAddModal, setShowAddModal] = useState(false); // (Era showEventModal)
+  const [selectedEvento, setSelectedEvento] = useState(null); // Para Visualização
+  const [eventoParaEditar, setEventoParaEditar] = useState(null); // NOVO: Para Edição
 
   // --- Caminhos das Coleções ---
   const getMusicosCollectionPath = () => {
@@ -148,11 +175,18 @@ function App() {
     return `users/${userId}/eventos`;
   };
 
+  // 1. Carregamento GAPI (REMOVIDO - Agora só carrega sob demanda para o admin)
+
   // **********************************************************
-  // 2. Observador de Autenticação (A SOLUÇÃO DE PERSISTÊNCIA)
-  // (Idêntico ao anterior, 100% funcional)
+  // <<< INÍCIO DA CORREÇÃO DE PERSISTÊNCIA >>>
   // **********************************************************
+  
+  // 2. Observador de Autenticação (A SOLUÇÃO)
+  // Roda UMA VEZ ao carregar o app
   useEffect(() => {
+    // 'onAuthStateChanged' é o ouvinte oficial do Firebase.
+    // Ele é disparado no carregamento da página e novamente se o usuário
+    // logar ou deslogar.
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         // --- CASO 1: Usuário ESTÁ logado ---
@@ -164,49 +198,56 @@ function App() {
           picture: user.photoURL,
         });
 
+        // Define o Papel do Usuário
         if (user.uid === ADMIN_UID) {
           setUserRole('admin');
           console.log("Status de Acesso: ADMIN");
-      	} else {
+        } else {
           setUserRole('musician');
           console.log("Status de Acesso: MÚSICO");
-      	}
+        }
         
-      	setIsDbReady(true);
-      	setGlobalError(null);
+        setIsDbReady(true);
+        setGlobalError(null);
 
-      } else {
-      	// --- CASO 2: Usuário NÃO está logado (ou deslogou) ---
-      	console.log("onAuthStateChanged: Usuário nulo.");
-      	setUserId(null);
-      	setUserProfile(null);
-      	setIsDbReady(false);
-      	setUserRole(null);
-      	setIsCalendarReady(false);
-      	setGapiClient(null);
-      	setGlobalError(null);
-      	setMusicos([]);
-      	setEventos([]);
-      }
+      } else {
+        // --- CASO 2: Usuário NÃO está logado (ou deslogou) ---
+        console.log("onAuthStateChanged: Usuário nulo.");
+        setUserId(null);
+        setUserProfile(null);
+        setIsDbReady(false);
+        setUserRole(null); // Limpa o papel
+        setIsCalendarReady(false); // Limpa autorização
+        setGapiClient(null); // Limpa GAPI
+        setGlobalError(null);
+        setMusicos([]);
+        setEventos([]);
+      }
       
-    	// --- Finalmente: Avisa o App que a verificação terminou ---
-    	setAuthLoading(false);
-  	});
+      // --- Finalmente: Avisa o App que a verificação terminou ---
+      setAuthLoading(false);
+    });
 
-  	// Função de limpeza do useEffect
-  	return () => unsubscribe();
+    // Função de limpeza do useEffect
+    return () => unsubscribe();
   }, []); // O array vazio [] garante que isso rode SÓ UMA VEZ
 
+  // **********************************************************
+  // <<< FIM DA CORREÇÃO DE PERSISTÊNCIA >>>
+  // **********************************************************
 
-  // 3. Carregamento de Músicos (Idêntico)
+
+  // 3. Carregamento de Músicos (Ouvinte do Firestore)
+  // SÓ RODA SE FOR ADMIN
   useEffect(() => {
     const collectionPath = getMusicosCollectionPath();
+    // ATUALIZADO: Agora também depende do `isCalendarReady`
     if (!isDbReady || !collectionPath || userRole !== 'admin' || !isCalendarReady) {
       setMusicos([]);
       setLoadingMusicos(false);
       return;
     };
-    // ... (lógica restante idêntica)
+    
     setLoadingMusicos(true);
     const q = query(collection(db, collectionPath));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -223,37 +264,46 @@ function App() {
       }
     );
     return () => unsubscribe();
-  }, [isDbReady, userId, userRole, isCalendarReady]);
+  }, [isDbReady, userId, userRole, isCalendarReady]); // <-- Depende do isCalendarReady
 
-  // 4. Carregamento de Eventos (Idêntico)
+  // 4. Carregamento de Eventos (Ouvinte do Firestore)
+  // RODA PARA ADMIN OU MÚSICO, MAS COM QUERIES DIFERENTES
   useEffect(() => {
     if (!isDbReady || !userProfile || !userRole) {
       setEventos([]);
       setLoadingEventos(false);
       return;
     };
-    // ... (lógica restante idêntica)
+    
+    // Admin precisa de autorização do calendário para carregar
     if (userRole === 'admin' && !isCalendarReady) {
       setEventos([]);
       setLoadingEventos(false);
       return;
     }
+    
     setLoadingEventos(true);
-  	let q;
+    let q;
+    
     if (userRole === 'admin') {
+      // --- Lógica de Admin ---
       const collectionPath = getEventosCollectionPath();
       q = query(collection(db, collectionPath));
+      
     } else if (userRole === 'musician') {
+      // --- Lógica de Músico ---
       q = query(
         collectionGroup(db, 'eventos'),
         where('musicoEmails', 'array-contains', userProfile.email)
       );
     }
+
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
         const eventosData = [];
         querySnapshot.forEach((doc) => {
           eventosData.push({ id: doc.id, ...doc.data() });
         });
+        // Ordena os eventos por data de início
         eventosData.sort((a, b) => new Date(a.dataInicio) - new Date(b.dataInicio));
         setEventos(eventosData);
         setLoadingEventos(false);
@@ -264,11 +314,10 @@ function App() {
       }
     );
     return () => unsubscribe();
-  }, [isDbReady, userId, userRole, userProfile, isCalendarReady]);
+  }, [isDbReady, userId, userRole, userProfile, isCalendarReady]); // <-- Depende de tudo
 
-  // --- Funções de Inicialização GAPI (Idêntico) ---
+  // --- Funções de Inicialização GAPI (AGORA É SÓ PARA ADMIN) ---
   const initializeGapi = (accessToken) => {
-  	// ... (código idêntico)
     window.gapi.load('client', () => {
       window.gapi.client
         .init({
@@ -277,9 +326,10 @@ function App() {
           ],
         })
         .then(() => {
+          // Define o token IMEDIATAMENTE após inicializar
           window.gapi.client.setToken({ access_token: accessToken });
-          setGapiClient(window.gapi);
-          setIsCalendarReady(true);
+          setGapiClient(window.gapi); // GAPI está pronto
+          setIsCalendarReady(true); // Calendário está autorizado
           console.log("GAPI client inicializado E autorizado.");
         })
         .catch((e) => {
@@ -289,35 +339,51 @@ function App() {
     });
   };
 
-  // --- Funções de Autenticação Google (Idêntico e simplificado) ---
+  // --- Funções de Autenticação Google ---
+  
+  // ATUALIZADO: LOGIN BÁSICO (SIMPLIFICADO)
   const handleAuthClick = async () => {
-  	// ... (código idêntico)
     if (ADMIN_UID === "COLE_SEU_GOOGLE_UID_AQUI") {
       setGlobalError("Erro de Configuração: O ADMIN_UID ainda não foi definido no código App.jsx.");
       return;
     }
+    
     try {
       const provider = new GoogleAuthProvider();
+      // NENHUM SCOPE SENSÍVEL PEDIDO AQUI
+      
+      // Apenas chama o popup. O 'onAuthStateChanged' (acima)
+      // vai detectar o login e cuidar de definir os estados.
       await signInWithPopup(auth, provider);
+      
+      // O restante do código (setUserId, setUserProfile, etc)
+      // foi removido daqui e agora é tratado pelo 'onAuthStateChanged'
+
     } catch (e) {
       console.error("Erro no login com Google:", e);
       setGlobalError(`Erro de autenticação: ${e.message}`);
     }
   };
 
+  // NOVO: AUTORIZAÇÃO SÓ PARA ADMIN
   const handleCalendarAuth = async () => {
-  	// ... (código idêntico)
     try {
       const provider = new GoogleAuthProvider();
+      // AGORA SIM, PEDE O SCOPE SENSÍVEL
       provider.addScope(CALENDAR_SCOPE); 
+      
+      // Força o re-login (ou pop-up de permissão)
       const result = await signInWithPopup(auth, provider); 
       const credential = GoogleAuthProvider.credentialFromResult(result);
       const token = credential.accessToken;
+      
       if (token) {
+        // Carrega os scripts do GAPI (só o admin faz isso)
         const scriptGapi = document.createElement('script');
         scriptGapi.src = 'https://apis.google.com/js/api.js';
         scriptGapi.async = true;
         scriptGapi.defer = true;
+        // Passa o token para a função onload
         scriptGapi.onload = () => initializeGapi(token); 
         document.body.appendChild(scriptGapi);
       }
@@ -327,83 +393,99 @@ function App() {
     }
   };
 
+  // ATUALIZADO: LOGOUT (SIMPLIFICADO)
   const handleSignoutClick = async () => {
-  	// ... (código idêntico)
     try {
+      // Apenas chama o signOut. O 'onAuthStateChanged' (acima)
+      // vai detectar o usuário nulo e cuidar de limpar os estados.
       await signOut(auth);
       console.log('Firebase Auth: Deslogado.');
     } catch (e) {
       console.error("Erro ao deslogar:", e);
       setGlobalError("Erro ao tentar sair.");
     }
+    // Todos os 'set...' foram removidos daqui.
   };
   
-  // Deletar Evento (Idêntico)
+  // Deletar Evento (com SweetAlert2)
   const handleDeleteEvento = async (eventoId) => {
-  	// ... (código idêntico)
+    // Apenas Admins podem deletar
     if (userRole !== 'admin') return; 
+    
     const collectionPath = getEventosCollectionPath();
     if (!collectionPath) {
       setGlobalError("Erro de conexão (User ID nulo).");
       return;
     }
+    
     const result = await Swal.fire({
       title: 'Tem certeza que deseja deletar?',
       text: "(Isso NÃO o removerá do Google Calendar, apenas da lista do app.)",
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
+      confirmButtonColor: '#3085d6', // Azul
+      cancelButtonColor: '#d33', // Vermelho
       confirmButtonText: 'Sim, deletar!',
       cancelButtonText: 'Cancelar'
     });
+
     if (result.isConfirmed) {
       try {
         await deleteDoc(doc(db, collectionPath, eventoId));
         console.log("Evento deletado do Firestore.");
-        Swal.fire('Deletado!','O evento foi removido da sua lista.','success');
+        Swal.fire(
+          'Deletado!',
+          'O evento foi removido da sua lista.',
+          'success'
+        );
       } catch (e) {
         console.error("[Firestore] Erro ao deletar evento:", e);
         setGlobalError("Não foi possível deletar o evento do Firestore.");
-        Swal.fire('Erro!','Não foi possível deletar o evento.','error');
+        Swal.fire(
+          'Erro!',
+          'Não foi possível deletar o evento.',
+          'error'
+        );
       }
     }
   };
 
-  // --- Componente: Cabeçalho (com Abas) (Idêntico) ---
+  // --- Componente: Cabeçalho (com Abas) ---
   const renderHeader = () => (
+    // Código de layout limpo (sem hacks w-full)
   	<header className="bg-white shadow-md">
-  		{/* ... (código idêntico) ... */}
-    	<div className="px-4 sm:px-6 lg:px-8">
-      	<div className="flex justify-between items-center h-16">
-        	<h1 className="text-2xl font-bold text-gray-800">
-          	Agenda de Músicos
-        	</h1>
-        	<div className="flex items-center">
-          	<span className="text-gray-700 mr-3 hidden sm:block">
-            	Olá, {userProfile.name.split(' ')[0]}
+      <div className="px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          <h1 className="text-2xl font-bold text-gray-800">
+            Agenda de Músicos
+          </h1>
+          <div className="flex items-center">
+            <span className="text-gray-700 mr-3 hidden sm:block">
+              Olá, {userProfile.name.split(' ')[0]}
           	</span>
-          	<img
-            	className="h-10 w-10 rounded-full"
-            	src={userProfile.picture}
-            	alt="Foto do Perfil"
+            <img
+              className="h-10 w-10 rounded-full"
+              src={userProfile.picture}
+              alt="Foto do Perfil"
           	/>
-          	<button
-            	onClick={handleSignoutClick}
-            	className="ml-4 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300"
+            <button
+              onClick={handleSignoutClick}
+              className="ml-4 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300"
           	>
-            	Sair
+              Sair
           	</button>
         	</div>
       	</div>
     	</div>
+    	
+    	{/* ATUALIZADO: Abas só aparecem para o ADMIN */}
     	{userRole === 'admin' && (
       	<nav className="bg-gray-50 border-t border-gray-200">
         	<div className="px-4 sm:px-6 lg:px-8 flex space-x-4">
           	<TabButton
             	label="Eventos"
             	isActive={page === 'eventos'}
-  	        	onClick={() => setPage('eventos')}
+            	onClick={() => setPage('eventos')}
           	/>
           	<TabButton
             	label="Músicos"
@@ -416,110 +498,118 @@ function App() {
   	</header>
   );
 
-  // --- Componentes de Telas (Idênticos) ---
+  // --- NOVO: Tela de Autorização do Admin ---
   const AdminAuthScreen = () => (
-  	// ... (código idêntico)
     <div className="bg-white rounded-lg shadow-xl p-4 sm:p-8 text-center">
       <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
         Autorização Necessária
-      </h2>
+    	</h2>
       <p className="text-gray-700 mb-6">
         Para gerenciar eventos, você precisa autorizar o acesso ao seu Google Calendar.
-      </p>
+    	</p>
       <button
         onClick={handleCalendarAuth}
         className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1"
-      >
+    	>
         Autorizar Google Calendar
-      </button>
+    	</button>
       <p className="text-sm text-gray-500 mt-4">
         (Os músicos não verão esta etapa.)
-      </p>
-    </div>
+    	</p>
+  	</div>
   );
+
+  // --- NOVO: Dashboard do Admin ---
   const AdminDashboard = () => (
-  	// ... (código idêntico)
     <>
       {page === 'eventos' && renderEventosPage()}
       {page === 'musicos' && renderMusicosPage()}
-    </>
+  	</>
   );
+
+  // --- NOVO: Dashboard do Músico ---
   const MusicianDashboard = () => (
-  	// ... (código idêntico)
     <div className="bg-white rounded-lg shadow-xl p-4 sm:p-8">
       <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">
         Meus Próximos Eventos
-      </h2>
-      {loadingEventos && <p>Carregando seus eventos...</p>}
-      {!loadingEventos && eventos.length === 0 && (
-        <p className="text-gray-600">Você ainda não foi convidado para nenhum evento.</p>
-      )}
-      {!loadingEventos && eventos.length > 0 && (
-        <ul className="divide-y divide-gray-200">
-          {eventos.map(evento => (
-            <li key={evento.id}>
-              <div
-                className="py-4 flex justify-between items-center w-full text-left hover:bg-gray-50 rounded-lg cursor-pointer"
-                onClick={() => setSelectedEvento(evento)}
-              >
-                <div>
-                  <p className="text-lg font-medium text-gray-900">{evento.nome}</p>
-                  <p className="text-sm text-gray-600">{evento.cidade} - <StatusBadge status={evento.status} /></p>
-                  <p className="text-sm text-gray-500">
-                    {formatDisplayDate(evento.dataInicio, evento.dataFim)}
-                  </p>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+    	</h2>
+    	
+    	{loadingEventos && <p>Carregando seus eventos...</p>}
+    	{!loadingEventos && eventos.length === 0 && (
+      	<p className="text-gray-600">Você ainda não foi convidado para nenhum evento.</p>
+    	)}
+    	{!loadingEventos && eventos.length > 0 && (
+      	<ul className="divide-y divide-gray-200">
+        	{eventos.map(evento => (
+          	<li key={evento.id}>
+            	<div
+              	className="py-4 flex justify-between items-center w-full text-left hover:bg-gray-50 rounded-lg cursor-pointer"
+              	onClick={() => setSelectedEvento(evento)}
+            	>
+              	<div>
+                	<p className="text-lg font-medium text-gray-900">{evento.nome}</p>
+                	<p className="text-sm text-gray-600">{evento.cidade} - <StatusBadge status={evento.status} /></p>
+                	<p className="text-sm text-gray-500">
+                  	{formatDisplayDate(evento.dataInicio, evento.dataFim)}
+                	</p>
+              	</div>
+            	</div>
+          	</li>
+        	))}
+      	</ul>
+    	)}
+  	</div>
   );
+
+  // --- Componente: Aba de Eventos (ADMIN) ---
   const renderEventosPage = () => (
-  	// ... (código idêntico)
     <div className="bg-white rounded-lg shadow-xl p-4 sm:p-8">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6">
         <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-0">
           Eventos
-        </h2>
+      	</h2>
         <button
           onClick={() => setShowAddModal(true)}
           className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1"
-        >
+      	>
           [+] Novo Evento
-        </button>
-      </div>
-      {loadingEventos && <p>Carregando eventos...</p>}
-      {!loadingEventos && eventos.length === 0 && (
-        <p className="text-gray-600">Nenhum evento cadastrado ainda.</p>
-      )}
-      {!loadingEventos && eventos.length > 0 && (
-        <ul className="divide-y divide-gray-200">
-          {eventos.map(evento => (
-            <li key={evento.id}>
-              <div
-                className="py-4 flex justify-between items-center w-full text-left hover:bg-gray-50 rounded-lg cursor-pointer"
-                onClick={() => setSelectedEvento(evento)}
-              >
-                <div>
-                  <p className="text-lg font-medium text-gray-900">{evento.nome}</p>
-                  <p className="text-sm text-gray-600">{evento.cidade} - <StatusBadge status={evento.status} /></p>
-                  <p className="text-sm text-gray-500">
-                    {formatDisplayDate(evento.dataInicio, evento.dataFim)}
-                  </p>
-                </div>
-                <div className="flex flex-shrink-0 ml-2">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation(); 
-                      setEventoParaEditar(evento);
-                    }}
-                    className="bg-blue-100 hover:bg-blue-200 text-blue-700 p-2 rounded-full text-sm transition duration-300"
+      	</button>
+    	</div>
+
+    	{loadingEventos && <p>Carregando eventos...</p>}
+    	{!loadingEventos && eventos.length === 0 && (
+      	<p className="text-gray-600">Nenhum evento cadastrado ainda.</p>
+    	)}
+    	{!loadingEventos && eventos.length > 0 && (
+      	<ul className="divide-y divide-gray-200">
+        	{eventos.map(evento => (
+          	<li key={evento.id}>
+            	<div
+              	className="py-4 flex justify-between items-center w-full text-left hover:bg-gray-50 rounded-lg cursor-pointer"
+              	onClick={() => setSelectedEvento(evento)}
+            	>
+              	{/* Informações do Evento */}
+              	<div>
+                	<p className="text-lg font-medium text-gray-900">{evento.nome}</p>
+                	<p className="text-sm text-gray-600">{evento.cidade} - <StatusBadge status={evento.status} /></p>
+                	<p className="text-sm text-gray-500">
+                  	{formatDisplayDate(evento.dataInicio, evento.dataFim)}
+                	</p>
+              	</div>
+              	
+              	{/* Container para os botões de ação */}
+              	<div className="flex flex-shrink-0 ml-2">
+                	<button
+                  	onClick={(e) => {
+                    	e.stopPropagation(); 
+                    	setEventoParaEditar(evento);
+                  	}}
+                  	className="bg-blue-100 hover:bg-blue-200 text-blue-700 p-2 rounded-full text-sm transition duration-300"
                   	title="Editar evento"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg>
-                  </button>
+                	>
+                  	<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg>
+                	</button>
+
                 	<button
                   	onClick={(e) => {
                     	e.stopPropagation();
@@ -538,8 +628,9 @@ function App() {
     	)}
   	</div>
   );
+
+  // --- Componente: Aba de Músicos (ADMIN) ---
   const renderMusicosPage = () => (
-  	// ... (código idêntico)
     <MusicosManager
       musicos={musicos}
       loading={loadingMusicos}
@@ -551,86 +642,80 @@ function App() {
 
   // --- Renderização Principal ---
 
-  // **********************************************************
-  // <<< TELA DE LOADING ANIMADA >>>
-  // (Idêntica, funcional)
-  // **********************************************************
-  
+  // <<< NOVO: Tela de Loading da Autenticação >>>
+  // Mostra isso ANTES de decidir se mostra Login ou o App
   if (authLoading) {
     return (
-      <div className="loading-screen">
-        <div className="loading-logo-container">
-          <img 
-            src={claveLogo} 
-            alt="Clave de Sol" 
-          	className="loading-logo-static" 
-          />
-          <img 
-            src={rodaLogo} 
-          	alt="Carregando..." 
-          	className="loading-logo-spin" 
-          />
-      	</div>
-      </div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="max-w-md w-full text-center">
+          <h1 className="text-2xl font-bold text-gray-700">
+            Carregando sua sessão...
+          </h1>
+        </div>
+      </div>
     );
   }
   
-  // Tela de Login (Idêntica)
+  // Tela de Login (Se o Firebase não tiver usuário E o loading terminou)
   if (!userProfile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      	{/* ... (código idêntico) ... */}
-      	<div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
-        	<h1 className="text-3xl font-bold text-gray-800 mb-2">
-          	Agenda de Músicos
-        	</h1>
-        	<p className="text-gray-600 mb-8">
-          	Faça login com sua conta Google para gerenciar os eventos.
-        	</p>
-        	{globalError && <ErrorMessage message={globalError} />}
-        	<button
-          	onClick={handleAuthClick}
-        	className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1"
-        	>
-          	Fazer Login com Google
-        	</button>
-      	</div>
-      </div>
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+            Agenda de Músicos
+          </h1>
+          <p className="text-gray-600 mb-8">
+            Faça login com sua conta Google para gerenciar os eventos.
+          </p>
+          {globalError && <ErrorMessage message={globalError} />}
+          <button
+            onClick={handleAuthClick}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1"
+          >
+            Fazer Login com Google
+          </button>
+        </div>
+      </div>
     );
   }
 
-  // Tela Principal (Idêntica)
+  // Tela Principal (Logado e Autorizado)
+  // (Só chega aqui se authLoading = false E userProfile = true)
   return (
+    // Código de layout limpo (sem hacks w-full)
     <div className="min-h-screen bg-gray-100 font-sans">
-    	{renderHeader()}
-    	
-    	<main className="py-6 px-4 sm:px-6 lg:px-8">
-      	{globalError && <ErrorMessage message={globalError} onDismiss={() => setGlobalError(null)} />}
+      {renderHeader()}
+      
+      <main className="py-6 px-4 sm:px-6 lg:px-8">
+        {globalError && <ErrorMessage message={globalError} onDismiss={() => setGlobalError(null)} />}
 
-      	{userRole === 'admin' && !isCalendarReady && <AdminAuthScreen />}
-      	{userRole === 'admin' && isCalendarReady && <AdminDashboard />}
-      	{userRole === 'musician' && <MusicianDashboard />}
-    	</main>
+        {/* ATUALIZADO: Renderização condicional de Painel */}
+        {userRole === 'admin' && !isCalendarReady && <AdminAuthScreen />}
+        {userRole === 'admin' && isCalendarReady && <AdminDashboard />}
+        {userRole === 'musician' && <MusicianDashboard />}
+      </main>
 
-    	{(showAddModal || eventoParaEditar) && userRole === 'admin' && isCalendarReady && (
-      	<AddEventModal
-        	onClose={() => {
-          	setShowAddModal(false);
-          	setEventoParaEditar(null);
-        	}}
+      {/* O Modal de Adicionar/Editar Evento (SÓ PARA ADMIN) */}
+      {(showAddModal || eventoParaEditar) && userRole === 'admin' && isCalendarReady && (
+        <AddEventModal
+          onClose={() => {
+            setShowAddModal(false);
+            setEventoParaEditar(null); // Fecha ambos os modos
+          }}
         	musicosCadastrados={musicos}
         	gapiClient={gapiClient}
         	eventosCollectionPath={getEventosCollectionPath()}
-        	eventoParaEditar={eventoParaEditar}
+        	eventoParaEditar={eventoParaEditar} // Passa o evento para preencher
       	/>
     	)}
     	
+  	{/* O Modal de Visualizar Evento (ADMIN E MÚSICO) */}
   	{selectedEvento && (
     	<ViewEventModal
       	evento={selectedEvento}
       	onClose={() => setSelectedEvento(null)}
-      	userRole={userRole}
-      	userEmail={userProfile.email}
+      	userRole={userRole} // NOVO: Passa o papel
+      	userEmail={userProfile.email} // NOVO: Passa o email
     	/>
   	)}
   	</div>
@@ -639,30 +724,38 @@ function App() {
 
 // --- Componentes Auxiliares ---
 
-// (Todos os componentes como ViewEventModal, AddEventModal, etc.
-// são idênticos ao código anterior)
-
+// **********************************************************
+// ATUALIZAÇÃO (Passo 34/35) - Componente Inteiro Atualizado
+// **********************************************************
 const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
   const isAdmin = userRole === 'admin';
-  // ... (código idêntico)
+
+  // --- Novos Helpers de Layout (para o Pedido 2) ---
   const startDate = new Date(evento.dataInicio);
   const endDate = new Date(evento.dataFim);
+  // Helper 1: Data
   const dateString = startDate.toLocaleDateString('pt-BR', { 
     day: '2-digit', month: '2-digit', year: 'numeric' 
   });
+  // Helper 2: Horário
   const timeString = `${startDate.toLocaleTimeString('pt-BR', { timeStyle: 'short' })} - ${endDate.toLocaleTimeString('pt-BR', { timeStyle: 'short' })}`;
+  
+  // Encontra o cachet do músico logado
   const myCachet = evento.musicos.find(m => m.email === userEmail)?.cachet || '0';
   
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-      	{/* ... (código idêntico) ... */}
+        
+        {/* Cabeçalho do Modal (Layout Corrigido) */}
         <div className="flex justify-between items-start p-6 border-b border-gray-200">
+          {/* Div Flex-grow para empurrar o status para a direita */}
           <div className="flex-grow">
             <div className="flex justify-between items-center">
               <h3 className="text-2xl font-bold text-gray-900">
                 {evento.nome}
               </h3>
+              {/* Status movido para o cabeçalho */}
               <StatusBadge status={evento.status} />
             </div>
             <p className="text-sm text-gray-500">{evento.cidade}</p>
@@ -670,102 +763,136 @@ const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
           <button
             type="button"
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 ml-4"
+            className="text-gray-400 hover:text-gray-600 ml-4" // ml-4 para espaçamento
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
           </button>
         </div>
+
+        {/* Corpo do Modal */}
         <div className="p-6 space-y-6">
+          
+          {/* Seção 1: Detalhes Principais (Layout Corrigido) */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <InfoItem label="Data" value={dateString} />
             <InfoItem label="Horário" value={timeString} />
-            {isAdmin ? (
+            
+            {/* Coluna 3 inteligente */}
+          	{isAdmin ? (
               <InfoItem label="Pacote" value={evento.pacote} />
-            ) : (
-              <InfoItem label="Seu Cachet" value={formatCurrency(myCachet)} />
-            )}
-          </div>
-          {isAdmin && (
-            <div>
-              <h4 className="text-lg font-semibold text-gray-800 mb-2 border-b pb-1">
-                Financeiro (Admin)
-              </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <InfoItem label="Valor Total do Evento" value={formatCurrency(evento.valorEvento)} />
-              </div>
-            </div>
-          )}
-          <div>
-            <h4 className="text-lg font-semibold text-gray-800 mb-2 border-b pb-1">
-              Músicos no Evento
-            </h4>
-            {evento.musicos && evento.musicos.length > 0 ? (
-              <ul className="divide-y divide-gray-200">
-                {evento.musicos.map(musico => {
-                  const isMe = musico.email === userEmail;
-                  return (
-                    <li key={musico.id} className="py-3 flex justify-between items-center">
-                      <div>
-                        <p className="font-medium text-gray-900">{musico.nome}</p>
-                    	<p className="text-sm text-gray-500">{musico.instrumento}</p>
-                      </div>
-                      {isAdmin && (
-                        <p className="text-gray-700 font-semibold">
-                          {formatCurrency(musico.cachet)}
+          	) : (
+            	<InfoItem label="Seu Cachet" value={formatCurrency(myCachet)} />
+          	)}
+        	</div>
+
+        	{/* Seção 2: Finanças (SÓ PARA ADMIN) */}
+        	{isAdmin && (
+          	<div>
+            	<h4 className="text-lg font-semibold text-gray-800 mb-2 border-b pb-1">
+              	Financeiro (Admin)
+            	</h4>
+            	<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              	<InfoItem label="Valor Total do Evento" value={formatCurrency(evento.valorEvento)} />
+            	</div>
+          	</div>
+        	)}
+        	
+        	{/* Seção 3: Músicos (Lógica Corrigida) */}
+        	<div>
+          	<h4 className="text-lg font-semibold text-gray-800 mb-2 border-b pb-1">
+            	Músicos no Evento
+          	</h4>
+          	{evento.musicos && evento.musicos.length > 0 ? (
+            	<ul className="divide-y divide-gray-200">
+              	{evento.musicos.map(musico => {
+                	// Lógica de Privacidade: Músico só vê o próprio cachet
+                	const isMe = musico.email === userEmail;
+                	
+                	return (
+                  	<li key={musico.id} className="py-3 flex justify-between items-center">
+                    	<div>
+                      	<p className="font-medium text-gray-900">{musico.nome}</p>
+                      	<p className="text-sm text-gray-500">{musico.instrumento}</p>
+                    	</div>
+                    	
+                    	{/* **********************************
+                    	A CORREÇÃO (Passo 35)
+                    	Lógica atualizada para (isAdmin)
+                    	**********************************
+                    	*/}
+                    	{isAdmin && (
+                      	<p className="text-gray-700 font-semibold">
+                        	{formatCurrency(musico.cachet)}
                       	</p>
                     	)}
                   	</li>
                 	);
-            	  })}
-          	  </ul>
-        	) : (
-          	<p className="text-gray-500">Nenhum músico selecionado para este evento.</p>
-        	)}
-      	  </div>
-    	</div>
-    	<div className="p-6 bg-gray-50 border-t border-gray-200 rounded-b-2xl flex justify-end">
-      	<button
-        	type="button"
-        	onClick={onClose}
-  	    	className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300"
-section     >
-        	Fechar
-      	</button>
+              	})}
+            	</ul>
+          	) : (
+            	<p className="text-gray-500">Nenhum músico selecionado para este evento.</p>
+          	)}
+        	</div>
+
+      	</div>
+
+      	{/* Rodapé do Modal */}
+      	<div className="p-6 bg-gray-50 border-t border-gray-200 rounded-b-2xl flex justify-end">
+        	<button
+          	type="button"
+          	onClick={onClose}
+  	      	className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300"
+        	>
+          	Fechar
+        	</button>
+      	</div>
+
     	</div>
   	</div>
-  </div>
   );
 };
 
+
+// Modal de Adicionar Evento (AGORA SERVE PARA ADICIONAR E EDITAR)
 const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollectionPath, eventoParaEditar }) => {
-  // ... (código idêntico)
+  
   const isEditMode = eventoParaEditar !== null;
+
+  // Estados do Evento (Preenchidos se for Edição)
   const [nome, setNome] = useState(isEditMode ? eventoParaEditar.nome : '');
   const [data, setData] = useState(isEditMode ? formatDateForInput(eventoParaEditar.dataInicio) : '');
   const [horaInicio, setHoraInicio] = useState(isEditMode ? eventoParaEditar.dataInicio.split('T')[1].substring(0, 5) : '09:00');
   const [horaFim, setHoraFim] = useState(isEditMode ? eventoParaEditar.dataFim.split('T')[1].substring(0, 5) : '10:00');
   const [cidade, setCidade] = useState(isEditMode ? eventoParaEditar.cidade : '');
   const [status, setStatus] = useState(isEditMode ? eventoParaEditar.status : 'A Confirmar');
+  
+  // Estados de Finanças (Preenchidos se for Edição)
   const [pacote, setPacote] = useState(isEditMode ? eventoParaEditar.pacote : pacotesOptions[0]);
   const [valorEvento, setValorEvento] = useState(isEditMode ? eventoParaEditar.valorEvento : '');
   const [selectedMusicos, setSelectedMusicos] = useState(isEditMode ? eventoParaEditar.musicos.map(m => m.id) : []);
   const [cachets, setCachets] = useState(isEditMode ? buildCachetsMap(eventoParaEditar.musicos) : {});
+
   const [saving, setSaving] = useState(false);
   const [modalError, setModalError] = useState(null);
 
   const handleSubmit = async (e) => {
-  	// ... (código idêntico)
     e.preventDefault();
     setModalError(null); 
+    
     if (!nome || !data || !horaInicio || !horaFim || !cidade) {
       setModalError("Por favor, preencha todos os campos obrigatórios."); 
       return;
     }
     setSaving(true);
+
     try {
+      // 1. Prepara dados comuns
       const dataInicioISO = `${data}T${horaInicio}:00`;
       const dataFimISO = `${data}T${horaFim}:00`;
       const fusoHorario = getLocalTimeZone();
+
+      // 2. Prepara lista de músicos com cachets (para Firestore)
+      // (Correção do 'vt.id' - Passo 27)
       const musicosConvidados = selectedMusicos
         .map(musicoId => {
           const musico = musicosCadastrados.find(m => m.id === musicoId);
@@ -781,7 +908,10 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
           console.warn(`Músico com ID ${musicoId} não encontrado. Será removido do evento.`);
           return null;
         })
-        .filter(Boolean);
+        .filter(Boolean); // Remove nulos
+
+
+      // 3. Objeto para o FIRESTORE (Com todos os dados financeiros)
       const eventoParaFirestore = {
         nome,
         cidade,
@@ -789,11 +919,13 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
         dataInicio: dataInicioISO,
         dataFim: dataFimISO,
         fusoHorario,
-  	    pacote: pacote,
+        pacote: pacote,
         valorEvento: valorEvento,
         musicos: musicosConvidados,
-        musicoEmails: musicosConvidados.map(m => m.email),
+        musicoEmails: musicosConvidados.map(m => m.email), // NOVO: Campo de busca
       };
+      
+      // 4. Objeto para o GOOGLE CALENDAR (Limpo, sem finanças)
       const attendees = musicosConvidados.map(musico => ({ email: musico.email }));
       const eventoParaGoogle = {
         summary: nome,
@@ -804,73 +936,99 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
         attendees: attendees,
         reminders: { useDefault: true },
       };
+      
+      // 5. LÓGICA DE SALVAR (CRIAR vs EDITAR)
       if (isEditMode) {
+        // --- MODO DE ATUALIZAÇÃO ---
         const eventoRef = doc(db, eventosCollectionPath, eventoParaEditar.id);
+        
+        // (Correção de Edição - Passo 26)
         if (eventoParaEditar.googleEventId) {
+          // CASO 1: Evento MODERNO (Tem ID do Google)
           console.log("Atualizando evento existente no Google Calendar...");
           await gapiClient.client.calendar.events.update({
             calendarId: 'primary',
             eventId: eventoParaEditar.googleEventId,
             resource: eventoParaGoogle,
-          	sendUpdates: 'all'
-    	    });
-        	await setDoc(eventoRef, {
-          	...eventoParaFirestore,
-          	googleEventId: eventoParaEditar.googleEventId
-        	});
+            sendUpdates: 'all' // NOVO: Força notificação de e-mail
+          });
+          
+          // Atualiza Firestore
+          await setDoc(eventoRef, {
+            ...eventoParaFirestore,
+            googleEventId: eventoParaEditar.googleEventId // Preserva o ID
+          });
+          
         } else {
+          // CASO 2: Evento ANTIGO (Sem ID do Google)
           console.warn("Evento antigo sem googleEventId. Criando novo evento no Google Calendar...");
+          
+          // 1. Cria no Google Calendar
           const googleResponse = await gapiClient.client.calendar.events.insert({
             calendarId: 'primary',
             resource: eventoParaGoogle,
             sendNotifications: true,
           });
           const newGoogleEventId = googleResponse.result.id;
+
+          // 2. Atualiza Firestore com o novo ID
           await setDoc(eventoRef, {
             ...eventoParaFirestore,
-            googleEventId: newGoogleEventId
+            googleEventId: newGoogleEventId // Salva o novo ID
           });
         }
+        
       } else {
+        // --- MODO DE CRIAÇÃO ---
+        
+        // 1. Cria no Firestore PRIMEIRO (para ter o ID)
         const docRef = await addDoc(collection(db, eventosCollectionPath), eventoParaFirestore);
+        
+        // 2. Cria no Google Calendar
         const googleResponse = await gapiClient.client.calendar.events.insert({
           calendarId: 'primary',
           resource: eventoParaGoogle,
           sendNotifications: true,
-section     });
+        });
         const googleEventId = googleResponse.result.id;
+
+        // 3. Atualiza o Firestore com o ID do Google
         await updateDoc(docRef, { googleEventId: googleEventId });
       }
+
       console.log("Evento salvo/atualizado com sucesso!");
       setSaving(false);
       onClose();
+
     } catch (e) {
       console.error("Erro ao salvar evento (objeto bruto):", e);
       let errorMessage = "Ocorreu um erro desconhecido ao salvar.";
+
       if (e.result && e.result.error) {
         errorMessage = `Erro do Google (${e.result.error.code}): ${e.result.error.message}`;
         if (e.result.error.code === 403) {
-          errorMessage += " - Verifique se a 'Google Calendar API' está ATIVADA no seu projeto do Google Cloud.";
-	    }
-  	  } else if (e.message) {
-  	    errorMessage = e.message;
-  	  }
-    	setModalError(errorMessage);
-    	setSaving(false);
-    }
+            errorMessage += " - Verifique se a 'Google Calendar API' está ATIVADA no seu projeto do Google Cloud.";
+        }
+      } else if (e.message) {
+        errorMessage = e.message;
+      }
+      
+      setModalError(errorMessage); // Seta o erro local
+      setSaving(false);
+    }
   };
 
   const handleMusicoToggle = (musicoId) => {
-  	// ... (código idêntico)
+    // Adiciona ou remove o músico do array de selecionados
     setSelectedMusicos(prev =>
       prev.includes(musicoId)
         ? prev.filter(id => id !== musicoId)
-A       : [...prev, musicoId]
+        : [...prev, musicoId]
     );
   };
   
   const handleCachetChange = (musicoId, valor) => {
-  	// ... (código idêntico)
+    // Atualiza o valor do cachet no objeto `cachets`
     setCachets(prev => ({
       ...prev,
       [musicoId]: valor
@@ -878,24 +1036,27 @@ A       : [...prev, musicoId]
   };
 
   return (
-  	<div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
-    	{/* ... (código idêntico) ... */}
-    	<div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-      	<form onSubmit={handleSubmit}>
-        	<div className="flex justify-between items-center p-6 border-b border-gray-200">
-          	<h3 className="text-2xl font-bold text-gray-900">
-            	{isEditMode ? 'Editar Evento' : 'Adicionar Novo Evento'}
-          	</h3>
-          	<button
-            	type="button"
-            	onClick={onClose}
-            	className="text-gray-400 hover:text-gray-600"
-          	>
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <form onSubmit={handleSubmit}>
+          <div className="flex justify-between items-center p-6 border-b border-gray-200">
+            <h3 className="text-2xl font-bold text-gray-900">
+              {/* Título dinâmico */}
+              {isEditMode ? 'Editar Evento' : 'Adicionar Novo Evento'}
+            </h3>
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600"
+            >
             	<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
           	</button>
         	</div>
+
         	<div className="p-6 space-y-4">
+          	
           	{modalError && <ErrorMessage message={modalError} onDismiss={() => setModalError(null)} />}
+
           	<FormInput
             	label="Nome do Evento"
             	value={nome}
@@ -906,7 +1067,7 @@ A       : [...prev, musicoId]
             	label="Cidade"
             	value={cidade}
             	onChange={setCidade}
-  	        	placeholder="Ex: São Paulo, SP"
+            	placeholder="Ex: São Paulo, SP"
           	/>
           	<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             	<FormInput
@@ -918,129 +1079,145 @@ A       : [...prev, musicoId]
             	<FormSelect
               	label="Hora Início"
               	value={horaInicio}
-  	        	onChange={setHoraInicio}
-            	options={timeOptions}
-          	/>
-          	<FormSelect
-            	label="Hora Fim"
-            	value={horaFim}
-            	onChange={setHoraFim}
-            	options={timeOptions}
-          	/>
-        	</div>
-        	<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          	<FormSelect
-            	label="Status"
-  	        	value={status}
-            	onChange={setStatus}
-            	options={['A Confirmar', 'Confirmado']}
-          	/>
-          	<FormSelect
-            	label="Pacote"
-            	value={pacote}
-  	        	onChange={setPacote}
-    	      	options={pacotesOptions}
-          	/>
-          	<FormInput
-            	label="Valor do Evento (R$)"
-            	type="text"
-            	inputMode="numeric"
-            	value={valorEvento}
-  	        	onChange={setValorEvento}
-            	placeholder="Ex: 1500"
-          	/>
-        	</div>
-        	<div>
-          	<label className="block text-sm font-medium text-gray-700 mb-2">
-            	Selecionar Músicos (e definir cachet)
-          	</label>
-          	<div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-2 space-y-2">
-            	{musicosCadastrados.length === 0 && (
-              	<p className="text-gray-500 text-sm">Nenhum músico cadastrado. Vá para a aba "Músicos" para adicionar.</p>
-            	)}
-            	{musicosCadastrados.map(musico => (
-              	<div key={musico.id} className="p-2 hover:bg-gray-50 rounded-lg">
-                	<label className="flex items-center space-x-3">
-                  	<input
-                    	type="checkbox"
-  	              	checked={selectedMusicos.includes(musico.id)}
-                    	onChange={() => handleMusicoToggle(musico.id)}
-                    	className="h-5 w-5 rounded text-blue-600 border-gray-300 focus:ring-blue-500"
-                  	/>
-                  	<span className="text-gray-800">
-                    	{musico.nome} <span className="text-gray-500 text-sm">({musico.instrumento})</span>
-                  	</span>
-                  	{selectedMusicos.includes(musico.id) && (
-s               	<div className="ml-auto flex items-center pl-2">
-                      	<span className="text-sm text-gray-600 mr-1">R$</span>
-                      	<input
-                        	type="text"
-                        	inputMode="numeric"
-                        	placeholder="Cachet"
-                        	className="w-24 p-1 border border-gray-300 rounded-md shadow-sm text-sm"
-                        	value={cachets[musico.id] || ''}
-                        	onChange={(e) => handleCachetChange(musico.id, e.target.value)}
-                        	onClick={(e) => e.stopPropagation()} 
-                      	/>
-                    	</div>
-                  	)}
-                	</label>
-              	</div>
-            	))}
+              	onChange={setHoraInicio}
+              	options={timeOptions}
+            	/>
+            	<FormSelect
+              	label="Hora Fim"
+              	value={horaFim}
+              	onChange={setHoraFim}
+              	options={timeOptions}
+            	/>
+          	</div>
+          	
+          	{/* --- SEÇÃO DE FINANÇAS (NOVOS CAMPOS) --- */}
+          	<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            	<FormSelect
+              	label="Status"
+              	value={status}
+              	onChange={setStatus}
+              	options={['A Confirmar', 'Confirmado']}
+            	/>
+            	<FormSelect
+              	label="Pacote"
+              	value={pacote}
+              	onChange={setPacote}
+              	options={pacotesOptions}
+            	/>
+            	<FormInput
+              	label="Valor do Evento (R$)"
+              	type="text" // Usamos text para permitir "1.500,00"
+              	inputMode="numeric" // Melhora teclado no celular
+              	value={valorEvento}
+              	onChange={setValorEvento}
+              	placeholder="Ex: 1500"
+            	/>
+          	</div>
+          	{/* --- FIM DA SEÇÃO DE FINANÇAS --- */}
+
+
+          	<div>
+            	<label className="block text-sm font-medium text-gray-700 mb-2">
+              	Selecionar Músicos (e definir cachet)
+            	</label>
+            	<div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-2 space-y-2">
+              	{musicosCadastrados.length === 0 && (
+                	<p className="text-gray-500 text-sm">Nenhum músico cadastrado. Vá para a aba "Músicos" para adicionar.</p>
+              	)}
+              	{musicosCadastrados.map(musico => (
+                	<div key={musico.id} className="p-2 hover:bg-gray-50 rounded-lg">
+                  	<label className="flex items-center space-x-3">
+                    	<input
+                      	type="checkbox"
+                      	checked={selectedMusicos.includes(musico.id)}
+                      	onChange={() => handleMusicoToggle(musico.id)}
+                      	className="h-5 w-5 rounded text-blue-600 border-gray-300 focus:ring-blue-500"
+                    	/>
+                    	<span className="text-gray-800">
+                      	{musico.nome} <span className="text-gray-500 text-sm">({musico.instrumento})</span>
+                    	</span>
+
+                    	{/* NOVO: Input de Cachet (aparece se selecionado) */}
+                    	{selectedMusicos.includes(musico.id) && (
+                      	<div className="ml-auto flex items-center pl-2">
+                        	<span className="text-sm text-gray-600 mr-1">R$</span>
+                        	<input
+                          	type="text"
+                          	inputMode="numeric"
+                          	placeholder="Cachet"
+                          	className="w-24 p-1 border border-gray-300 rounded-md shadow-sm text-sm"
+                          	value={cachets[musico.id] || ''}
+                          	onChange={(e) => handleCachetChange(musico.id, e.target.value)}
+                          	// Impede que clicar no input desmarque o músico
+                          	onClick={(e) => e.stopPropagation()} 
+                        	/>
+                      	</div>
+                    	)}
+                  	</label>
+                	</div>
+              	))}
+            	</div>
           	</div>
         	</div>
-      	</div>
-      	<div className="p-6 bg-gray-50 border-t border-gray-200 rounded-b-2xl flex justify-end space-x-3">
-        	<button
-          	type="button"
-          	onClick={onClose}
-          	className="bg-white hover:bg-gray-100 text-gray-700 font-semibold py-2 px-4 rounded-lg border border-gray-300 shadow-sm transition duration-300"
-        	>
-          	Cancelar
-        	</button>
-        	<button
-          	type="submit"
-          	disabled={saving}
-          	className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 disabled:opacity-50"
-Methods     >
-          	{saving ? 'Salvando...' : (isEditMode ? 'Atualizar Evento' : 'Salvar Evento')}
-        	</button>
-      	</div>
-    	</form>
+
+        	<div className="p-6 bg-gray-50 border-t border-gray-200 rounded-b-2xl flex justify-end space-x-3">
+          	<button
+            	type="button"
+            	onClick={onClose}
+            	className="bg-white hover:bg-gray-100 text-gray-700 font-semibold py-2 px-4 rounded-lg border border-gray-300 shadow-sm transition duration-300"
+          	>
+            	Cancelar
+          	</button>
+          	<button
+            	type="submit"
+            	disabled={saving}
+            	className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 disabled:opacity-50"
+          	>
+            	{/* Texto dinâmico */}
+            	{saving ? 'Salvando...' : (isEditMode ? 'Atualizar Evento' : 'Salvar Evento')}
+          	</button>
+        	</div>
+      	</form>
+    	</div>
   	</div>
-  </div>
   );
 };
 
+
+// **********************************************************
+// ATUALIZAÇÃO (Passo 28) - Componente Inteiro Atualizado
+// **********************************************************
 const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
-  // ... (código idêntico)
+  // NOVO: Estado para controlar a edição
   const [musicoParaEditar, setMusicoParaEditar] = useState(null);
+  
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [instrumento, setInstrumento] = useState('');
   const [saving, setSaving] = useState(false);
-  const [formError, setFormError] = useState(null);
+  const [formError, setFormError] = useState(null); // Erro local do formulário
 
+  // NOVO: Efeito para preencher/limpar o formulário
   useEffect(() => {
-  	// ... (código idêntico)
     if (musicoParaEditar) {
+      // Preenche o formulário para edição
       setNome(musicoParaEditar.nome);
       setEmail(musicoParaEditar.email);
       setInstrumento(musicoParaEditar.instrumento);
-      setFormError(null);
+      setFormError(null); // Limpa erros
     } else {
+      // Limpa o formulário (modo de adição)
       setNome('');
       setEmail('');
       setInstrumento('');
     }
-  }, [musicoParaEditar]);
+  }, [musicoParaEditar]); // Roda sempre que o 'musicoParaEditar' mudar
 
   const handleSubmit = async (e) => {
-  	// ... (código idêntico)
     e.preventDefault();
     if (!nome || !email || !instrumento) {
       setFormError("Por favor, preencha todos os campos.");
-s     return;
+      return;
     }
     if (!collectionPath) {
       setError("Erro de conexão (User ID nulo).");
@@ -1048,23 +1225,28 @@ s     return;
     }
     setSaving(true);
     setFormError(null);
+    
     try {
       if (musicoParaEditar) {
+        // --- MODO DE ATUALIZAÇÃO ---
         const musicoRef = doc(db, collectionPath, musicoParaEditar.id);
         await setDoc(musicoRef, {
           nome: nome,
           email: email,
-        	instrumento: instrumento,
-      	});
-      	setMusicoParaEditar(null);
-    	} else {
-      	await addDoc(collection(db, collectionPath), {
-        	nome: nome,
-        	email: email,
-        	instrumento: instrumento,
-      	});
-      	setNome('');
-      	setEmail('');
+          instrumento: instrumento,
+        });
+        // Limpa o formulário e sai do modo de edição
+        setMusicoParaEditar(null);
+      } else {
+        // --- MODO DE CRIAÇÃO ---
+        await addDoc(collection(db, collectionPath), {
+          nome: nome,
+          email: email,
+          instrumento: instrumento,
+        });
+        // Limpa o formulário
+        setNome('');
+        setEmail('');
       	setInstrumento('');
     	}
   	} catch (e) {
@@ -1074,143 +1256,171 @@ s     return;
   	setSaving(false);
   };
 
+  // Deletar Músico (com SweetAlert2)
   const handleDelete = async (musicoId) => {
-  	// ... (código idêntico)
     if (!collectionPath) {
       setError("Erro de conexão (User ID nulo).");
       return;
     }
+    
+    // Se estiver editando este músico, cancele a edição
     if (musicoParaEditar && musicoParaEditar.id === musicoId) {
-    	setMusicoParaEditar(null);
+      setMusicoParaEditar(null);
     }
+    
     const result = await Swal.fire({
       title: 'Tem certeza que deseja deletar?',
       text: "O músico será removido permanentemente.",
       icon: 'warning',
-    	showCancelButton: true,
-    	confirmButtonColor: '#3085d6',
-    	cancelButtonColor: '#d33',
-    	confirmButtonText: 'Sim, deletar!',
-    	cancelButtonText: 'Cancelar'
-  	});
-  	if (result.isConfirmed) {
-    	try {
-      	await deleteDoc(doc(db, collectionPath, musicoId));
-      	Swal.fire('Deletado!','O músico foi removido da sua lista.','success');
-  	} catch (e) {
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Sim, deletar!',
+      cancelButtonText: 'Cancelar'
+    });
+    
+    if (result.isConfirmed) {
+      try {
+        await deleteDoc(doc(db, collectionPath, musicoId));
+        Swal.fire(
+        	'Deletado!',
+        	'O músico foi removido da sua lista.',
+        	'success'
+      	);
+    	} catch (e) {
       	console.error("[Firestore] Erro ao deletar músico:", e);
-      	setError("Não foi possível deletar o músico.");
-      	Swal.fire('Erro!','Não foi possível deletar o músico.','error');
+      	setError("Não foi possível deletar o músico."); // Mostra erro global
+      	Swal.fire(
+        	'Erro!',
+        	'Não foi possível deletar o músico.',
+        	'error'
+      	);
     	}
   	}
   };
 
   return (
-  	<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-    	{/* ... (código idêntico) ... */}
-  	  <div className="lg:col-span-1">
-    		<div className="bg-white rounded-lg shadow-xl p-4 sm:p-6">
-      		<h3 className="text-2xl font-bold text-gray-900 mb-4">
-        		{musicoParaEditar ? 'Editar Músico' : 'Adicionar Músico'}
-      		</h3>
-      		{formError && <ErrorMessage message={formError} onDismiss={() => setFormError(null)} />}
-      		<form onSubmit={handleSubmit} className="space-y-4">
-        		<FormInput
-          		label="Nome"
-          		value={nome}
-          		onChange={setNome}
-  	        	placeholder="Ex: João Silva"
-        		/>
-        		<FormInput
-          		label="Email"
-          		type="email"
-          		value={email}
-  	        	onChange={setEmail}
-          		placeholder="joao.silva@gmail.com"
-        		/>
-        		<FormInput
-  	        	label="Instrumento"
-          		value={instrumento}
-          		onChange={setInstrumento}
-        		placeholder="Ex: Guitarra, Vocal"
-      		/>
-      		<div className="flex flex-col sm:flex-row sm:gap-2">
-        		<button
-          		type="submit"
-          		disabled={saving}
-          		className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 disabled:opacity-50"
-        		>
-          		{saving ? 'Salvando...' : (musicoParaEditar ? 'Atualizar Músico' : 'Salvar Músico')}
-        		</button>
-        		{musicoParaEditar && (
-          		<button
-            		type="button"
-  	        		onClick={() => setMusicoParaEditar(null)}
-            		className="w-full sm:w-auto bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-300 mt-2 sm:mt-0"
-  	        	>
-  	  	      	Cancelar
-          		</button>
-        		)}
+    // ATUALIZADO: Layout responsivo para o gerenciador de músicos
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* Coluna 1: Formulário (com padding menor no celular) */}
+      <div className="lg:col-span-1">
+        <div className="bg-white rounded-lg shadow-xl p-4 sm:p-6">
+          <h3 className="text-2xl font-bold text-gray-900 mb-4">
+            {/* Título dinâmico */}
+            {musicoParaEditar ? 'Editar Músico' : 'Adicionar Músico'}
+          </h3>
+          {formError && <ErrorMessage message={formError} onDismiss={() => setFormError(null)} />}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <FormInput
+            	label="Nome"
+            	value={nome}
+            	onChange={setNome}
+            	placeholder="Ex: João Silva"
+          	/>
+          	<FormInput
+            	label="Email"
+            	type="email"
+            	value={email}
+            	onChange={setEmail}
+            	placeholder="joao.silva@gmail.com"
+          	/>
+          	<FormInput
+            	label="Instrumento"
+            	value={instrumento}
+            	onChange={setInstrumento}
+            	placeholder="Ex: Guitarra, Vocal"
+          	/>
+          	<div className="flex flex-col sm:flex-row sm:gap-2">
+            	<button
+              	type="submit"
+              	disabled={saving}
+              	className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 disabled:opacity-50"
+t         	>
+              	{/* Texto dinâmico */}
+              	{saving ? 'Salvando...' : (musicoParaEditar ? 'Atualizar Músico' : 'Salvar Músico')}
+            	</button>
+            	
+            	{/* NOVO: Botão Cancelar */}
+            	{musicoParaEditar && (
+              	<button
+                	type="button"
+                	onClick={() => setMusicoParaEditar(null)}
+                	className="w-full sm:w-auto bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-300 mt-2 sm:mt-0"
+              	>
+                	Cancelar
+              	</button>
+            	)}
+          	</div>
+        	</form>
+      	</div>
+    	</div>
+
+    	{/* Coluna 2: Lista (com padding menor no celular) */}
+    	<div className="lg:col-span-2">
+      	<div className="bg-white rounded-lg shadow-xl p-4 sm:p-6">
+        	<h3 className="text-2xl font-bold text-gray-900 mb-4">
+          	Músicos Cadastrados
+        	</h3>
+        	{loading && <p>Carregando músicos...</p>}
+      		{!loading && musicos.length === 0 && (
+          	<p className="text-gray-600">Nenhum músico cadastrado ainda.</p>
+        	)}
+        	{!loading && musicos.length > 0 && (
+          	<ul className="divide-y divide-gray-200">
+            	{musicos.map(musico => (
+              	<li key={musico.id} className="py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                	
+                	{/* **********************************
+                  	ATUALIZAÇÃO (Passo 36)
+                  	Adicionado Avatar e flex layout
+                  	**********************************
+                	*/}
+                	<div className="mb-2 sm:mb-0 flex items-center">
+                  	<Avatar name={musico.nome} />
+                  	<div className="ml-3">
+                    	<p className="text-lg font-medium text-gray-900">{musico.nome}</p>
+                    	<p className="text-sm text-gray-600">{musico.instrumento}</p>
+                    	<p className="text-sm text-gray-500">{musico.email}</p>
+                  	</div>
+                	</div>
+                	
+                	{/* NOVO: Container de botões de ícone */}
+              		<div className="flex flex-shrink-0 ml-2 w-full sm:w-auto">
+                		<button
+                  		onClick={() => setMusicoParaEditar(musico)}
+                  		className="w-1/2 sm:w-auto bg-blue-100 hover:bg-blue-200 text-blue-700 p-2 rounded-lg text-sm transition duration-300"
+                  		title="Editar Músico"
+                		>
+                  		<svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg>
+                		</button>
+                		<button
+                  		onClick={() => handleDelete(musico.id)}
+                  		className="w-1/2 sm:w-auto bg-red-100 hover:bg-red-200 text-red-700 p-2 ml-2 rounded-lg text-sm transition duration-300"
+                  		title="Deletar Músico"
+                		>
+                  		<svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                		</button>
+              		</div>
+              	</li>
+            	))}
+          	</ul>
+        	)}
       		</div>
-    		</form>
-    		</div>
-  		</div>
-  		<div className="lg:col-span-2">
-    		<div className="bg-white rounded-lg shadow-xl p-4 sm:p-6">
-      		<h3 className="text-2xl font-bold text-gray-900 mb-4">
-        		Músicos Cadastrados
-      		</h3>
-      		{loading && <p>Carregando músicos...</p>}
-    			{!loading && musicos.length === 0 && (
-        		<p className="text-gray-600">Nenhum músico cadastrado ainda.</p>
-  	  		)}
-    		{!loading && musicos.length > 0 && (
-      		<ul className="divide-y divide-gray-200">
-        		{musicos.map(musico => (
-          		<li key={musico.id} className="py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
-            		<div className="mb-2 sm:mb-0 flex items-center">
-              		<Avatar name={musico.nome} />
-              		<div className="ml-3">
-                		<p className="text-lg font-medium text-gray-900">{musico.nome}</p>
-                		<p className="text-sm text-gray-600">{musico.instrumento}</p>
-  	          		<p className="text-sm text-gray-500">{musico.email}</p>
-            		</div>
-          		</div>
-          		<div className="flex flex-shrink-0 ml-2 w-full sm:w-auto">
-            		<button
-              		onClick={() => setMusicoParaEditar(musico)}
-              		className="w-1/2 sm:w-auto bg-blue-100 hover:bg-blue-200 text-blue-700 p-2 rounded-lg text-sm transition duration-300"
-  	        			title="Editar Músico"
-            		>
-  	        			<svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg>
-            		</button>
-            		<button
-              		onClick={() => handleDelete(musico.id)}
-              		className="w-1/2 sm:w-auto bg-red-100 hover:bg-red-200 text-red-700 p-2 ml-2 rounded-lg text-sm transition duration-300"
-              		title="Deletar Músico"
-            		>
-  	        			<svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-            		</button>
-          		</div>
-        		</li>
-      		))}
-    		</ul>
-  		)}
-  		</div>
-  		</div>
+    	</div>
   	</div>
   );
 };
 
+
+// Componente reusável para Input (Idêntico)
 const FormInput = ({ label, type = 'text', value, onChange, placeholder, inputMode = 'text' }) => (
-  // ... (código idêntico)
   <div>
     <label className="block text-sm font-medium text-gray-700 mb-1">
       {label}
     </label>
     <input
       type={type}
-  	  inputMode={inputMode}
+      inputMode={inputMode} // Adicionado para teclado numérico
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
@@ -1219,16 +1429,16 @@ const FormInput = ({ label, type = 'text', value, onChange, placeholder, inputMo
   </div>
 );
 
+// Componente reusável para Select (Idêntico)
 const FormSelect = ({ label, value, onChange, options }) => (
-  // ... (código idêntico)
   <div>
     <label className="block text-sm font-medium text-gray-700 mb-1">
       {label}
     </label>
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-section       className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+  	<select
+    	value={value}
+    	onChange={(e) => onChange(e.target.value)}
+    	className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
   	>
     	{options.map(option => (
       	<option key={option} value={option}>{option}</option>
@@ -1237,13 +1447,14 @@ section       className="w-full px-3 py-2 border border-gray-300 rounded-lg s
   </div>
 );
 
+// Componente reusável para Botão de Aba (Idêntico)
 const TabButton = ({ label, isActive, onClick }) => (
-  // ... (código idêntico)
   <button
     onClick={onClick}
     className={`py-3 px-4 font-medium text-sm rounded-t-lg transition-colors duration-200
     	${isActive
       	? 'bg-white border-b-2 border-blue-600 text-blue-600'
+      	// Correção de bug visual: Corrigido o hover da aba inativa
       	: 'text-gray-500 hover:text-gray-700 border-b-2 border-transparent hover:border-gray-300'
     	}
   	`}
@@ -1252,8 +1463,8 @@ const TabButton = ({ label, isActive, onClick }) => (
   </button>
 );
 
+// Componente reusável para Mensagem de Erro (Idêntico)
 const ErrorMessage = ({ message, onDismiss }) => (
-  // ... (código idêntico)
   <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded-lg flex justify-between items-center">
   	<div>
     	<p className="font-bold">Erro</p>
@@ -1267,11 +1478,11 @@ const ErrorMessage = ({ message, onDismiss }) => (
   </div>
 );
 
+// Componente Helper para o Modal de Visualização
 const InfoItem = ({ label, value, children }) => (
-  // ... (código idêntico)
   <div>
     <label className="block text-sm font-medium text-gray-500">
-s     {label}
+      {label}
     </label>
   	{children ? (
     	<div className="mt-1">{children}</div>
@@ -1283,11 +1494,11 @@ s     {label}
   </div>
 );
 
+// Componente Helper para o Modal de Visualização
 const StatusBadge = ({ status }) => (
-  // ... (código idêntico)
   <span
     className={`px-2 py-0.5 rounded-full text-xs font-semibold
-s   	${status === 'Confirmado'
+    	${status === 'Confirmado'
       	? 'bg-green-100 text-green-800'
       	: 'bg-yellow-100 text-yellow-800'
     	}
@@ -1297,13 +1508,6 @@ s   	${status === 'Confirmado'
   </span>
 );
 
-// **********************************************************
-// <<< INÍCIO DA CORREÇÃO: COMPONENTES FALTANDO >>>
-// **********************************************************
-
-// (Estes componentes foram apagados por mim acidentalmente na
-//  limpeza do deploy anterior. Estou adicionando-os de volta.)
-
 // **********************************
 // NOVO (Passo 36): Componente Avatar
 // **********************************
@@ -1312,7 +1516,7 @@ const getInitials = (name = '') => {
   if (names.length === 0) return '?';
   // Pega a primeira letra do primeiro nome
   const first = names[0][0];
-s   // Pega a primeira letra do último nome (se houver mais de 1 nome)
+  // Pega a primeira letra do último nome (se houver mais de 1 nome)
   const last = names.length > 1 ? names[names.length - 1][0] : '';
   return `${first}${last}`.toUpperCase();
 };
@@ -1325,7 +1529,7 @@ const Avatar = ({ name }) => {
   	'bg-blue-200 text-blue-800',
   	'bg-green-200 text-green-800',
   	'bg-yellow-200 text-yellow-800',
-s 	'bg-purple-200 text-purple-800',
+  	'bg-purple-200 text-purple-800',
   	'bg-pink-200 text-pink-800',
   	'bg-indigo-200 text-indigo-800',
   ];
@@ -1337,14 +1541,10 @@ s 	'bg-purple-200 text-purple-800',
   	<div
     	className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center font-bold ${color}`}
   	>
-s   	{initials}
+    	{initials}
   	</div>
   );
 };
-
-// **********************************************************
-// <<< FIM DA CORREÇÃO >>>
-// **********************************************************
 
 
 export default App;
