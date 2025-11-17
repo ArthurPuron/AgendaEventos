@@ -1,3 +1,12 @@
+/* * IMPORTANTE: Adicionado para carregar os estilos do Tailwind
+ * que são usados em todo o resto do App.jsx
+*/
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* * Seu CSS original do Vite (abaixo)
+*/
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -71,4 +80,66 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
+}
+
+/* -------------------------------------------------
+  NOVO: ESTILOS DA TELA DE CARREGAMENTO
+  (Adicionados ao seu index.css)
+-------------------------------------------------
+*/
+
+/* 1. Define a animação de rotação (sentido horário) */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 2. Estilo do container principal da tela de loading */
+.loading-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed; /* Ocupa a tela inteira */
+  inset: 0;
+  background-color: #1a3b3a; /* Sua cor de fundo (verde-petróleo) */
+  min-height: 100vh;
+  z-index: 100; /* Garante que fique por cima de tudo */
+}
+
+/* 3. Container para empilhar as duas imagens */
+.loading-logo-container {
+  position: relative;
+  width: 200px; /* Ajuste o tamanho conforme necessário */
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 4. Estilo da Clave (Estática, no centro) */
+.loading-logo-static {
+  position: absolute;
+  width: 40%; /* Ajuste o tamanho da clave (menor que a roda) */
+  height: 40%;
+  object-fit: contain;
+  /* z-index: 10; (Opcional, garante que fique por cima) */
+}
+
+/* 5. Estilo da Roda (Girando) */
+.loading-logo-spin {
+  position: absolute;
+  width: 100%; /* Roda ocupa o container inteiro */
+  height: 100%;
+  object-fit: contain;
+  
+  /* Aplica a animação 'spin'
+     duração: 10s (10 segundos por volta)
+     timing: linear (velocidade constante)
+     iteration: infinite (para sempre) 
+  */
+  animation: spin 10s linear infinite;
 }
