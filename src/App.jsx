@@ -453,7 +453,7 @@ function App() {
   // --- Componente: Cabeçalho (com Abas) ---
   const renderHeader = () => (
     // Código de layout limpo (sem hacks w-full)
-    <header className="bg-white shadow-md">
+  	<header className="bg-white shadow-md">
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <h1 className="text-2xl font-bold text-gray-800">
@@ -462,40 +462,40 @@ function App() {
           <div className="flex items-center">
             <span className="text-gray-700 mr-3 hidden sm:block">
               Olá, {userProfile.name.split(' ')[0]}
-            </span>
+          	</span>
             <img
               className="h-10 w-10 rounded-full"
               src={userProfile.picture}
               alt="Foto do Perfil"
-            />
+          	/>
             <button
               onClick={handleSignoutClick}
               className="ml-4 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300"
-            >
+          	>
               Sair
-            </button>
-          </div>
-        </div>
-      </div>
-      
-      {/* ATUALIZADO: Abas só aparecem para o ADMIN */}
-      {userRole === 'admin' && (
-        <nav className="bg-gray-50 border-t border-gray-200">
-          <div className="px-4 sm:px-6 lg:px-8 flex space-x-4">
-            <TabButton
-              label="Eventos"
-              isActive={page === 'eventos'}
-              onClick={() => setPage('eventos')}
-            />
-            <TabButton
-              label="Músicos"
-              isActive={page === 'musicos'}
-              onClick={() => setPage('musicos')}
-            />
-          </div>
-        </nav>
-      )}
-    </header>
+          	</button>
+        	</div>
+      	</div>
+    	</div>
+    	
+    	{/* ATUALIZADO: Abas só aparecem para o ADMIN */}
+    	{userRole === 'admin' && (
+      	<nav className="bg-gray-50 border-t border-gray-200">
+        	<div className="px-4 sm:px-6 lg:px-8 flex space-x-4">
+          	<TabButton
+            	label="Eventos"
+            	isActive={page === 'eventos'}
+            	onClick={() => setPage('eventos')}
+          	/>
+          	<TabButton
+            	label="Músicos"
+            	isActive={page === 'musicos'}
+            	onClick={() => setPage('musicos')}
+          	/>
+        	</div>
+      	</nav>
+    	)}
+  	</header>
   );
 
   // --- NOVO: Tela de Autorização do Admin ---
@@ -503,20 +503,20 @@ function App() {
     <div className="bg-white rounded-lg shadow-xl p-4 sm:p-8 text-center">
       <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
         Autorização Necessária
-      </h2>
+    	</h2>
       <p className="text-gray-700 mb-6">
         Para gerenciar eventos, você precisa autorizar o acesso ao seu Google Calendar.
-      </p>
+    	</p>
       <button
         onClick={handleCalendarAuth}
         className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1"
-      >
+    	>
         Autorizar Google Calendar
-      </button>
+    	</button>
       <p className="text-sm text-gray-500 mt-4">
         (Os músicos não verão esta etapa.)
-      </p>
-    </div>
+    	</p>
+  	</div>
   );
 
   // --- NOVO: Dashboard do Admin ---
@@ -524,7 +524,7 @@ function App() {
     <>
       {page === 'eventos' && renderEventosPage()}
       {page === 'musicos' && renderMusicosPage()}
-    </>
+  	</>
   );
 
   // --- NOVO: Dashboard do Músico ---
@@ -532,33 +532,33 @@ function App() {
     <div className="bg-white rounded-lg shadow-xl p-4 sm:p-8">
       <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">
         Meus Próximos Eventos
-      </h2>
-      
-      {loadingEventos && <p>Carregando seus eventos...</p>}
-      {!loadingEventos && eventos.length === 0 && (
-        <p className="text-gray-600">Você ainda não foi convidado para nenhum evento.</p>
-      )}
-      {!loadingEventos && eventos.length > 0 && (
-        <ul className="divide-y divide-gray-200">
-          {eventos.map(evento => (
-            <li key={evento.id}>
-              <div
-                className="py-4 flex justify-between items-center w-full text-left hover:bg-gray-50 rounded-lg cursor-pointer"
-                onClick={() => setSelectedEvento(evento)}
-              >
-                <div>
-                  <p className="text-lg font-medium text-gray-900">{evento.nome}</p>
-                  <p className="text-sm text-gray-600">{evento.cidade} - <StatusBadge status={evento.status} /></p>
-                  <p className="text-sm text-gray-500">
-                    {formatDisplayDate(evento.dataInicio, evento.dataFim)}
-                  </p>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+    	</h2>
+    	
+    	{loadingEventos && <p>Carregando seus eventos...</p>}
+    	{!loadingEventos && eventos.length === 0 && (
+      	<p className="text-gray-600">Você ainda não foi convidado para nenhum evento.</p>
+    	)}
+    	{!loadingEventos && eventos.length > 0 && (
+      	<ul className="divide-y divide-gray-200">
+        	{eventos.map(evento => (
+          	<li key={evento.id}>
+            	<div
+              	className="py-4 flex justify-between items-center w-full text-left hover:bg-gray-50 rounded-lg cursor-pointer"
+              	onClick={() => setSelectedEvento(evento)}
+            	>
+              	<div>
+                	<p className="text-lg font-medium text-gray-900">{evento.nome}</p>
+                	<p className="text-sm text-gray-600">{evento.cidade} - <StatusBadge status={evento.status} /></p>
+                	<p className="text-sm text-gray-500">
+                  	{formatDisplayDate(evento.dataInicio, evento.dataFim)}
+                	</p>
+              	</div>
+            	</div>
+          	</li>
+        	))}
+      	</ul>
+    	)}
+  	</div>
   );
 
   // --- Componente: Aba de Eventos (ADMIN) ---
@@ -567,66 +567,66 @@ function App() {
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6">
         <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-0">
           Eventos
-        </h2>
+      	</h2>
         <button
           onClick={() => setShowAddModal(true)}
           className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1"
-        >
+      	>
           [+] Novo Evento
-        </button>
-      </div>
+      	</button>
+    	</div>
 
-      {loadingEventos && <p>Carregando eventos...</p>}
-      {!loadingEventos && eventos.length === 0 && (
-        <p className="text-gray-600">Nenhum evento cadastrado ainda.</p>
-      )}
-      {!loadingEventos && eventos.length > 0 && (
-        <ul className="divide-y divide-gray-200">
-          {eventos.map(evento => (
-            <li key={evento.id}>
-              <div
-                className="py-4 flex justify-between items-center w-full text-left hover:bg-gray-50 rounded-lg cursor-pointer"
-                onClick={() => setSelectedEvento(evento)}
-              >
-                {/* Informações do Evento */}
-                <div>
-                  <p className="text-lg font-medium text-gray-900">{evento.nome}</p>
-                  <p className="text-sm text-gray-600">{evento.cidade} - <StatusBadge status={evento.status} /></p>
-                  <p className="text-sm text-gray-500">
-                    {formatDisplayDate(evento.dataInicio, evento.dataFim)}
-                  </p>
-                </div>
-                
-                {/* Container para os botões de ação */}
-                <div className="flex flex-shrink-0 ml-2">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation(); 
-                      setEventoParaEditar(evento);
-                    }}
-                    className="bg-blue-100 hover:bg-blue-200 text-blue-700 p-2 rounded-full text-sm transition duration-300"
-t                  title="Editar evento"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg>
-                  </button>
+    	{loadingEventos && <p>Carregando eventos...</p>}
+    	{!loadingEventos && eventos.length === 0 && (
+      	<p className="text-gray-600">Nenhum evento cadastrado ainda.</p>
+    	)}
+    	{!loadingEventos && eventos.length > 0 && (
+      	<ul className="divide-y divide-gray-200">
+        	{eventos.map(evento => (
+          	<li key={evento.id}>
+            	<div
+              	className="py-4 flex justify-between items-center w-full text-left hover:bg-gray-50 rounded-lg cursor-pointer"
+              	onClick={() => setSelectedEvento(evento)}
+            	>
+              	{/* Informações do Evento */}
+              	<div>
+                	<p className="text-lg font-medium text-gray-900">{evento.nome}</p>
+                	<p className="text-sm text-gray-600">{evento.cidade} - <StatusBadge status={evento.status} /></p>
+                	<p className="text-sm text-gray-500">
+                  	{formatDisplayDate(evento.dataInicio, evento.dataFim)}
+                	</p>
+              	</div>
+              	
+              	{/* Container para os botões de ação */}
+              	<div className="flex flex-shrink-0 ml-2">
+                	<button
+                  	onClick={(e) => {
+                    	e.stopPropagation(); 
+                    	setEventoParaEditar(evento);
+                  	}}
+                  	className="bg-blue-100 hover:bg-blue-200 text-blue-700 p-2 rounded-full text-sm transition duration-300"
+                  	title="Editar evento"
+                	>
+                  	<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg>
+                	</button>
 
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteEvento(evento.id);
-                    }}
-                    className="bg-red-100 hover:bg-red-200 text-red-700 p-2 ml-2 rounded-full text-sm transition duration-300"
-                    title="Deletar evento do app"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                  </button>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+                	<button
+                  	onClick={(e) => {
+                    	e.stopPropagation();
+                    	handleDeleteEvento(evento.id);
+                  	}}
+                  	className="bg-red-100 hover:bg-red-200 text-red-700 p-2 ml-2 rounded-full text-sm transition duration-300"
+                  	title="Deletar evento do app"
+                	>
+                  	<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                	</button>
+              	</div>
+            	</div>
+          	</li>
+        	))}
+      	</ul>
+    	)}
+  	</div>
   );
 
   // --- Componente: Aba de Músicos (ADMIN) ---
@@ -657,7 +657,7 @@ t                  title="Editar evento"
   }
   
   // Tela de Login (Se o Firebase não tiver usuário E o loading terminou)
-i  if (!userProfile) {
+  if (!userProfile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
@@ -680,7 +680,7 @@ i  if (!userProfile) {
   }
 
   // Tela Principal (Logado e Autorizado)
-// (Só chega aqui se authLoading = false E userProfile = true)
+  // (Só chega aqui se authLoading = false E userProfile = true)
   return (
     // Código de layout limpo (sem hacks w-full)
     <div className="min-h-screen bg-gray-100 font-sans">
@@ -702,23 +702,23 @@ i  if (!userProfile) {
             setShowAddModal(false);
             setEventoParaEditar(null); // Fecha ambos os modos
           }}
-          musicosCadastrados={musicos}
-          gapiClient={gapiClient}
-          eventosCollectionPath={getEventosCollectionPath()}
-          eventoParaEditar={eventoParaEditar} // Passa o evento para preencher
-        />
-      )}
-      
-      {/* O Modal de Visualizar Evento (ADMIN E MÚSICO) */}
-      {selectedEvento && (
-        <ViewEventModal
-          evento={selectedEvento}
-          onClose={() => setSelectedEvento(null)}
-          userRole={userRole} // NOVO: Passa o papel
-e          userEmail={userProfile.email} // NOVO: Passa o email
-        />
-      )}
-    </div>
+        	musicosCadastrados={musicos}
+        	gapiClient={gapiClient}
+        	eventosCollectionPath={getEventosCollectionPath()}
+        	eventoParaEditar={eventoParaEditar} // Passa o evento para preencher
+      	/>
+    	)}
+    	
+  	{/* O Modal de Visualizar Evento (ADMIN E MÚSICO) */}
+  	{selectedEvento && (
+    	<ViewEventModal
+      	evento={selectedEvento}
+      	onClose={() => setSelectedEvento(null)}
+      	userRole={userRole} // NOVO: Passa o papel
+      	userEmail={userProfile.email} // NOVO: Passa o email
+    	/>
+  	)}
+  	</div>
   );
 }
 
@@ -778,77 +778,77 @@ const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
             <InfoItem label="Horário" value={timeString} />
             
             {/* Coluna 3 inteligente */}
-            {isAdmin ? (
+          	{isAdmin ? (
               <InfoItem label="Pacote" value={evento.pacote} />
-            ) : (
-              <InfoItem label="Seu Cachet" value={formatCurrency(myCachet)} />
-            )}
-          </div>
+          	) : (
+            	<InfoItem label="Seu Cachet" value={formatCurrency(myCachet)} />
+          	)}
+        	</div>
 
-          {/* Seção 2: Finanças (SÓ PARA ADMIN) */}
-          {isAdmin && (
-            <div>
-              <h4 className="text-lg font-semibold text-gray-800 mb-2 border-b pb-1">
-                Financeiro (Admin)
-              </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <InfoItem label="Valor Total do Evento" value={formatCurrency(evento.valorEvento)} />
-              </div>
-            </div>
-          )}
-          
-          {/* Seção 3: Músicos (Lógica Corrigida) */}
-          <div>
-            <h4 className="text-lg font-semibold text-gray-800 mb-2 border-b pb-1">
-              Músicos no Evento
-            </h4>
-            {evento.musicos && evento.musicos.length > 0 ? (
-              <ul className="divide-y divide-gray-200">
-                {evento.musicos.map(musico => {
-                  // Lógica de Privacidade: Músico só vê o próprio cachet
-                  const isMe = musico.email === userEmail;
-                  
-                  return (
-                    <li key={musico.id} className="py-3 flex justify-between items-center">
-                      <div>
-                        <p className="font-medium text-gray-900">{musico.nome}</p>
-                        <p className="text-sm text-gray-500">{musico.instrumento}</p>
-                      </div>
-                      
-                      {/* **********************************
-s                        A CORREÇÃO (Passo 35)
-                        Lógica atualizada para (isAdmin)
-                        **********************************
-                      */}
-                      {isAdmin && (
-                        <p className="text-gray-700 font-semibold">
-                          {formatCurrency(musico.cachet)}
-                        </p>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : (
-              <p className="text-gray-500">Nenhum músico selecionado para este evento.</p>
-sv         )}
-          </div>
+        	{/* Seção 2: Finanças (SÓ PARA ADMIN) */}
+        	{isAdmin && (
+          	<div>
+            	<h4 className="text-lg font-semibold text-gray-800 mb-2 border-b pb-1">
+              	Financeiro (Admin)
+            	</h4>
+            	<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              	<InfoItem label="Valor Total do Evento" value={formatCurrency(evento.valorEvento)} />
+            	</div>
+          	</div>
+        	)}
+        	
+        	{/* Seção 3: Músicos (Lógica Corrigida) */}
+        	<div>
+          	<h4 className="text-lg font-semibold text-gray-800 mb-2 border-b pb-1">
+            	Músicos no Evento
+          	</h4>
+          	{evento.musicos && evento.musicos.length > 0 ? (
+            	<ul className="divide-y divide-gray-200">
+              	{evento.musicos.map(musico => {
+                	// Lógica de Privacidade: Músico só vê o próprio cachet
+                	const isMe = musico.email === userEmail;
+                	
+                	return (
+                  	<li key={musico.id} className="py-3 flex justify-between items-center">
+                    	<div>
+                      	<p className="font-medium text-gray-900">{musico.nome}</p>
+                      	<p className="text-sm text-gray-500">{musico.instrumento}</p>
+                    	</div>
+                    	
+                    	{/* **********************************
+                    	A CORREÇÃO (Passo 35)
+                    	Lógica atualizada para (isAdmin)
+                    	**********************************
+                    	*/}
+                    	{isAdmin && (
+                      	<p className="text-gray-700 font-semibold">
+                        	{formatCurrency(musico.cachet)}
+                      	</p>
+                    	)}
+                  	</li>
+                	);
+              	})}
+            	</ul>
+          	) : (
+            	<p className="text-gray-500">Nenhum músico selecionado para este evento.</p>
+          	)}
+        	</div>
 
-        </div>
+      	</div>
 
-        {/* Rodapé do Modal */}
-        <div className="p-6 bg-gray-50 border-t border-gray-200 rounded-b-2xl flex justify-end">
-          <button
-            type="button"
-            onClick={onClose}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300"
-          >
-            Fechar
-          </button>
-        </div>
+      	{/* Rodapé do Modal */}
+      	<div className="p-6 bg-gray-50 border-t border-gray-200 rounded-b-2xl flex justify-end">
+        	<button
+          	type="button"
+          	onClick={onClose}
+  	      	className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300"
+        	>
+          	Fechar
+        	</button>
+      	</div>
 
-      </div>
-    </div>
+    	</div>
+  	</div>
   );
 };
 
@@ -923,7 +923,7 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
         valorEvento: valorEvento,
         musicos: musicosConvidados,
         musicoEmails: musicosConvidados.map(m => m.email), // NOVO: Campo de busca
-s     };
+      };
       
       // 4. Objeto para o GOOGLE CALENDAR (Limpo, sem finanças)
       const attendees = musicosConvidados.map(musico => ({ email: musico.email }));
@@ -945,7 +945,7 @@ s     };
         // (Correção de Edição - Passo 26)
         if (eventoParaEditar.googleEventId) {
           // CASO 1: Evento MODERNO (Tem ID do Google)
-a         console.log("Atualizando evento existente no Google Calendar...");
+          console.log("Atualizando evento existente no Google Calendar...");
           await gapiClient.client.calendar.events.update({
             calendarId: 'primary',
             eventId: eventoParaEditar.googleEventId,
@@ -1006,7 +1006,7 @@ a         console.log("Atualizando evento existente no Google Calendar...");
 
       if (e.result && e.result.error) {
         errorMessage = `Erro do Google (${e.result.error.code}): ${e.result.error.message}`;
-a       if (e.result.error.code === 403) {
+        if (e.result.error.code === 403) {
             errorMessage += " - Verifique se a 'Google Calendar API' está ATIVADA no seu projeto do Google Cloud.";
         }
       } else if (e.message) {
@@ -1049,137 +1049,137 @@ a       if (e.result.error.code === 403) {
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-            </button>
-          </div>
+            	<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          	</button>
+        	</div>
 
-          <div className="p-6 space-y-4">
-            
-            {modalError && <ErrorMessage message={modalError} onDismiss={() => setModalError(null)} />}
+        	<div className="p-6 space-y-4">
+          	
+          	{modalError && <ErrorMessage message={modalError} onDismiss={() => setModalError(null)} />}
 
-            <FormInput
-              label="Nome do Evento"
-              value={nome}
-              onChange={setNome}
-              placeholder="Ex: Casamento Ana e Bruno"
-            />
-            <FormInput
-              label="Cidade"
-              value={cidade}
-              onChange={setCidade}
-              placeholder="Ex: São Paulo, SP"
-            />
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <FormInput
-                label="Data"
-                type="date"
-                value={data}
-                onChange={setData}
-              />
-              <FormSelect
-                label="Hora Início"
-                value={horaInicio}
-                onChange={setHoraInicio}
-                options={timeOptions}
-              />
-              <FormSelect
-                label="Hora Fim"
-                value={horaFim}
-                onChange={setHoraFim}
-                options={timeOptions}
-              />
-a         </div>
-            
-            {/* --- SEÇÃO DE FINANÇAS (NOVOS CAMPOS) --- */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <FormSelect
-                label="Status"
-                value={status}
-                onChange={setStatus}
-                options={['A Confirmar', 'Confirmado']}
-              />
-              <FormSelect
-                label="Pacote"
-                value={pacote}
-                onChange={setPacote}
-                options={pacotesOptions}
-              />
-              <FormInput
-                label="Valor do Evento (R$)"
-                type="text" // Usamos text para permitir "1.500,00"
-t               inputMode="numeric" // Melhora teclado no celular
-                value={valorEvento}
-                onChange={setValorEvento}
-                placeholder="Ex: 1500"
-              />
-            </div>
-            {/* --- FIM DA SEÇÃO DE FINANÇAS --- */}
+          	<FormInput
+            	label="Nome do Evento"
+            	value={nome}
+            	onChange={setNome}
+            	placeholder="Ex: Casamento Ana e Bruno"
+          	/>
+          	<FormInput
+            	label="Cidade"
+            	value={cidade}
+            	onChange={setCidade}
+            	placeholder="Ex: São Paulo, SP"
+          	/>
+          	<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            	<FormInput
+              	label="Data"
+              	type="date"
+              	value={data}
+              	onChange={setData}
+            	/>
+            	<FormSelect
+              	label="Hora Início"
+              	value={horaInicio}
+              	onChange={setHoraInicio}
+              	options={timeOptions}
+            	/>
+            	<FormSelect
+              	label="Hora Fim"
+              	value={horaFim}
+              	onChange={setHoraFim}
+              	options={timeOptions}
+            	/>
+          	</div>
+          	
+          	{/* --- SEÇÃO DE FINANÇAS (NOVOS CAMPOS) --- */}
+          	<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            	<FormSelect
+              	label="Status"
+              	value={status}
+              	onChange={setStatus}
+              	options={['A Confirmar', 'Confirmado']}
+            	/>
+            	<FormSelect
+              	label="Pacote"
+              	value={pacote}
+              	onChange={setPacote}
+              	options={pacotesOptions}
+            	/>
+            	<FormInput
+              	label="Valor do Evento (R$)"
+              	type="text" // Usamos text para permitir "1.500,00"
+              	inputMode="numeric" // Melhora teclado no celular
+              	value={valorEvento}
+              	onChange={setValorEvento}
+              	placeholder="Ex: 1500"
+            	/>
+          	</div>
+          	{/* --- FIM DA SEÇÃO DE FINANÇAS --- */}
 
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Selecionar Músicos (e definir cachet)
-              </label>
-              <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-2 space-y-2">
-                {musicosCadastrados.length === 0 && (
-                  <p className="text-gray-500 text-sm">Nenhum músico cadastrado. Vá para a aba "Músicos" para adicionar.</p>
-                )}
-                {musicosCadastrados.map(musico => (
-                  <div key={musico.id} className="p-2 hover:bg-gray-50 rounded-lg">
-                    <label className="flex items-center space-x-3">
-                      <input
-                        type="checkbox"
-in                     checked={selectedMusicos.includes(musico.id)}
-                        onChange={() => handleMusicoToggle(musico.id)}
-                        className="h-5 w-5 rounded text-blue-600 border-gray-300 focus:ring-blue-500"
-                      />
-                      <span className="text-gray-800">
-                        {musico.nome} <span className="text-gray-500 text-sm">({musico.instrumento})</span>
-                      </span>
+          	<div>
+            	<label className="block text-sm font-medium text-gray-700 mb-2">
+              	Selecionar Músicos (e definir cachet)
+            	</label>
+            	<div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-2 space-y-2">
+              	{musicosCadastrados.length === 0 && (
+                	<p className="text-gray-500 text-sm">Nenhum músico cadastrado. Vá para a aba "Músicos" para adicionar.</p>
+              	)}
+              	{musicosCadastrados.map(musico => (
+                	<div key={musico.id} className="p-2 hover:bg-gray-50 rounded-lg">
+                  	<label className="flex items-center space-x-3">
+                    	<input
+                      	type="checkbox"
+                      	checked={selectedMusicos.includes(musico.id)}
+                      	onChange={() => handleMusicoToggle(musico.id)}
+                      	className="h-5 w-5 rounded text-blue-600 border-gray-300 focus:ring-blue-500"
+                    	/>
+                    	<span className="text-gray-800">
+                      	{musico.nome} <span className="text-gray-500 text-sm">({musico.instrumento})</span>
+                    	</span>
 
-                      {/* NOVO: Input de Cachet (aparece se selecionado) */}
-                      {selectedMusicos.includes(musico.id) && (
-                        <div className="ml-auto flex items-center pl-2">
-                          <span className="text-sm text-gray-600 mr-1">R$</span>
-                          <input
-                            type="text"
-                            inputMode="numeric"
-                            placeholder="Cachet"
-                            className="w-24 p-1 border border-gray-300 rounded-md shadow-sm text-sm"
-d                         value={cachets[musico.id] || ''}
-                            onChange={(e) => handleCachetChange(musico.id, e.target.value)}
-                            // Impede que clicar no input desmarque o músico
-                            onClick={(e) => e.stopPropagation()} 
-                          />
-                        </div>
-                      )}
-                    </label>
-                  </div>
-                ))}
-              </div>
-A         </div>
-          </div>
+                    	{/* NOVO: Input de Cachet (aparece se selecionado) */}
+                    	{selectedMusicos.includes(musico.id) && (
+                      	<div className="ml-auto flex items-center pl-2">
+                        	<span className="text-sm text-gray-600 mr-1">R$</span>
+                        	<input
+                          	type="text"
+                          	inputMode="numeric"
+                          	placeholder="Cachet"
+                          	className="w-24 p-1 border border-gray-300 rounded-md shadow-sm text-sm"
+                          	value={cachets[musico.id] || ''}
+                          	onChange={(e) => handleCachetChange(musico.id, e.target.value)}
+                          	// Impede que clicar no input desmarque o músico
+                          	onClick={(e) => e.stopPropagation()} 
+                        	/>
+                      	</div>
+                    	)}
+                  	</label>
+                	</div>
+              	))}
+            	</div>
+          	</div>
+        	</div>
 
-          <div className="p-6 bg-gray-50 border-t border-gray-200 rounded-b-2xl flex justify-end space-x-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="bg-white hover:bg-gray-100 text-gray-700 font-semibold py-2 px-4 rounded-lg border border-gray-300 shadow-sm transition duration-300"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 disabled:opacity-50"
-            >
-              {/* Texto dinâmico */}
-              {saving ? 'Salvando...' : (isEditMode ? 'Atualizar Evento' : 'Salvar Evento')}
-s         </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        	<div className="p-6 bg-gray-50 border-t border-gray-200 rounded-b-2xl flex justify-end space-x-3">
+          	<button
+            	type="button"
+            	onClick={onClose}
+            	className="bg-white hover:bg-gray-100 text-gray-700 font-semibold py-2 px-4 rounded-lg border border-gray-300 shadow-sm transition duration-300"
+          	>
+            	Cancelar
+          	</button>
+          	<button
+            	type="submit"
+            	disabled={saving}
+            	className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 disabled:opacity-50"
+          	>
+            	{/* Texto dinâmico */}
+            	{saving ? 'Salvando...' : (isEditMode ? 'Atualizar Evento' : 'Salvar Evento')}
+          	</button>
+        	</div>
+      	</form>
+    	</div>
+  	</div>
   );
 };
 
@@ -1247,13 +1247,13 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
         // Limpa o formulário
         setNome('');
         setEmail('');
-        setInstrumento('');
-      }
-    } catch (e) {
-s     console.error("[Firestore] Erro ao salvar músico:", e);
-      setFormError("Não foi possível salvar o músico.");
-    }
-    setSaving(false);
+      	setInstrumento('');
+    	}
+  	} catch (e) {
+    	console.error("[Firestore] Erro ao salvar músico:", e);
+    	setFormError("Não foi possível salvar o músico.");
+  	}
+  	setSaving(false);
   };
 
   // Deletar Músico (com SweetAlert2)
@@ -1283,20 +1283,20 @@ s     console.error("[Firestore] Erro ao salvar músico:", e);
       try {
         await deleteDoc(doc(db, collectionPath, musicoId));
         Swal.fire(
-          'Deletado!',
-          'O músico foi removido da sua lista.',
-          'success'
-        );
-      } catch (e) {
-        console.error("[Firestore] Erro ao deletar músico:", e);
-section     setError("Não foi possível deletar o músico."); // Mostra erro global
-        Swal.fire(
-          'Erro!',
-          'Não foi possível deletar o músico.',
-          'error'
-        );
-      }
-    }
+        	'Deletado!',
+        	'O músico foi removido da sua lista.',
+        	'success'
+      	);
+    	} catch (e) {
+      	console.error("[Firestore] Erro ao deletar músico:", e);
+      	setError("Não foi possível deletar o músico."); // Mostra erro global
+      	Swal.fire(
+        	'Erro!',
+        	'Não foi possível deletar o músico.',
+        	'error'
+      	);
+    	}
+  	}
   };
 
   return (
@@ -1312,102 +1312,102 @@ section     setError("Não foi possível deletar o músico."); // Mostra erro 
           {formError && <ErrorMessage message={formError} onDismiss={() => setFormError(null)} />}
           <form onSubmit={handleSubmit} className="space-y-4">
             <FormInput
-              label="Nome"
-              value={nome}
-              onChange={setNome}
-              placeholder="Ex: João Silva"
-            />
-            <FormInput
-              label="Email"
-              type="email"
-              value={email}
-              onChange={setEmail}
-              placeholder="joao.silva@gmail.com"
-s           />
-            <FormInput
-              label="Instrumento"
-              value={instrumento}
-              onChange={setInstrumento}
-              placeholder="Ex: Guitarra, Vocal"
-            />
-            <div className="flex flex-col sm:flex-row sm:gap-2">
-              <button
-                type="submit"
-                disabled={saving}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 disabled:opacity-50"
-              >
-                {/* Texto dinâmico */}
-                {saving ? 'Salvando...' : (musicoParaEditar ? 'Atualizar Músico' : 'Salvar Músico')}
-              </button>
-              
-              {/* NOVO: Botão Cancelar */}
-              {musicoParaEditar && (
-                <button
-                  type="button"
-                  onClick={() => setMusicoParaEditar(null)}
-                  className="w-full sm:w-auto bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-300 mt-2 sm:mt-0"
-s             >
-                  Cancelar
-                </button>
-              )}
-            </div>
-          </form>
-        </div>
-      </div>
+            	label="Nome"
+            	value={nome}
+            	onChange={setNome}
+            	placeholder="Ex: João Silva"
+          	/>
+          	<FormInput
+            	label="Email"
+            	type="email"
+            	value={email}
+            	onChange={setEmail}
+            	placeholder="joao.silva@gmail.com"
+          	/>
+          	<FormInput
+            	label="Instrumento"
+            	value={instrumento}
+            	onChange={setInstrumento}
+            	placeholder="Ex: Guitarra, Vocal"
+          	/>
+          	<div className="flex flex-col sm:flex-row sm:gap-2">
+            	<button
+              	type="submit"
+              	disabled={saving}
+              	className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 disabled:opacity-50"
+t         	>
+              	{/* Texto dinâmico */}
+              	{saving ? 'Salvando...' : (musicoParaEditar ? 'Atualizar Músico' : 'Salvar Músico')}
+            	</button>
+            	
+            	{/* NOVO: Botão Cancelar */}
+            	{musicoParaEditar && (
+              	<button
+                	type="button"
+                	onClick={() => setMusicoParaEditar(null)}
+                	className="w-full sm:w-auto bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-300 mt-2 sm:mt-0"
+              	>
+                	Cancelar
+              	</button>
+            	)}
+          	</div>
+        	</form>
+      	</div>
+    	</div>
 
-      {/* Coluna 2: Lista (com padding menor no celular) */}
-      <div className="lg:col-span-2">
-        <div className="bg-white rounded-lg shadow-xl p-4 sm:p-6">
-          <h3 className="text-2xl font-bold text-gray-900 mb-4">
-            Músicos Cadastrados
-          </h3>
-          {loading && <p>Carregando músicos...</p>}
-s       {!loading && musicos.length === 0 && (
-            <p className="text-gray-600">Nenhum músico cadastrado ainda.</p>
-          )}
-          {!loading && musicos.length > 0 && (
-            <ul className="divide-y divide-gray-200">
-              {musicos.map(musico => (
-                <li key={musico.id} className="py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
-                  
-                  {/* **********************************
-                    ATUALIZAÇÃO (Passo 36)
-                    Adicionado Avatar e flex layout
-                    **********************************
-                  */}
-                  <div className="mb-2 sm:mb-0 flex items-center">
-                    <Avatar name={musico.nome} />
-                    <div className="ml-3">
-                      <p className="text-lg font-medium text-gray-900">{musico.nome}</p>
-                      <p className="text-sm text-gray-600">{musico.instrumento}</p>
-s                     <p className="text-sm text-gray-500">{musico.email}</p>
-                    </div>
-                  </div>
-                  
-                  {/* NOVO: Container de botões de ícone */}
-s               <div className="flex flex-shrink-0 ml-2 w-full sm:w-auto">
-                    <button
-                      onClick={() => setMusicoParaEditar(musico)}
-                      className="w-1/2 sm:w-auto bg-blue-100 hover:bg-blue-200 text-blue-700 p-2 rounded-lg text-sm transition duration-300"
-                      title="Editar Músico"
-                    >
-  s                   <svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg>
-                    </button>
-                    <button
-                      onClick={() => handleDelete(musico.id)}
-                      className="w-1/2 sm:w-auto bg-red-100 hover:bg-red-200 text-red-700 p-2 ml-2 rounded-lg text-sm transition duration-300"
-                      title="Deletar Músico"
-                  D >
-                      <svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-A   </div>
-    </div>
+    	{/* Coluna 2: Lista (com padding menor no celular) */}
+    	<div className="lg:col-span-2">
+      	<div className="bg-white rounded-lg shadow-xl p-4 sm:p-6">
+        	<h3 className="text-2xl font-bold text-gray-900 mb-4">
+          	Músicos Cadastrados
+        	</h3>
+        	{loading && <p>Carregando músicos...</p>}
+      		{!loading && musicos.length === 0 && (
+          	<p className="text-gray-600">Nenhum músico cadastrado ainda.</p>
+        	)}
+        	{!loading && musicos.length > 0 && (
+          	<ul className="divide-y divide-gray-200">
+            	{musicos.map(musico => (
+              	<li key={musico.id} className="py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                	
+                	{/* **********************************
+                  	ATUALIZAÇÃO (Passo 36)
+                  	Adicionado Avatar e flex layout
+                  	**********************************
+                	*/}
+                	<div className="mb-2 sm:mb-0 flex items-center">
+                  	<Avatar name={musico.nome} />
+                  	<div className="ml-3">
+                    	<p className="text-lg font-medium text-gray-900">{musico.nome}</p>
+                    	<p className="text-sm text-gray-600">{musico.instrumento}</p>
+                    	<p className="text-sm text-gray-500">{musico.email}</p>
+                  	</div>
+                	</div>
+                	
+                	{/* NOVO: Container de botões de ícone */}
+              		<div className="flex flex-shrink-0 ml-2 w-full sm:w-auto">
+                		<button
+                  		onClick={() => setMusicoParaEditar(musico)}
+                  		className="w-1/2 sm:w-auto bg-blue-100 hover:bg-blue-200 text-blue-700 p-2 rounded-lg text-sm transition duration-300"
+                  		title="Editar Músico"
+                		>
+                  		<svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg>
+                		</button>
+                		<button
+                  		onClick={() => handleDelete(musico.id)}
+                  		className="w-1/2 sm:w-auto bg-red-100 hover:bg-red-200 text-red-700 p-2 ml-2 rounded-lg text-sm transition duration-300"
+                  		title="Deletar Músico"
+                		>
+                  		<svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                		</button>
+              		</div>
+              	</li>
+            	))}
+          	</ul>
+        	)}
+      		</div>
+    	</div>
+  	</div>
   );
 };
 
@@ -1421,7 +1421,7 @@ const FormInput = ({ label, type = 'text', value, onChange, placeholder, inputMo
     <input
       type={type}
       inputMode={inputMode} // Adicionado para teclado numérico
-S     value={value}
+      value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -1435,29 +1435,29 @@ const FormSelect = ({ label, value, onChange, options }) => (
     <label className="block text-sm font-medium text-gray-700 mb-1">
       {label}
     </label>
-    <select
-      value={value}
-s     onChange={(e) => onChange(e.target.value)}
-      className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-    >
-      {options.map(option => (
-        <option key={option} value={option}>{option}</option>
-      ))}
-    </select>
+  	<select
+    	value={value}
+    	onChange={(e) => onChange(e.target.value)}
+    	className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+  	>
+    	{options.map(option => (
+      	<option key={option} value={option}>{option}</option>
+    	))}
+  	</select>
   </div>
 );
 
 // Componente reusável para Botão de Aba (Idêntico)
 const TabButton = ({ label, isActive, onClick }) => (
-s   <button
+  <button
     onClick={onClick}
     className={`py-3 px-4 font-medium text-sm rounded-t-lg transition-colors duration-200
-      ${isActive
-        ? 'bg-white border-b-2 border-blue-600 text-blue-600'
-        // Correção de bug visual: Corrigido o hover da aba inativa
-        : 'text-gray-500 hover:text-gray-700 border-b-2 border-transparent hover:border-gray-300'
-d     }
-    `}
+    	${isActive
+      	? 'bg-white border-b-2 border-blue-600 text-blue-600'
+      	// Correção de bug visual: Corrigido o hover da aba inativa
+      	: 'text-gray-500 hover:text-gray-700 border-b-2 border-transparent hover:border-gray-300'
+    	}
+  	`}
   >
     {label}
   </button>
@@ -1466,15 +1466,15 @@ d     }
 // Componente reusável para Mensagem de Erro (Idêntico)
 const ErrorMessage = ({ message, onDismiss }) => (
   <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded-lg flex justify-between items-center">
-    <div>
-      <p className="font-bold">Erro</p>
-A     <p>{message}</p>
+  	<div>
+    	<p className="font-bold">Erro</p>
+    	<p>{message}</p>
   	</div>
-    {onDismiss && (
-      <button onClick={onDismiss} className="text-red-700 font-bold ml-4">
-        &times;
-      </button>
-    )}
+  	{onDismiss && (
+    	<button onClick={onDismiss} className="text-red-700 font-bold ml-4">
+      	&times;
+    	</button>
+  	)}
   </div>
 );
 
@@ -1484,13 +1484,13 @@ const InfoItem = ({ label, value, children }) => (
     <label className="block text-sm font-medium text-gray-500">
       {label}
     </label>
-    {children ? (
-      <div className="mt-1">{children}</div>
-    ) : (
-s     <p className="text-lg font-semibold text-gray-900">
-        {value}
-      </p>
-    )}
+  	{children ? (
+    	<div className="mt-1">{children}</div>
+  	) : (
+    	<p className="text-lg font-semibold text-gray-900">
+      	{value}
+    	</p>
+  	)}
   </div>
 );
 
@@ -1498,13 +1498,13 @@ s     <p className="text-lg font-semibold text-gray-900">
 const StatusBadge = ({ status }) => (
   <span
     className={`px-2 py-0.5 rounded-full text-xs font-semibold
-      ${status === 'Confirmado'
-        ? 'bg-green-100 text-green-800'
-        : 'bg-yellow-100 text-yellow-800'
-      }
-    `}
+    	${status === 'Confirmado'
+      	? 'bg-green-100 text-green-800'
+      	: 'bg-yellow-100 text-yellow-800'
+    	}
+  	`}
   >
-sv   {status}
+  	{status}
   </span>
 );
 
@@ -1516,33 +1516,33 @@ const getInitials = (name = '') => {
   if (names.length === 0) return '?';
   // Pega a primeira letra do primeiro nome
   const first = names[0][0];
-s   // Pega a primeira letra do último nome (se houver mais de 1 nome)
+  // Pega a primeira letra do último nome (se houver mais de 1 nome)
   const last = names.length > 1 ? names[names.length - 1][0] : '';
   return `${first}${last}`.toUpperCase();
 };
 
 // Gera uma cor consistente baseada no nome
 const Avatar = ({ name }) => {
-i   const initials = getInitials(name);
+  const initials = getInitials(name);
   const colors = [
-    'bg-red-200 text-red-800',
-    'bg-blue-200 text-blue-800',
-    'bg-green-200 text-green-800',
-    'bg-yellow-200 text-yellow-800',
-s   'bg-purple-200 text-purple-800',
-    'bg-pink-200 text-pink-800',
-    'bg-indigo-200 text-indigo-800',
+  	'bg-red-200 text-red-800',
+  	'bg-blue-200 text-blue-800',
+  	'bg-green-200 text-green-800',
+  	'bg-yellow-200 text-yellow-800',
+  	'bg-purple-200 text-purple-800',
+  	'bg-pink-200 text-pink-800',
+  	'bg-indigo-200 text-indigo-800',
   ];
   // Cria um hash simples para pegar uma cor consistente
   const charCodeSum = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
   const color = colors[charCodeSum % colors.length];
 
   return (
-    <div
-      className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center font-bold ${color}`}
-s   >
-      {initials}
-    </div>
+  	<div
+    	className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center font-bold ${color}`}
+  	>
+    	{initials}
+  	</div>
   );
 };
 
