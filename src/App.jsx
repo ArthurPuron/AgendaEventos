@@ -568,16 +568,17 @@ function App() {
 
   // --- Componente: Aba de Eventos (ADMIN) ---
   const renderEventosPage = () => (
-    <div className="bg-[--color-bg-card] rounded-lg shadow-xl p-4 sm:p-8"> {/* MUDANÇA: bg-white -> bg-card */}
+    <div> {/* MUDANÇA: Removido o bg-[--color-bg-card], p-4, etc. deste container */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6">
-        <h2 className="text-2xl sm:text-3xl font-bold text-[--color-text-light] mb-4 sm:mb-0"> {/* MUDANÇA: text-gray-900 -> text-light */}
-          Eventos
-      	</h2>
+        
+        {/* MUDANÇA: Título <h2>Eventos</h2> foi REMOVIDO daqui */}
+        
         <button
           onClick={() => setShowAddModal(true)}
-          className="w-full sm:w-auto bg-transparent hover:bg-[--color-accent-primary]/10 border border-[--color-accent-secondary] text-[--color-accent-secondary] font-bold py-2 px-4 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1" /* MUDANÇA: bg-green-600 -> Botão Fantasma */
+          /* MUDANÇA: Botão atualizado para o estilo preenchido, como solicitado no texto */
+          className="w-full sm:w-auto bg-[--color-accent-primary] hover:opacity-90 text-[--color-text-dark] font-bold py-2 px-4 rounded-lg shadow-md transition duration-300"
       	>
-          [+] Novo Evento
+          + Novo Evento
       	</button>
     	</div>
 
@@ -586,30 +587,36 @@ function App() {
         <p className="text-[--color-text-medium]">Nenhum evento cadastrado ainda.</p> /* MUDANÇA: text-gray-600 -> text-medium */
       )}
       {!loadingEventos && eventos.length > 0 && (
-        <ul className="divide-y divide-[--color-border]"> {/* MUDANÇA: divide-gray-200 -> divide-border */}
+        /* MUDANÇA: de 'divide-y' para 'space-y-4' para espaçar os cards */
+        <ul className="space-y-4"> 
           {eventos.map(evento => (
-            <li key={evento.id}>
+            /* MUDANÇA: Estilos do card aplicados diretamente ao LI */
+            <li 
+              key={evento.id}
+              className="bg-[--color-bg-card] rounded-lg shadow-lg p-4 transition-all hover:bg-[--color-border]/30"
+              onClick={() => setSelectedEvento(evento)}
+            >
               <div
-                className="py-4 flex justify-between items-center w-full text-left hover:bg-[--color-bg-main] rounded-lg cursor-pointer px-2" /* MUDANÇA: hover:bg-gray-50 -> hover:bg-main */
-                onClick={() => setSelectedEvento(evento)}
+                /* MUDANÇA: Removido padding, hover, etc. do div interno */
+                className="flex justify-between items-center w-full text-left cursor-pointer"
               >
                 {/* Informações do Evento */}
                 <div>
-                  <p className="text-lg font-medium text-[--color-text-light]">{evento.nome}</p> {/* MUDANÇA: text-gray-900 -> text-light */}
-                  <p className="text-sm text-[--color-text-medium]">{evento.cidade} - <StatusBadge status={evento.status} /></p> {/* MUDANÇA: text-gray-600 -> text-medium */}
-                  <p className="text-sm text-[--color-text-medium]"> {/* MUDANÇA: text-gray-500 -> text-medium */}
+                  <p className="text-lg font-medium text-[--color-text-light]">{evento.nome}</p>
+                  <p className="text-sm text-[--color-text-medium]">{evento.cidade} - <StatusBadge status={evento.status} /></p>
+                  <p className="text-sm text-[--color-text-medium]">
                     {formatDisplayDate(evento.dataInicio, evento.dataFim)}
                   </p>
                 </div>
                 
-                {/* Container para os botões de ação */}
+                {/* Container para os botões de ação (permanece igual) */}
                 <div className="flex flex-shrink-0 ml-2">
                   <button
                     onClick={(e) => {
                       e.stopPropagation(); 
                       setEventoParaEditar(evento);
                     }}
-                    className="hover:bg-[--color-border] text-[--color-text-medium] hover:text-[--color-text-light] p-2 rounded-full text-sm transition duration-300" /* MUDANÇA: bg-blue-100 -> Botão Transparente */
+                    className="hover:bg-[--color-border] text-[--color-text-medium] hover:text-[--color-text-light] p-2 rounded-full text-sm transition duration-300"
                     title="Editar evento"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg>
@@ -620,7 +627,7 @@ function App() {
                       e.stopPropagation();
                       handleDeleteEvento(evento.id);
                     }}
-                    className="hover:bg-[--color-border] text-[--color-text-medium] hover:text-[--color-text-light] p-2 ml-2 rounded-full text-sm transition duration-300" /* MUDANÇA: bg-red-100 -> Botão Transparente */
+                    className="hover:bg-[--color-border] text-[--color-text-medium] hover:text-[--color-text-light] p-2 ml-2 rounded-full text-sm transition duration-300"
                     title="Deletar evento do app"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
