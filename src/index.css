@@ -31,13 +31,22 @@ a:hover {
 }
 
 /* * ATUALIZAÇÃO: Cor do body
- * Também corrigida para bater com o :root
+ * Aplicando o degradê de fundo
  */
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background-color: #162A3A; /* ATUALIZAÇÃO: Azul Marinho (Principal) */
+  
+  /* 1. Cor sólida (para navegadores que não suportam degradê) */
+  background-color: #162A3A; 
+  
+  /* 2. O degradê (de cima para baixo) */
+  background-image: linear-gradient(to bottom, #162A3A, #2A3E4D);
+  
+  /* 3. Garantias para o fundo ficar perfeito */
+  background-attachment: fixed; /* O fundo não rola com a página */
+  background-repeat: no-repeat; /* Não repetir o degradê */
 }
 
 h1 {
