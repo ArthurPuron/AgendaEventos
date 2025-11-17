@@ -516,7 +516,7 @@ function App() {
                       setEventoParaEditar(evento);
                     }}
                     className="bg-blue-100 hover:bg-blue-200 text-blue-700 p-2 rounded-full text-sm transition duration-300"
-                    title="Editar evento"
+                  	title="Editar evento"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg>
                   </button>
@@ -590,7 +590,7 @@ function App() {
         	{globalError && <ErrorMessage message={globalError} />}
         	<button
           	onClick={handleAuthClick}
-section         	className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1"
+        	className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1"
         	>
           	Fazer Login com Google
         	</button>
@@ -707,7 +707,7 @@ const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
                     <li key={musico.id} className="py-3 flex justify-between items-center">
                       <div>
                         <p className="font-medium text-gray-900">{musico.nome}</p>
-line                   <p className="text-sm text-gray-500">{musico.instrumento}</p>
+                    	<p className="text-sm text-gray-500">{musico.instrumento}</p>
                       </div>
                       {isAdmin && (
                         <p className="text-gray-700 font-semibold">
@@ -728,7 +728,7 @@ line                   <p className="text-sm text-gray-500">{musico.ins
         	type="button"
         	onClick={onClose}
   	    	className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300"
-      	>
+section     >
         	Fechar
       	</button>
     	</div>
@@ -813,11 +813,11 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
             eventId: eventoParaEditar.googleEventId,
             resource: eventoParaGoogle,
           	sendUpdates: 'all'
-          });
-          await setDoc(eventoRef, {
-section           ...eventoParaFirestore,
+    	    });
+        	await setDoc(eventoRef, {
+          	...eventoParaFirestore,
           	googleEventId: eventoParaEditar.googleEventId
-          });
+        	});
         } else {
           console.warn("Evento antigo sem googleEventId. Criando novo evento no Google Calendar...");
           const googleResponse = await gapiClient.client.calendar.events.insert({
@@ -837,7 +837,7 @@ section           ...eventoParaFirestore,
           calendarId: 'primary',
           resource: eventoParaGoogle,
           sendNotifications: true,
-        });
+section     });
         const googleEventId = googleResponse.result.id;
         await updateDoc(docRef, { googleEventId: googleEventId });
       }
@@ -865,7 +865,7 @@ section           ...eventoParaFirestore,
     setSelectedMusicos(prev =>
       prev.includes(musicoId)
         ? prev.filter(id => id !== musicoId)
-        : [...prev, musicoId]
+A       : [...prev, musicoId]
     );
   };
   
@@ -943,7 +943,7 @@ section           ...eventoParaFirestore,
           	/>
           	<FormInput
             	label="Valor do Evento (R$)"
-button           	type="text"
+            	type="text"
             	inputMode="numeric"
             	value={valorEvento}
   	        	onChange={setValorEvento}
@@ -971,10 +971,10 @@ button           	type="text"
                     	{musico.nome} <span className="text-gray-500 text-sm">({musico.instrumento})</span>
                   	</span>
                   	{selectedMusicos.includes(musico.id) && (
-                    	<div className="ml-auto flex items-center pl-2">
+s               	<div className="ml-auto flex items-center pl-2">
                       	<span className="text-sm text-gray-600 mr-1">R$</span>
                       	<input
-                t       	type="text"
+                        	type="text"
                         	inputMode="numeric"
                         	placeholder="Cachet"
                         	className="w-24 p-1 border border-gray-300 rounded-md shadow-sm text-sm"
@@ -1002,7 +1002,7 @@ button           	type="text"
           	type="submit"
           	disabled={saving}
           	className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 disabled:opacity-50"
-        	>
+Methods     >
           	{saving ? 'Salvando...' : (isEditMode ? 'Atualizar Evento' : 'Salvar Evento')}
         	</button>
       	</div>
@@ -1040,7 +1040,7 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
     e.preventDefault();
     if (!nome || !email || !instrumento) {
       setFormError("Por favor, preencha todos os campos.");
-      return;
+s     return;
     }
     if (!collectionPath) {
       setError("Erro de conexão (User ID nulo).");
@@ -1097,7 +1097,7 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
     	try {
       	await deleteDoc(doc(db, collectionPath, musicoId));
       	Swal.fire('Deletado!','O músico foi removido da sua lista.','success');
-    	} catch (e) {
+  	} catch (e) {
       	console.error("[Firestore] Erro ao deletar músico:", e);
       	setError("Não foi possível deletar o músico.");
       	Swal.fire('Erro!','Não foi possível deletar o músico.','error');
@@ -1108,96 +1108,96 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
   return (
   	<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
     	{/* ... (código idêntico) ... */}
-    	<div className="lg:col-span-1">
-      	<div className="bg-white rounded-lg shadow-xl p-4 sm:p-6">
-        	<h3 className="text-2xl font-bold text-gray-900 mb-4">
-          	{musicoParaEditar ? 'Editar Músico' : 'Adicionar Músico'}
-        	</h3>
-        	{formError && <ErrorMessage message={formError} onDismiss={() => setFormError(null)} />}
-        	<form onSubmit={handleSubmit} className="space-y-4">
-          	<FormInput
-            	label="Nome"
-            	value={nome}
-            	onChange={setNome}
+  	  <div className="lg:col-span-1">
+    		<div className="bg-white rounded-lg shadow-xl p-4 sm:p-6">
+      		<h3 className="text-2xl font-bold text-gray-900 mb-4">
+        		{musicoParaEditar ? 'Editar Músico' : 'Adicionar Músico'}
+      		</h3>
+      		{formError && <ErrorMessage message={formError} onDismiss={() => setFormError(null)} />}
+      		<form onSubmit={handleSubmit} className="space-y-4">
+        		<FormInput
+          		label="Nome"
+          		value={nome}
+          		onChange={setNome}
   	        	placeholder="Ex: João Silva"
-          	/>
-          	<FormInput
-            	label="Email"
-            	type="email"
-            	value={email}
+        		/>
+        		<FormInput
+          		label="Email"
+          		type="email"
+          		value={email}
   	        	onChange={setEmail}
-            	placeholder="joao.silva@gmail.com"
-          	/>
-          	<FormInput
+          		placeholder="joao.silva@gmail.com"
+        		/>
+        		<FormInput
   	        	label="Instrumento"
-            	value={instrumento}
-            	onChange={setInstrumento}
-          	placeholder="Ex: Guitarra, Vocal"
-        	/>
-        	<div className="flex flex-col sm:flex-row sm:gap-2">
-          	<button
-            	type="submit"
-            	disabled={saving}
-            	className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 disabled:opacity-50"
-          	>
-            	{saving ? 'Salvando...' : (musicoParaEditar ? 'Atualizar Músico' : 'Salvar Músico')}
-          	</button>
-          	{musicoParaEditar && (
-            	<button
-              	type="button"
-  	          	onClick={() => setMusicoParaEditar(null)}
-              	className="w-full sm:w-auto bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-300 mt-2 sm:mt-0"
-            	>
-  	          	Cancelar
-            	</button>
-          	)}
-        	</div>
-      	</form>
-    	</div>
-  	</div>
-  	<div className="lg:col-span-2">
-    	<div className="bg-white rounded-lg shadow-xl p-4 sm:p-6">
-      	<h3 className="text-2xl font-bold text-gray-900 mb-4">
-        	Músicos Cadastrados
-      	</h3>
-      	{loading && <p>Carregando músicos...</p>}
-      	{!loading && musicos.length === 0 && (
-        	<p className="text-gray-600">Nenhum músico cadastrado ainda.</p>
-      	)}
-      	{!loading && musicos.length > 0 && (
-        	<ul className="divide-y divide-gray-200">
-          	{musicos.map(musico => (
-            	<li key={musico.id} className="py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
-              	<div className="mb-2 sm:mb-0 flex items-center">
-                	<Avatar name={musico.nome} />
-                	<div className="ml-3">
-                  	<p className="text-lg font-medium text-gray-900">{musico.nome}</p>
-                  	<p className="text-sm text-gray-600">{musico.instrumento}</p>
-  	            	<p className="text-sm text-gray-500">{musico.email}</p>
-              	</div>
-            	</div>
-            	<div className="flex flex-shrink-0 ml-2 w-full sm:w-auto">
-              	<button
-                	onClick={() => setMusicoParaEditar(musico)}
-                	className="w-1/2 sm:w-auto bg-blue-100 hover:bg-blue-200 text-blue-700 p-2 rounded-lg text-sm transition duration-300"
-  	          		title="Editar Músico"
-              	>
-                	<svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg>
-              	</button>
-              	<button
-                	onClick={() => handleDelete(musico.id)}
-                	className="w-1/2 sm:w-auto bg-red-100 hover:bg-red-200 text-red-700 p-2 ml-2 rounded-lg text-sm transition duration-300"
-                	title="Deletar Músico"
-              	>
-  	          		<svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-              	</button>
-            	</div>
-          	</li>
-        	))}
-        	</ul>
-    	)}
-    	</div>
-  	</div>
+          		value={instrumento}
+          		onChange={setInstrumento}
+        		placeholder="Ex: Guitarra, Vocal"
+      		/>
+      		<div className="flex flex-col sm:flex-row sm:gap-2">
+        		<button
+          		type="submit"
+          		disabled={saving}
+          		className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 disabled:opacity-50"
+        		>
+          		{saving ? 'Salvando...' : (musicoParaEditar ? 'Atualizar Músico' : 'Salvar Músico')}
+        		</button>
+        		{musicoParaEditar && (
+          		<button
+            		type="button"
+  	        		onClick={() => setMusicoParaEditar(null)}
+            		className="w-full sm:w-auto bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-300 mt-2 sm:mt-0"
+  	        	>
+  	  	      	Cancelar
+          		</button>
+        		)}
+      		</div>
+    		</form>
+    		</div>
+  		</div>
+  		<div className="lg:col-span-2">
+    		<div className="bg-white rounded-lg shadow-xl p-4 sm:p-6">
+      		<h3 className="text-2xl font-bold text-gray-900 mb-4">
+        		Músicos Cadastrados
+      		</h3>
+      		{loading && <p>Carregando músicos...</p>}
+    			{!loading && musicos.length === 0 && (
+        		<p className="text-gray-600">Nenhum músico cadastrado ainda.</p>
+  	  		)}
+    		{!loading && musicos.length > 0 && (
+      		<ul className="divide-y divide-gray-200">
+        		{musicos.map(musico => (
+          		<li key={musico.id} className="py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+            		<div className="mb-2 sm:mb-0 flex items-center">
+              		<Avatar name={musico.nome} />
+              		<div className="ml-3">
+                		<p className="text-lg font-medium text-gray-900">{musico.nome}</p>
+                		<p className="text-sm text-gray-600">{musico.instrumento}</p>
+  	          		<p className="text-sm text-gray-500">{musico.email}</p>
+            		</div>
+          		</div>
+          		<div className="flex flex-shrink-0 ml-2 w-full sm:w-auto">
+            		<button
+              		onClick={() => setMusicoParaEditar(musico)}
+              		className="w-1/2 sm:w-auto bg-blue-100 hover:bg-blue-200 text-blue-700 p-2 rounded-lg text-sm transition duration-300"
+  	        			title="Editar Músico"
+            		>
+  	        			<svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg>
+            		</button>
+            		<button
+              		onClick={() => handleDelete(musico.id)}
+              		className="w-1/2 sm:w-auto bg-red-100 hover:bg-red-200 text-red-700 p-2 ml-2 rounded-lg text-sm transition duration-300"
+              		title="Deletar Músico"
+            		>
+  	        			<svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            		</button>
+          		</div>
+        		</li>
+      		))}
+    		</ul>
+  		)}
+  		</div>
+  		</div>
   	</div>
   );
 };
@@ -1228,7 +1228,7 @@ const FormSelect = ({ label, value, onChange, options }) => (
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+section       className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
   	>
     	{options.map(option => (
       	<option key={option} value={option}>{option}</option>
@@ -1271,7 +1271,7 @@ const InfoItem = ({ label, value, children }) => (
   // ... (código idêntico)
   <div>
     <label className="block text-sm font-medium text-gray-500">
-      {label}
+s     {label}
     </label>
   	{children ? (
     	<div className="mt-1">{children}</div>
@@ -1287,7 +1287,7 @@ const StatusBadge = ({ status }) => (
   // ... (código idêntico)
   <span
     className={`px-2 py-0.5 rounded-full text-xs font-semibold
-    	${status === 'Confirmado'
+s   	${status === 'Confirmado'
       	? 'bg-green-100 text-green-800'
       	: 'bg-yellow-100 text-yellow-800'
     	}
@@ -1312,7 +1312,7 @@ const getInitials = (name = '') => {
   if (names.length === 0) return '?';
   // Pega a primeira letra do primeiro nome
   const first = names[0][0];
-  // Pega a primeira letra do último nome (se houver mais de 1 nome)
+s   // Pega a primeira letra do último nome (se houver mais de 1 nome)
   const last = names.length > 1 ? names[names.length - 1][0] : '';
   return `${first}${last}`.toUpperCase();
 };
@@ -1325,7 +1325,7 @@ const Avatar = ({ name }) => {
   	'bg-blue-200 text-blue-800',
   	'bg-green-200 text-green-800',
   	'bg-yellow-200 text-yellow-800',
-  	'bg-purple-200 text-purple-800',
+s 	'bg-purple-200 text-purple-800',
   	'bg-pink-200 text-pink-800',
   	'bg-indigo-200 text-indigo-800',
   ];
@@ -1337,7 +1337,7 @@ const Avatar = ({ name }) => {
   	<div
     	className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center font-bold ${color}`}
   	>
-    	{initials}
+s   	{initials}
   	</div>
   );
 };
