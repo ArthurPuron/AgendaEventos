@@ -160,22 +160,24 @@ function App() {
   // 2. Observador de Autenticação (A SOLUÇÃO DE PERSISTÊNCIA)
   // (Idêntico ao anterior, 100% funcional)
   // **********************************************************
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        // --- CASO 1: Usuário ESTÁ logado ---
-        console.log("onAuthStateChanged: Usuário encontrado.", user.uid);
-        setUserId(user.uid);
-        setUserProfile({
-          name: user.displayName,
-          email: user.email,
-          picture: user.photoURL,
-        });
+ // Observador de Autenticação
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        console.log("onAuthStateChanged: Usuário encontrado.", user.uid);
+        setUserId(user.uid);
+        setUserProfile({
+          name: user.displayName,
+          email: user.email,
+          picture: user.photoURL,
+        });
 
-       if (user.uid === ADMIN_UID) {
+        if (user.uid === ADMIN_UID) {
           setUserRole('admin');
           console.log("Status de Acesso: ADMIN");
           const storedToken = localStorage.getItem('gapi_access_token');
+          
+          // SE tiver token salvo, NÃO para o loading aqui (espera o initializeGapi)
           if (storedToken) {
             const scriptGapi = document.createElement('script');
             scriptGapi.src = 'https://apis.google.com/js/api.js';
@@ -183,36 +185,36 @@ function App() {
             scriptGapi.defer = true;
             scriptGapi.onload = () => initializeGapi(storedToken);
             document.body.appendChild(scriptGapi);
+          } else {
+            // Se NÃO tiver token, pode parar o loading
+            setAuthLoading(false);
           }
         } else {
-          setUserRole('musician');
-          console.log("Status de Acesso: MÚSICO");
-      	}
-        
-      	setIsDbReady(true);
-      	setGlobalError(null);
+          setUserRole('musician');
+          console.log("Status de Acesso: MÚSICO");
+          setAuthLoading(false);
+        }
+        
+        setIsDbReady(true);
+        setGlobalError(null);
 
-      } else {
-      	// --- CASO 2: Usuário NÃO está logado (ou deslogou) ---
-      	console.log("onAuthStateChanged: Usuário nulo.");
-      	setUserId(null);
-      	setUserProfile(null);
-      	setIsDbReady(false);
-      	setUserRole(null);
-      	setIsCalendarReady(false);
-      	setGapiClient(null);
-      	setGlobalError(null);
-      	setMusicos([]);
-      	setEventos([]);
-      }
-      
-    	// --- Finalmente: Avisa o App que a verificação terminou ---
-    	setAuthLoading(false);
-  	});
+      } else {
+        console.log("onAuthStateChanged: Usuário nulo.");
+        setUserId(null);
+        setUserProfile(null);
+        setIsDbReady(false);
+        setUserRole(null);
+        setIsCalendarReady(false);
+        setGapiClient(null);
+        setGlobalError(null);
+        setMusicos([]);
+        setEventos([]);
+        setAuthLoading(false);
+      }
+    });
 
-  	// Função de limpeza do useEffect
-  	return () => unsubscribe();
-  }, []); // O array vazio [] garante que isso rode SÓ UMA VEZ
+    return () => unsubscribe();
+  }, []);
 
 
   // 3. Carregamento de Músicos (Idêntico)
@@ -284,27 +286,28 @@ function App() {
   }, [isDbReady, userId, userRole, userProfile, isCalendarReady]);
 
   // --- Funções de Inicialização GAPI (Idêntico) ---
-  const initializeGapi = (accessToken) => {
-  	// ... (código idêntico)
-    window.gapi.load('client', () => {
-      window.gapi.client
-        .init({
-          discoveryDocs: [
-            'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest',
-          ],
-        })
-        .then(() => {
-          window.gapi.client.setToken({ access_token: accessToken });
-          setGapiClient(window.gapi);
-          setIsCalendarReady(true);
-          console.log("GAPI client inicializado E autorizado.");
-        })
-        .catch((e) => {
-          console.error('Erro ao inicializar GAPI client:', e);
-          setGlobalError('Erro ao inicializar GAPI client.');
-        });
-    });
-  };
+ const initializeGapi = (accessToken) => {
+    window.gapi.load('client', () => {
+      window.gapi.client
+        .init({
+          discoveryDocs: [
+            'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest',
+          ],
+        })
+        .then(() => {
+          window.gapi.client.setToken({ access_token: accessToken });
+          setGapiClient(window.gapi);
+          setIsCalendarReady(true);
+          console.log("GAPI client inicializado E autorizado.");
+          setAuthLoading(false);
+        })
+        .catch((e) => {
+          console.error('Erro ao inicializar GAPI client:', e);
+          setGlobalError('Erro ao inicializar GAPI client.');
+          setAuthLoading(false);
+        });
+    });
+  };
 
   // --- Funções de Autenticação Google (Idêntico e simplificado) ---
   const handleAuthClick = async () => {
