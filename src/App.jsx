@@ -636,7 +636,7 @@ const renderEventosPage = () => (
   // Tela Principal (Logado e Autorizado)
   // (Só chega aqui se authLoading = false E userProfile = true)
   return (
-<div className="min-h-screen bg-[#162A3A] text-[#F5F0ED] font-sans">
+<div className="min-h-screen bg-transparent text-[#F5F0ED] font-sans">
 	{renderHeader()}
     	
     	<main className="py-6 px-4 sm:px-6 lg:px-8">
