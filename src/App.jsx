@@ -483,14 +483,11 @@ const renderHeader = () => (
 
 // --- Componente: Aba de Eventos (ADMIN) ---
 const renderEventosPage = () => (
-    // ATUALIZAÇÃO: Removemos o 'div' com 'bg-gray-800', 'rounded-lg', 'shadow-xl', 'p-4', 'sm:p-8'
-    // Este 'div' agora é apenas um container lógico, sem fundo ou painel.
     <div>
       <div className="mb-6">
         <button
           onClick={() => setShowAddModal(true)}
-          // ATUALIZAÇÃO: Cor de fundo para Rose Gold
-          className="w-auto bg-[#C9A798] hover:opacity-90 text-black font-bold py-2 px-6 rounded-lg shadow-lg transition duration-300"
+          className="w-auto bg-[#C9A798] hover:opacity-90 text-white font-bold py-2 px-6 rounded-lg shadow-lg transition duration-300"
       	>
           + Novo Evento
       	</button>
@@ -501,45 +498,37 @@ const renderEventosPage = () => (
       	<p className="text-gray-400">Nenhum evento cadastrado ainda.</p>
     	)}
     	{!loadingEventos && eventos.length > 0 && (
-      	// NOVO LAYOUT: Lista de cards em vez de "divide-y"
       	<ul className="space-y-4">
         	{eventos.map(evento => (
-          	// Card principal do evento
-          	// Card principal do evento
-
-
-			<li 
+          	<li 
             	key={evento.id}
-            	// ATUALIZAÇÃO: Fundo do Card para Azul-Sombra
-            	className="bg-[#2A3E4D] p-4 rounded-lg shadow-md cursor-pointer"
+            	className="bg-[#2A3E4D] p-4 rounded-lg shadow-md cursor-pointer flex justify-between items-start"
 				onClick={() => setSelectedEvento(evento)}
           	>
-            	{/* Seção 1: Informações (Nome, Cidade, Data) */}
-            	<div>
-              	{/* ATUALIZAÇÃO: Título para Branco-Gelo */}
+            	<div className="flex flex-col">
               	<p className="text-xl font-bold text-[#F5F0ED]">{evento.nome}</p>
-              	{/* ATUALIZAÇÃO: Subtítulos para Cinza-Bege */}
               	<p className="text-sm text-[#A9B4BD]">{evento.cidade}</p>
-              	<p className="text-sm text-[#A9B4BD] mt-1">
-                	{formatDisplayDate(evento.dataInicio, evento.dataFim)}
-              	</p>
+              	
+                <div className="mt-4">
+                    <p className="text-base text-[#F5F0ED]">
+                        {new Date(evento.dataInicio).toLocaleDateString('pt-BR')}
+                    </p>
+                    <p className="text-base text-[#F5F0ED]">
+                        {new Date(evento.dataInicio).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} - {new Date(evento.dataFim).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                </div>
             	</div>
             	
-            	{/* Seção 2: Ações (Status, Editar, Deletar) */}
-            	{/* ATUALIZAÇÃO: Borda divisória para Azul Marinho (fundo) */}
-            	<div className="flex items-center justify-between mt-4 pt-4 border-t border-[#162A3A]">
-              	{/* Status (será atualizado no componente StatusBadge) */}
+            	<div className="flex flex-col items-end justify-between h-full min-h-[120px]">
               	<StatusBadge status={evento.status} />
               	
-              	{/* Botões de Ação */}
-              	<div className="flex flex-shrink-0 ml-2">
+              	<div className="flex mt-4">
                 	<button
                   	onClick={(e) => {
                     	e.stopPropagation(); 
                     	setEventoParaEditar(evento);
                   	}}
-                  	// ATUALIZAÇÃO: Ícone para Cinza-Bege, hover para Branco-Gelo
-                  	className="text-[#A9B4BD] hover:text-[#F5F0ED] p-2 rounded-full transition duration-300"
+                  	className="text-[#C9A798] hover:text-white p-2 rounded-full transition duration-300"
                   	title="Editar evento"
                 	>
                   	<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg>
@@ -548,10 +537,9 @@ const renderEventosPage = () => (
                 	<button
                   	onClick={(e) => {
                     	e.stopPropagation();
-        _eventos/ag(evento.id);
+                    	handleDeleteEvento(evento.id);
                   	}}
-                  	// ATUALIZAÇÃO: Ícone para Cinza-Bege
-                  	className="text-[#A9B4BD] hover:text-red-500 p-2 ml-2 rounded-full transition duration-300"
+                  	className="text-[#C9A798] hover:text-red-500 p-2 ml-2 rounded-full transition duration-300"
                   	title="Deletar evento do app"
                 	>
                   	<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
@@ -564,7 +552,6 @@ const renderEventosPage = () => (
     	)}
   	</div>
   );
-	
 	
   const renderMusicosPage = () => (
   	// ... (código idêntico)
@@ -1344,12 +1331,10 @@ import './App.css';
 // Componente Helper (NOVO ESTILO DARK)
 const StatusBadge = ({ status }) => (
   <span
-    className={`px-3 py-1 rounded-full text-xs font-bold
+    className={`px-3 py-2 rounded-lg text-xs font-bold
     	${status === 'Confirmado'
-      	// ATUALIZAÇÃO: Confirmado usa Rose Gold
-      	? 'bg-[#C9A798] text-black'
-      	// ATUALIZAÇÃO: A Confirmar usa Azul-Sombra e texto Cinza-Bege
-      	: 'bg-[#2A3E4D] text-[#A9B4BD]'
+      	? 'bg-[#C9A798] text-white'
+      	: 'bg-[#162A3A] text-white'
     	}
   	`}
   >
