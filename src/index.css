@@ -7,37 +7,37 @@
  * A cor de fundo foi corrigida para o tom mais claro de cinza-azulado
  */
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
 
-  color-scheme: dark; /* Força o tema escuro */
-  color: #F5F0ED; /* ATUALIZAÇÃO: Branco-Gelo (Texto Principal) */
-  background-color: #162A3A; /* ATUALIZAÇÃO: Azul Marinho (Principal) */
+  color-scheme: dark; /* Força o tema escuro */
+  color: #f3f4f6; /* text-gray-100 */
+  background-color: #1f2937; /* <-- ESTA É A COR CORRETA (bg-gray-800) */
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 a {
-  font-weight: 500;
-  color: #C9A798; /* ATUALIZAÇÃO: Rose Gold (Destaque) */
-  text-decoration: inherit;
+  font-weight: 500;
+  color: #d4b79b; /* Cor de destaque (bege) */
+  text-decoration: inherit;
 }
 a:hover {
-  color: #F5F0ED; /* ATUALIZAÇÃO: Hover para Branco-Gelo */
+  color: #e0c8b3;
 }
 
 /* * ATUALIZAÇÃO: Cor do body
- * Também corrigida para bater com o :root
- */
+ * Também corrigida para bater com o :root
+ */
 body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
-  background-color: #162A3A; /* ATUALIZAÇÃO: Azul Marinho (Principal) */
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: #1f2937; /* <-- ESTA É A COR CORRETA (bg-gray-800) */
 }
 
 h1 {
@@ -75,15 +75,16 @@ button {
 
 /* 2. Estilo do container principal */
 .loading-screen {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: fixed;
-  inset: 0;
-  background-color: #162A3A; /* ATUALIZAÇÃO: Azul Marinho (Principal) */
-  min-height: 100vh;
-  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  inset: 0;
+  background-color: #1f2937; /* Cor do novo dark mode */
+  min-height: 100vh;
+  z-index: 100;
 }
+
 /* 3. Container para empilhar as imagens */
 .loading-logo-container {
   position: relative;
