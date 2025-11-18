@@ -372,10 +372,10 @@ function App() {
 
 // --- Componente: Cabeçalho (com Abas) ---
 const renderHeader = () => (
-    <header className="bg-[#162A3A] shadow-md">
+    <header className="bg-[#162A3A] shadow-md pb-2">
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <h1 className="text-2xl font-bold text-[#F5F0ED]">
+          <h1 className="text-2xl font-bold text-[#C9A798]">
             Agenda de Músicos
           </h1>
           <div className="flex items-center">
@@ -384,7 +384,7 @@ const renderHeader = () => (
           	</span>
             {userProfile.picture ? (
               <img
-                className="h-10 w-10 rounded-full"
+                className="h-10 w-10 rounded-full object-cover border-2 border-[#C9A798] p-0.5"
                 src={userProfile.picture}
                 alt="Foto do Perfil"
               />
@@ -393,7 +393,7 @@ const renderHeader = () => (
             )}
             <button
               onClick={handleSignoutClick}
-              className="ml-4 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300"
+              className="ml-4 bg-[#C9A798] hover:opacity-90 text-white font-bold py-2 px-6 rounded-lg shadow-md transition duration-300"
           	>
               Sair
           	</button>
@@ -401,10 +401,8 @@ const renderHeader = () => (
       	</div>
     	</div>
     	
-    	{/* Abas com novo estilo dark */}
     	{userRole === 'admin' && (
-      	<nav className="bg-[#162A3A] border-t border-[#2A3E4D]">
-        	<div className="px-4 sm:px-6 lg:px-8 flex space-x-4">
+      	<nav className="bg-[#162A3A] px-4 sm:px-6 lg:px-8 flex space-x-6">
           	<TabButton
             	label="Eventos"
             	isActive={page === 'eventos'}
@@ -415,7 +413,6 @@ const renderHeader = () => (
             	isActive={page === 'musicos'}
             	onClick={() => setPage('musicos')}
           	/>
-        	</div>
       	</nav>
     	)}
   	</header>
@@ -1283,19 +1280,16 @@ const FormSelect = ({ label, value, onChange, options }) => (
 const TabButton = ({ label, isActive, onClick }) => (
   <button
     onClick={onClick}
-    className={`py-3 px-4 font-medium text-sm rounded-t-lg transition-colors duration-200
+    className={`pb-2 mr-2 font-medium text-sm transition-all duration-200 border-b-2
     	${isActive
-      	// ATUALIZAÇÃO: Borda Rose Gold e texto Branco-Gelo
-      	? 'border-b-2 border-[#C9A798] text-[#F5F0ED]'
-      	// ATUALIZAÇÃO: Texto Cinza-Bege e hover para Branco-Gelo
-      	: 'text-[#A9B4BD] hover:text-[#F5F0ED] border-b-2 border-transparent hover:border-gray-600'
+      	? 'border-[#C9A798] text-[#F5F0ED]'
+      	: 'text-[#A9B4BD] border-transparent hover:text-[#F5F0ED]'
     	}
   	`}
   >
     {label}
   </button>
 );
-
 const ErrorMessage = ({ message, onDismiss }) => (
   // ... (código idêntico)
   <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded-lg flex justify-between items-center">
@@ -1344,9 +1338,7 @@ const StatusBadge = ({ status }) => (
 // ATUALIZAÇÃO: Avatar usa a cor Rose Gold
 const Avatar = ({ name }) => {
   const initials = getInitials(name);
-  // ATUALIZAÇÃO: Removemos a lógica de cores aleatórias
-  // e aplicamos o Rose Gold diretamente.
-  const color = 'bg-[#C9A798] text-black'; // Fundo Rose Gold, texto preto
+  const color = 'border-2 border-[#C9A798] text-[#C9A798] bg-transparent';
 
   return (
   	<div
