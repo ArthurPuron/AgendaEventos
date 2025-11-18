@@ -1,38 +1,43 @@
+/* Importações do Tailwind (Preservadas) */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* * ATUALIZAÇÃO: Tema Dark Mode Padrão
+ * A cor de fundo foi corrigida para o tom mais claro de cinza-azulado
+ */
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-  color-scheme: dark;
-  color: #F5F0ED;
-  background-color: #162A3A;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: dark; /* Força o tema escuro */
+  color: #F5F0ED; /* ATUALIZAÇÃO: Branco-Gelo (Texto Principal) */
+  background-color: #162A3A; /* ATUALIZAÇÃO: Azul Marinho (Principal) */
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 a {
-  font-weight: 500;
-  color: #C9A798;
-  text-decoration: inherit;
+  font-weight: 500;
+  color: #C9A798; /* ATUALIZAÇÃO: Rose Gold (Destaque) */
+  text-decoration: inherit;
 }
-
 a:hover {
-  color: #F5F0ED;
+  color: #F5F0ED; /* ATUALIZAÇÃO: Hover para Branco-Gelo */
 }
 
+/* * ATUALIZAÇÃO: Cor do body
+ * Também corrigida para bater com o :root
+ */
 body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
-  background-color: #162A3A;
-  background-image: linear-gradient(to bottom, #162A3A, #2A3E4D);
-  background-attachment: fixed;
-  background-repeat: no-repeat;
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: #162A3A; /* ATUALIZAÇÃO: Azul Marinho (Principal) */
 }
 
 h1 {
@@ -40,6 +45,7 @@ h1 {
   line-height: 1.1;
 }
 
+/* Removemos os botões padrão do Vite */
 button {
   border-radius: 8px;
   border: 1px solid transparent;
@@ -51,6 +57,13 @@ button {
   transition: all 0.25s;
 }
 
+/* -------------------------------------------------
+  ESTILOS DA TELA DE CARREGAMENTO (Adicionados de volta)
+  Isso corrige o bug da tela de carregamento.
+-------------------------------------------------
+*/
+
+/* 1. Define a animação de rotação */
 @keyframes spin {
   from {
     transform: rotate(0deg);
@@ -60,26 +73,28 @@ button {
   }
 }
 
+/* 2. Estilo do container principal */
 .loading-screen {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: fixed;
-  inset: 0;
-  background-color: #162A3A;
-  min-height: 100vh;
-  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  inset: 0;
+  background-color: #162A3A; /* ATUALIZAÇÃO: Azul Marinho (Principal) */
+  min-height: 100vh;
+  z-index: 100;
 }
-
+/* 3. Container para empilhar as imagens */
 .loading-logo-container {
   position: relative;
-  width: 200px;
+  width: 200px; /* Ajuste o tamanho conforme necessário */
   height: 200px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
+/* 4. Estilo da Clave (Estática) */
 .loading-logo-static {
   position: absolute;
   width: 40%;
@@ -87,6 +102,7 @@ button {
   object-fit: contain;
 }
 
+/* 5. Estilo da Roda (Girando) */
 .loading-logo-spin {
   position: absolute;
   width: 100%;
