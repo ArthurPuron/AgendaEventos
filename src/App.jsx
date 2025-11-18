@@ -172,10 +172,19 @@ function App() {
           picture: user.photoURL,
         });
 
-        if (user.uid === ADMIN_UID) {
-          setUserRole('admin');
-          console.log("Status de Acesso: ADMIN");
-      	} else {
+       if (user.uid === ADMIN_UID) {
+          setUserRole('admin');
+          console.log("Status de Acesso: ADMIN");
+          const storedToken = localStorage.getItem('gapi_access_token');
+          if (storedToken) {
+            const scriptGapi = document.createElement('script');
+            scriptGapi.src = 'https://apis.google.com/js/api.js';
+            scriptGapi.async = true;
+            scriptGapi.defer = true;
+            scriptGapi.onload = () => initializeGapi(storedToken);
+            document.body.appendChild(scriptGapi);
+          }
+        } else {
           setUserRole('musician');
           console.log("Status de Acesso: MÚSICO");
       	}
@@ -321,9 +330,10 @@ function App() {
       const result = await signInWithPopup(auth, provider); 
       const credential = GoogleAuthProvider.credentialFromResult(result);
       const token = credential.accessToken;
-      if (token) {
-        const scriptGapi = document.createElement('script');
-        scriptGapi.src = 'https://apis.google.com/js/api.js';
+      if (token) {
+        localStorage.setItem('gapi_access_token', token);
+        const scriptGapi = document.createElement('script');
+        scriptGapi.src = 'https://apis.google.com/js/api.js';
         scriptGapi.async = true;
         scriptGapi.defer = true;
         scriptGapi.onload = () => initializeGapi(token); 
@@ -336,10 +346,10 @@ function App() {
   };
 
   const handleSignoutClick = async () => {
-  	// ... (código idêntico)
-    try {
-      await signOut(auth);
-      console.log('Firebase Auth: Deslogado.');
+    try {
+      localStorage.removeItem('gapi_access_token');
+      await signOut(auth);
+      console.log('Firebase Auth: Deslogado.');
     } catch (e) {
       console.error("Erro ao deslogar:", e);
       setGlobalError("Erro ao tentar sair.");
