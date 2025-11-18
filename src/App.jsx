@@ -372,7 +372,7 @@ function App() {
 
 // --- Componente: Cabeçalho (com Abas) ---
 const renderHeader = () => (
-    <header className="bg-[#162A3A] shadow-md pb-2">
+    <header className="bg-[#162A3A]">
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <h1 className="text-2xl font-bold text-[#C9A798]">
@@ -399,7 +399,6 @@ const renderHeader = () => (
           	</button>
         	</div>
       	</div>
-    	</div>
     	
     	{userRole === 'admin' && (
       	<nav className="bg-[#162A3A] px-4 sm:px-6 lg:px-8 flex space-x-6">
@@ -1280,9 +1279,9 @@ const FormSelect = ({ label, value, onChange, options }) => (
 const TabButton = ({ label, isActive, onClick }) => (
   <button
     onClick={onClick}
-    className={`pb-2 mr-2 font-medium text-sm transition-all duration-200 border-b-2
+    className={`pb-2 px-2 font-medium text-base transition-all duration-200 border-b-2
     	${isActive
-      	? 'border-[#C9A798] text-[#F5F0ED]'
+      	? 'border-[#C9A798] text-[#C9A798]'
       	: 'text-[#A9B4BD] border-transparent hover:text-[#F5F0ED]'
     	}
   	`}
@@ -1338,16 +1337,13 @@ const StatusBadge = ({ status }) => (
 // ATUALIZAÇÃO: Avatar usa a cor Rose Gold
 const Avatar = ({ name }) => {
   const initials = getInitials(name);
-  const color = 'border-2 border-[#C9A798] text-[#C9A798] bg-transparent';
-
   return (
   	<div
-    	className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center font-bold ${color}`}
+    	className="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center font-bold border-2 border-[#C9A798] text-[#C9A798] bg-transparent"
   	>
     	{initials}
   	</div>
   );
 };
-
 
 export default App;
