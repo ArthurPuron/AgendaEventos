@@ -133,6 +133,7 @@ function App() {
   // --- NOVO ESTADO DE AUTORIZAÇÃO ---
 const [userRole, setUserRole] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+	const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   // --- Estados da Aplicação ---
   const [globalError, setGlobalError] = useState(null);
@@ -393,78 +394,93 @@ const [userRole, setUserRole] = useState(null);
   };
 
 const renderHeader = () => (
-    <header className="bg-[#162A3A] relative">
-      <div className="px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          <div className="flex items-center">
-            {userRole === 'admin' && (
-              <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="mr-4 text-[#C9A798] hover:text-white focus:outline-none"
-              >
-              	<svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path>
-              	</svg>
-              </button>
-            )}
+    <header className="bg-[#162A3A] pb-4 pt-safe">
+      <div className="px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          <div className="flex items-center">
+            {userRole === 'admin' && (
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="text-[#C9A798] hover:text-white focus:outline-none"
+              >
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+              </button>
+            )}
+          </div>
 
-            <h1 className="text-xl font-bold text-[#C9A798]">
-              Agenda de Músicos
-            </h1>
-          </div>
+          <div className="relative z-50">
+            <button 
+              onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+              className="focus:outline-none"
+            >
+              {userProfile.picture ? (
+                <img
+                  className="h-10 w-10 rounded-full object-cover border-2 border-[#C9A798] p-0.5"
+                  src={userProfile.picture}
+                  alt="Foto do Perfil"
+                />
+              ) : (
+                <Avatar name={userProfile.name} />
+              )}
+            </button>
 
-          <div className="flex items-center">
-            <span className="text-[#A9B4BD] mr-3 hidden sm:block">
-              Olá, {userProfile.name.split(' ')[0]}
-          	</span>
-            {userProfile.picture ? (
-              <img
-                className="h-10 w-10 rounded-full object-cover border-2 border-[#C9A798] p-0.5"
-                src={userProfile.picture}
-                alt="Foto do Perfil"
-              />
-            ) : (
-              <Avatar name={userProfile.name} />
-            )}
-            <button
-              onClick={handleSignoutClick}
-              className="ml-4 bg-[#C9A798] hover:opacity-90 text-white font-bold py-2 px-6 rounded-lg shadow-md transition duration-300"
-          	>
-              Sair
-          	</button>
-          </div>
-        </div>
-      </div>
-
-      {isMenuOpen && userRole === 'admin' && (
-      	<div className="absolute top-16 left-0 w-64 bg-[#2A3E4D] shadow-xl z-50 rounded-br-lg border-r border-b border-[#162A3A]">
-          <div className="flex flex-col py-2">
-            <button
-              onClick={() => {
-                setPage('eventos');
-                setIsMenuOpen(false);
-              }}
-              className={`text-left px-6 py-4 font-medium transition-colors duration-200 border-b border-[#162A3A] last:border-0
-                ${page === 'eventos' ? 'text-[#C9A798] bg-[#162A3A]' : 'text-[#F5F0ED] hover:bg-[#162A3A]'}
-              `}
-            >
-              Eventos
-            </button>
-            <button
-              onClick={() => {
-                setPage('musicos');
-                setIsMenuOpen(false);
-              }}
-              className={`text-left px-6 py-4 font-medium transition-colors duration-200
-                ${page === 'musicos' ? 'text-[#C9A798] bg-[#162A3A]' : 'text-[#F5F0ED] hover:bg-[#162A3A]'}
-              `}
-            >
-              Músicos
-            </button>
-          </div>
-      	</div>
-      )}
-  	</header>
+            {isUserMenuOpen && (
+              <div className="absolute right-0 mt-2 w-48 bg-[#2A3E4D] rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 border border-[#162A3A]">
+                 <div className="px-4 py-2 border-b border-[#162A3A]">
+                    <p className="text-sm text-[#F5F0ED] font-medium">Olá, {userProfile.name.split(' ')[0]}</p>
+                 </div>
+                <button
+                  onClick={() => {
+                    setIsUserMenuOpen(false);
+                    handleSignoutClick();
+                  }}
+                  className="block w-full text-left px-4 py-2 text-sm text-[#C9A798] hover:bg-[#162A3A]"
+                >
+                  Sair
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        <div className="flex justify-center mt-[-10px]">
+           <h1 className="text-xl font-bold text-[#C9A798]">
+            Agenda de Eventos
+          </h1>
+        </div>
+      </div>
+      
+      {isMenuOpen && userRole === 'admin' && (
+        <div className="absolute top-24 left-0 w-64 bg-[#2A3E4D] shadow-xl z-40 rounded-br-lg border-r border-b border-[#162A3A]">
+          <div className="flex flex-col py-2">
+            <button
+              onClick={() => {
+                setPage('eventos');
+                setIsMenuOpen(false);
+              }}
+              className={`text-left px-6 py-4 font-medium transition-colors duration-200 border-b border-[#162A3A] last:border-0
+                ${page === 'eventos' ? 'text-[#C9A798] bg-[#162A3A]' : 'text-[#F5F0ED] hover:bg-[#162A3A]'}
+              `}
+            >
+              Eventos
+            </button>
+            <button
+              onClick={() => {
+                setPage('musicos');
+                setIsMenuOpen(false);
+              }}
+              className={`text-left px-6 py-4 font-medium transition-colors duration-200
+                ${page === 'musicos' ? 'text-[#C9A798] bg-[#162A3A]' : 'text-[#F5F0ED] hover:bg-[#162A3A]'}
+              `}
+            >
+              Músicos
+            </button>
+          </div>
+        </div>
+      )}
+    </header>
 );
 
  // --- NOVO: Tela de Autorização do Admin (Atualizada com a Paleta) ---
