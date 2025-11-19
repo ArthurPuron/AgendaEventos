@@ -395,8 +395,8 @@ const [userRole, setUserRole] = useState(null);
 
 const renderHeader = () => (
     <header className="bg-[#162A3A] pb-4 pt-safe">
-      <div className="px-4 sm:px-6 lg:px-8 pt-2"> {/* Adicionado pt-2 para um ajuste fino no topo */}
-        <div className="flex justify-between items-start"> {/* Mudado para items-start para subir os ícones */}
+      <div className="px-4 sm:px-6 lg:px-8 pt-4"> {/* Ajustado para pt-4 para equilíbrio sem excesso */}
+        <div className="flex justify-between items-start">
           <div className="flex items-center">
             {userRole === 'admin' && (
               <button
@@ -451,8 +451,7 @@ const renderHeader = () => (
           </div>
         </div>
         
-        {/* Aumentado o margin-top (mt-4) para dar mais espaço entre os ícones e o título */}
-        <div className="flex justify-center mt-4 mb-2">
+        <div className="flex justify-center mt-6 mb-2">
            <h1 className="text-xl font-bold text-[#C9A798]">
             Agenda de Eventos
           </h1>
@@ -489,7 +488,6 @@ const renderHeader = () => (
       )}
     </header>
 );
-
  // --- NOVO: Tela de Autorização do Admin (Atualizada com a Paleta) ---
   const AdminAuthScreen = () => (
     <div className="bg-[#2A3E4D] rounded-lg shadow-xl p-4 sm:p-8 text-center">
