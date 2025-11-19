@@ -1099,7 +1099,7 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
           nome: nome,
           email: email,
         	instrumento: instrumento,
-      	});
+        	});
       	setMusicoParaEditar(null);
       } else {
       	await addDoc(collection(db, collectionPath), {
@@ -1162,7 +1162,7 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
             	value={nome}
             	onChange={setNome}
   	        	placeholder="Ex: João Silva"
-                className="text-gray-900"
+                className="!text-gray-900" 
           	/>
           	<FormInput
             	label="Email"
@@ -1170,14 +1170,14 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
             	value={email}
   	        	onChange={setEmail}
             	placeholder="joao.silva@gmail.com"
-                className="text-gray-900"
+                className="!text-gray-900"
           	/>
           	<FormInput
   	        	label="Instrumento"
             	value={instrumento}
             	onChange={setInstrumento}
-          	placeholder="Ex: Guitarra, Vocal"
-                className="text-gray-900"
+            	placeholder="Ex: Guitarra, Vocal"
+                className="!text-gray-900"
         	/>
         	<div className="flex flex-col sm:flex-row sm:gap-2">
           	<button
@@ -1237,16 +1237,15 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
   	          		<svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
               	</button>
             	</div>
-            	</li>
+          	</li>
           	))}
         	</ul>
       	)}
-    	</div>
+      	</div>
   	</div>
   	</div>
   );
 };
-
 // Componente reusável para Input (NOVO ESTILO)
 const FormInput = ({ label, type = 'text', value, onChange, placeholder, inputMode = 'text', className = '' }) => (
   <div>
