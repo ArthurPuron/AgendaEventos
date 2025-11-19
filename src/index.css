@@ -80,7 +80,7 @@ button {
   justify-content: center;
   position: fixed;
   inset: 0;
-  background-color: #1f2937; /* Cor do novo dark mode */
+  background-color: #162A3A; /* Cor do novo dark mode */
   min-height: 100vh;
   z-index: 100;
 }
