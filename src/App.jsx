@@ -692,7 +692,6 @@ const renderEventosPage = () => (
 // **********************************************************
 const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
   const isAdmin = userRole === 'admin';
-  // ... (código idêntico)
   const startDate = new Date(evento.dataInicio);
   const endDate = new Date(evento.dataFim);
   const dateString = startDate.toLocaleDateString('pt-BR', { 
@@ -703,8 +702,7 @@ const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
   
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-      	{/* ... (código idêntico) ... */}
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto pb-4">
         <div className="flex justify-between items-start p-6 border-b border-gray-200">
           <div className="flex-grow">
             <div className="flex justify-between items-center">
@@ -764,23 +762,14 @@ const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
                     	)}
                   	</li>
                 	);
-            	  })}
-          	  </ul>
+            	  })}
+          	  </ul>
         	) : (
           	<p className="text-gray-500">Nenhum músico selecionado para este evento.</p>
         	)}
-      	  </div>
-    	</div>
-    	<div className="p-6 bg-gray-50 border-t border-gray-200 rounded-b-2xl flex justify-end">
-      	<button
-        	type="button"
-        	onClick={onClose}
-  	    	className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300"
-      	>
-        	Fechar
-      	</button>
-    	</div>
-  	</div>
+          </div>
+        </div>
+      </div>
   </div>
   );
 };
@@ -1071,7 +1060,6 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
 };
 
 const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
-  // ... (código idêntico)
   const [musicoParaEditar, setMusicoParaEditar] = useState(null);
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
@@ -1080,7 +1068,6 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
   const [formError, setFormError] = useState(null);
 
   useEffect(() => {
-  	// ... (código idêntico)
     if (musicoParaEditar) {
       setNome(musicoParaEditar.nome);
       setEmail(musicoParaEditar.email);
@@ -1094,7 +1081,6 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
   }, [musicoParaEditar]);
 
   const handleSubmit = async (e) => {
-  	// ... (código idêntico)
     e.preventDefault();
     if (!nome || !email || !instrumento) {
       setFormError("Por favor, preencha todos os campos.");
@@ -1115,7 +1101,7 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
         	instrumento: instrumento,
       	});
       	setMusicoParaEditar(null);
-    	} else {
+      } else {
       	await addDoc(collection(db, collectionPath), {
         	nome: nome,
         	email: email,
@@ -1124,7 +1110,7 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
       	setNome('');
       	setEmail('');
       	setInstrumento('');
-    	}
+      	}
   	} catch (e) {
     	console.error("[Firestore] Erro ao salvar músico:", e);
     	setFormError("Não foi possível salvar o músico.");
@@ -1133,7 +1119,6 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
   };
 
   const handleDelete = async (musicoId) => {
-  	// ... (código idêntico)
     if (!collectionPath) {
       setError("Erro de conexão (User ID nulo).");
       return;
@@ -1159,13 +1144,12 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
       	console.error("[Firestore] Erro ao deletar músico:", e);
       	setError("Não foi possível deletar o músico.");
       	Swal.fire('Erro!','Não foi possível deletar o músico.','error');
-    	}
+  	}
   	}
   };
 
   return (
   	<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-    	{/* ... (código idêntico) ... */}
     	<div className="lg:col-span-1">
       	<div className="bg-white rounded-lg shadow-xl p-4 sm:p-6">
         	<h3 className="text-2xl font-bold text-gray-900 mb-4">
@@ -1178,6 +1162,7 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
             	value={nome}
             	onChange={setNome}
   	        	placeholder="Ex: João Silva"
+                className="text-gray-900"
           	/>
           	<FormInput
             	label="Email"
@@ -1185,12 +1170,14 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
             	value={email}
   	        	onChange={setEmail}
             	placeholder="joao.silva@gmail.com"
+                className="text-gray-900"
           	/>
           	<FormInput
   	        	label="Instrumento"
             	value={instrumento}
             	onChange={setInstrumento}
           	placeholder="Ex: Guitarra, Vocal"
+                className="text-gray-900"
         	/>
         	<div className="flex flex-col sm:flex-row sm:gap-2">
           	<button
@@ -1211,7 +1198,7 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
           	)}
         	</div>
       	</form>
-    	</div>
+      	</div>
   	</div>
   	<div className="lg:col-span-2">
     	<div className="bg-white rounded-lg shadow-xl p-4 sm:p-6">
@@ -1250,10 +1237,10 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
   	          		<svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
               	</button>
             	</div>
-          	</li>
-        	))}
+            	</li>
+          	))}
         	</ul>
-    	)}
+      	)}
     	</div>
   	</div>
   	</div>
@@ -1261,7 +1248,7 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
 };
 
 // Componente reusável para Input (NOVO ESTILO)
-const FormInput = ({ label, type = 'text', value, onChange, placeholder, inputMode = 'text' }) => (
+const FormInput = ({ label, type = 'text', value, onChange, placeholder, inputMode = 'text', className = '' }) => (
   <div>
     <label className="block text-sm font-medium text-gray-400 mb-1">
       {label}
@@ -1272,8 +1259,7 @@ const FormInput = ({ label, type = 'text', value, onChange, placeholder, inputMo
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      // Usa a nova classe CSS para o estilo sublinhado
-      className="w-full py-2 form-input-dark"
+      className={`w-full py-2 form-input-dark ${className}`}
     />
   </div>
 );
