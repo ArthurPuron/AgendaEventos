@@ -111,3 +111,7 @@ button {
   object-fit: contain;
   animation: spin 10s linear infinite;
 }
+
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
