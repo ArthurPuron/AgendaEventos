@@ -394,9 +394,10 @@ const [userRole, setUserRole] = useState(null);
   };
 
 const renderHeader = () => (
-    <header className="bg-[#162A3A] pb-4 pt-safe">
-      <div className="px-4 sm:px-6 lg:px-8 pt-4"> {/* Ajustado para pt-4 para equilíbrio sem excesso */}
-        <div className="flex justify-between items-start">
+    <header className="w-full bg-[#162A3A]">
+      {/* pt-safe garante que respeita o notch, mas removemos paddings extras aqui */}
+      <div className="pt-safe px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-start pt-1"> 
           <div className="flex items-center">
             {userRole === 'admin' && (
               <button
@@ -451,7 +452,8 @@ const renderHeader = () => (
           </div>
         </div>
         
-        <div className="flex justify-center mt-6 mb-2">
+        {/* AQUI: Aumentei o espaçamento entre os ícones e o título (mt-10) */}
+        <div className="flex justify-center mt-10 mb-4">
            <h1 className="text-xl font-bold text-[#C9A798]">
             Agenda de Eventos
           </h1>
@@ -459,7 +461,7 @@ const renderHeader = () => (
       </div>
       
       {isMenuOpen && userRole === 'admin' && (
-        <div className="absolute top-16 left-0 w-64 bg-[#2A3E4D] shadow-xl z-40 rounded-br-lg border-r border-b border-[#162A3A]">
+        <div className="absolute top-20 left-0 w-64 bg-[#2A3E4D] shadow-xl z-40 rounded-br-lg border-r border-b border-[#162A3A]">
           <div className="flex flex-col py-2">
             <button
               onClick={() => {
