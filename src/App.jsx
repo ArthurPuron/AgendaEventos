@@ -395,9 +395,9 @@ const [userRole, setUserRole] = useState(null);
 
 const renderHeader = () => (
     <header className="w-full bg-[#162A3A]">
-      {/* pt-safe garante que respeita o notch, mas removemos paddings extras aqui */}
-      <div className="pt-safe px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-start pt-1"> 
+      {/* Trocamos pt-safe por pt-2 para reduzir o espaço do topo */}
+      <div className="pt-2 px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-start pt-1">
           <div className="flex items-center">
             {userRole === 'admin' && (
               <button
