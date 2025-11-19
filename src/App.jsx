@@ -131,7 +131,8 @@ function App() {
   const [authLoading, setAuthLoading] = useState(true); // Este estado é a chave
 
   // --- NOVO ESTADO DE AUTORIZAÇÃO ---
-  const [userRole, setUserRole] = useState(null);
+const [userRole, setUserRole] = useState(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // --- Estados da Aplicação ---
   const [globalError, setGlobalError] = useState(null);
@@ -391,14 +392,27 @@ function App() {
     }
   };
 
-// --- Componente: Cabeçalho (com Abas) ---
 const renderHeader = () => (
-    <header className="bg-[#162A3A]">
+    <header className="bg-[#162A3A] relative">
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <h1 className="text-2xl font-bold text-[#C9A798]">
-            Agenda de Músicos
-          </h1>
+          <div className="flex items-center">
+            {userRole === 'admin' && (
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="mr-4 text-[#C9A798] hover:text-white focus:outline-none"
+              >
+              	<svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path>
+              	</svg>
+              </button>
+            )}
+
+            <h1 className="text-xl font-bold text-[#C9A798]">
+              Agenda de Músicos
+            </h1>
+          </div>
+
           <div className="flex items-center">
             <span className="text-[#A9B4BD] mr-3 hidden sm:block">
               Olá, {userProfile.name.split(' ')[0]}
@@ -418,24 +432,38 @@ const renderHeader = () => (
           	>
               Sair
           	</button>
-        	</div>
+          </div>
+        </div>
+      </div>
+
+      {isMenuOpen && userRole === 'admin' && (
+      	<div className="absolute top-16 left-0 w-64 bg-[#2A3E4D] shadow-xl z-50 rounded-br-lg border-r border-b border-[#162A3A]">
+          <div className="flex flex-col py-2">
+            <button
+              onClick={() => {
+                setPage('eventos');
+                setIsMenuOpen(false);
+              }}
+              className={`text-left px-6 py-4 font-medium transition-colors duration-200 border-b border-[#162A3A] last:border-0
+                ${page === 'eventos' ? 'text-[#C9A798] bg-[#162A3A]' : 'text-[#F5F0ED] hover:bg-[#162A3A]'}
+              `}
+            >
+              Eventos
+            </button>
+            <button
+              onClick={() => {
+                setPage('musicos');
+                setIsMenuOpen(false);
+              }}
+              className={`text-left px-6 py-4 font-medium transition-colors duration-200
+                ${page === 'musicos' ? 'text-[#C9A798] bg-[#162A3A]' : 'text-[#F5F0ED] hover:bg-[#162A3A]'}
+              `}
+            >
+              Músicos
+            </button>
+          </div>
       	</div>
-    	</div>
-		
-    	{userRole === 'admin' && (
-      	<nav className="bg-[#162A3A] px-4 sm:px-6 lg:px-8 flex space-x-6">
-          	<TabButton
-            	label="Eventos"
-            	isActive={page === 'eventos'}
-            	onClick={() => setPage('eventos')}
-          	/>
-          	<TabButton
-            	label="Músicos"
-            	isActive={page === 'musicos'}
-            	onClick={() => setPage('musicos')}
-          	/>
-      	</nav>
-    	)}
+      )}
   	</header>
 );
 
