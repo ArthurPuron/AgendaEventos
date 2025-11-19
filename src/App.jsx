@@ -395,8 +395,8 @@ const [userRole, setUserRole] = useState(null);
 
 const renderHeader = () => (
     <header className="bg-[#162A3A] pb-4 pt-safe">
-      <div className="px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+      <div className="px-4 sm:px-6 lg:px-8 pt-2"> {/* Adicionado pt-2 para um ajuste fino no topo */}
+        <div className="flex justify-between items-start"> {/* Mudado para items-start para subir os ícones */}
           <div className="flex items-center">
             {userRole === 'admin' && (
               <button
@@ -451,7 +451,8 @@ const renderHeader = () => (
           </div>
         </div>
         
-        <div className="flex justify-center mt-[-10px]">
+        {/* Aumentado o margin-top (mt-4) para dar mais espaço entre os ícones e o título */}
+        <div className="flex justify-center mt-4 mb-2">
            <h1 className="text-xl font-bold text-[#C9A798]">
             Agenda de Eventos
           </h1>
@@ -459,7 +460,7 @@ const renderHeader = () => (
       </div>
       
       {isMenuOpen && userRole === 'admin' && (
-        <div className="absolute top-24 left-0 w-64 bg-[#2A3E4D] shadow-xl z-40 rounded-br-lg border-r border-b border-[#162A3A]">
+        <div className="absolute top-16 left-0 w-64 bg-[#2A3E4D] shadow-xl z-40 rounded-br-lg border-r border-b border-[#162A3A]">
           <div className="flex flex-col py-2">
             <button
               onClick={() => {
