@@ -1263,7 +1263,6 @@ const FormInput = ({ label, type = 'text', value, onChange, placeholder, inputMo
     />
   </div>
 );
-
 // Componente reusável para Select (NOVO ESTILO)
 const FormSelect = ({ label, value, onChange, options }) => (
   <div>
