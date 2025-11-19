@@ -400,7 +400,10 @@ const renderHeader = () => (
           <div className="flex items-center">
             {userRole === 'admin' && (
               <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                onClick={() => {
+                  setIsMenuOpen(!isMenuOpen);
+                  setIsUserMenuOpen(false);
+                }}
                 className="text-[#C9A798] hover:text-white focus:outline-none"
               >
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -412,7 +415,10 @@ const renderHeader = () => (
 
           <div className="relative z-50">
             <button 
-              onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+              onClick={() => {
+                setIsUserMenuOpen(!isUserMenuOpen);
+                setIsMenuOpen(false);
+              }}
               className="focus:outline-none"
             >
               {userProfile.picture ? (
