@@ -395,6 +395,7 @@ const [userRole, setUserRole] = useState(null);
 
 const renderHeader = () => (
     <header className="w-full bg-[#162A3A]">
+      {/* pt-0 remove o espaço do topo */}
       <div className="pt-0 px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-start"> 
           <div className="flex items-center pt-1">
@@ -413,6 +414,7 @@ const renderHeader = () => (
             )}
           </div>
 
+          {/* z-10 garante que o ícone fique ABAIXO dos modais (que são z-40) */}
           <div className="relative z-10">
             <button 
               onClick={() => {
