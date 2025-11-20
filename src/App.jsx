@@ -704,7 +704,7 @@ const renderEventosPage = () => (
           </h1>
           
           <p className="text-[#A9B4BD] mb-8 text-sm leading-relaxed">
-            Acesse sua agenda de eventos musicais com exclusividade e sofisticação.
+            Acesse sua agenda de eventos musicais com exclusividade e praticidade.
           </p>
 
           {globalError && <ErrorMessage message={globalError} />}
