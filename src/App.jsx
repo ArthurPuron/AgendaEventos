@@ -38,7 +38,7 @@ import loginLogo from './assets/logo-login.png';
 // **********************************************************
 const ADMIN_EMAILS = [
   "arthurpuron@gmail.com",
-  "COLOQUE_O_EMAIL_DELA_AQUI@GMAIL.COM" 
+  "racheelpuroonmusica@gmail.com" 
 ];
 
 // **********************************************************
