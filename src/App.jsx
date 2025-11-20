@@ -313,40 +313,36 @@ const [userRole, setUserRole] = useState(null);
   };
 
   // --- Funções de Autenticação Google (Idêntico e simplificado) ---
-  const handleAuthClick = async () => {
-  	// ... (código idêntico)
-   
-    try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-    } catch (e) {
-      console.error("Erro no login com Google:", e);
-      setGlobalError(`Erro de autenticação: ${e.message}`);
-    }
-  };
-
-  const handleCalendarAuth = async () => {
-  	// ... (código idêntico)
-    try {
-      const provider = new GoogleAuthProvider();
-      provider.addScope(CALENDAR_SCOPE); 
-      const result = await signInWithPopup(auth, provider); 
-      const credential = GoogleAuthProvider.credentialFromResult(result);
-      const token = credential.accessToken;
+ const handleAuthClick = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+    } catch (e) {
+      console.error("Login Google:", e);
+      // Apenas loga, não mostra erro na tela
+    }
+  };
+const handleCalendarAuth = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.addScope(CALENDAR_SCOPE); 
+      const result = await signInWithPopup(auth, provider); 
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      const token = credential.accessToken;
       if (token) {
         localStorage.setItem('gapi_access_token', token);
         const scriptGapi = document.createElement('script');
         scriptGapi.src = 'https://apis.google.com/js/api.js';
-        scriptGapi.async = true;
-        scriptGapi.defer = true;
-        scriptGapi.onload = () => initializeGapi(token); 
-        document.body.appendChild(scriptGapi);
-      }
-    } catch (e) {
-      console.error("Erro ao autorizar calendário:", e);
-      setGlobalError("Não foi possível autorizar o Google Calendar.");
-    }
-  };
+        scriptGapi.async = true;
+        scriptGapi.defer = true;
+        scriptGapi.onload = () => initializeGapi(token); 
+        document.body.appendChild(scriptGapi);
+      }
+    } catch (e) {
+      console.error("Erro calendário:", e);
+      // Apenas loga, não mostra erro na tela
+    }
+  };
 
   const handleSignoutClick = async () => {
     try {
@@ -884,112 +880,112 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
   const [modalError, setModalError] = useState(null);
 
   const handleSubmit = async (e) => {
-  	// ... (código idêntico)
-    e.preventDefault();
-    setModalError(null); 
-    if (!nome || !data || !horaInicio || !horaFim || !cidade) {
-      setModalError("Por favor, preencha todos os campos obrigatórios."); 
-      return;
-    }
-    setSaving(true);
-    try {
-      const dataInicioISO = `${data}T${horaInicio}:00`;
-      const dataFimISO = `${data}T${horaFim}:00`;
-      const fusoHorario = getLocalTimeZone();
-      const musicosConvidados = selectedMusicos
-        .map(musicoId => {
-          const musico = musicosCadastrados.find(m => m.id === musicoId);
-          if (musico) {
-            return {
-              id: musico.id,
-              nome: musico.nome,
-              email: musico.email,
-              instrumento: musico.instrumento,
-              cachet: cachets[musicoId] || '0', 
-            };
-          }
-          console.warn(`Músico com ID ${musicoId} não encontrado. Será removido do evento.`);
-          return null;
-        })
-        .filter(Boolean);
-      const eventoParaFirestore = {
-        nome,
-        cidade,
-        status,
-        dataInicio: dataInicioISO,
-        dataFim: dataFimISO,
-        fusoHorario,
-  	    pacote: pacote,
-        valorEvento: valorEvento,
-        musicos: musicosConvidados,
-        musicoEmails: musicosConvidados.map(m => m.email),
-      };
-      const attendees = musicosConvidados.map(musico => ({ email: musico.email }));
-      const eventoParaGoogle = {
-        summary: nome,
-        location: cidade,
-        description: `Status: ${status}`,
-        start: { dateTime: dataInicioISO, timeZone: fusoHorario },
-        end: { dateTime: dataFimISO, timeZone: fusoHorario },
-        attendees: attendees,
-        reminders: { useDefault: true },
-      };
-      if (isEditMode) {
-        const eventoRef = doc(db, eventosCollectionPath, eventoParaEditar.id);
-        if (eventoParaEditar.googleEventId) {
-          console.log("Atualizando evento existente no Google Calendar...");
-          await gapiClient.client.calendar.events.update({
-            calendarId: 'primary',
-            eventId: eventoParaEditar.googleEventId,
-            resource: eventoParaGoogle,
-          	sendUpdates: 'all'
-          });
-          await setDoc(eventoRef, {
-            ...eventoParaFirestore,
-          	googleEventId: eventoParaEditar.googleEventId
-          });
-        } else {
-          console.warn("Evento antigo sem googleEventId. Criando novo evento no Google Calendar...");
-          const googleResponse = await gapiClient.client.calendar.events.insert({
-            calendarId: 'primary',
-            resource: eventoParaGoogle,
-            sendNotifications: true,
-          });
-          const newGoogleEventId = googleResponse.result.id;
-          await setDoc(eventoRef, {
-            ...eventoParaFirestore,
-            googleEventId: newGoogleEventId
-          });
-        }
-      } else {
-        const docRef = await addDoc(collection(db, eventosCollectionPath), eventoParaFirestore);
-        const googleResponse = await gapiClient.client.calendar.events.insert({
-          calendarId: 'primary',
-          resource: eventoParaGoogle,
-          sendNotifications: true,
-        });
-        const googleEventId = googleResponse.result.id;
-        await updateDoc(docRef, { googleEventId: googleEventId });
-      }
-      console.log("Evento salvo/atualizado com sucesso!");
-      setSaving(false);
-      onClose();
-    } catch (e) {
-      console.error("Erro ao salvar evento (objeto bruto):", e);
-      let errorMessage = "Ocorreu um erro desconhecido ao salvar.";
-      if (e.result && e.result.error) {
-        errorMessage = `Erro do Google (${e.result.error.code}): ${e.result.error.message}`;
-        if (e.result.error.code === 403) {
-          errorMessage += " - Verifique se a 'Google Calendar API' está ATIVADA no seu projeto do Google Cloud.";
-	    }
-  	  } else if (e.message) {
-  	    errorMessage = e.message;
-  	  }
-    	setModalError(errorMessage);
-    	setSaving(false);
-    }
-  };
+    e.preventDefault();
+    setModalError(null); 
+    if (!nome || !data || !horaInicio || !horaFim || !cidade) {
+      // Validação básica ainda pode aparecer, ou podemos remover se quiser silêncio total
+      // Por enquanto, mantive silencioso via console no setModalError
+      console.warn("Campos obrigatórios faltando");
+      return;
+    }
+    setSaving(true);
+    try {
+      const dataInicioISO = `${data}T${horaInicio}:00`;
+      const dataFimISO = `${data}T${horaFim}:00`;
+      const fusoHorario = getLocalTimeZone();
+      const musicosConvidados = selectedMusicos
+        .map(musicoId => {
+          const musico = musicosCadastrados.find(m => m.id === musicoId);
+          if (musico) {
+            return {
+              id: musico.id,
+              nome: musico.nome,
+              email: musico.email,
+              instrumento: musico.instrumento,
+              cachet: cachets[musicoId] || '0', 
+            };
+          }
+          return null;
+        })
+        .filter(Boolean);
+      
+      const eventoParaFirestore = {
+        nome,
+        cidade,
+        status,
+        dataInicio: dataInicioISO,
+        dataFim: dataFimISO,
+        fusoHorario,
+        pacote: pacote,
+        valorEvento: valorEvento,
+        musicos: musicosConvidados,
+        musicoEmails: musicosConvidados.map(m => m.email),
+      };
+      
+      const attendees = musicosConvidados.map(musico => ({ email: musico.email }));
+      const eventoParaGoogle = {
+        summary: nome,
+        location: cidade,
+        description: `Status: ${status}`,
+        start: { dateTime: dataInicioISO, timeZone: fusoHorario },
+        end: { dateTime: dataFimISO, timeZone: fusoHorario },
+        attendees: attendees,
+        reminders: { useDefault: true },
+      };
 
+      if (isEditMode) {
+        const eventoRef = doc(db, eventosCollectionPath, eventoParaEditar.id);
+        if (eventoParaEditar.googleEventId) {
+           await gapiClient.client.calendar.events.update({
+            calendarId: 'primary',
+            eventId: eventoParaEditar.googleEventId,
+            resource: eventoParaGoogle,
+            sendUpdates: 'all'
+          });
+          await setDoc(eventoRef, {
+            ...eventoParaFirestore,
+            googleEventId: eventoParaEditar.googleEventId
+          });
+        } else {
+          const googleResponse = await gapiClient.client.calendar.events.insert({
+            calendarId: 'primary',
+            resource: eventoParaGoogle,
+            sendNotifications: true,
+          });
+          const newGoogleEventId = googleResponse.result.id;
+          await setDoc(eventoRef, {
+            ...eventoParaFirestore,
+            googleEventId: newGoogleEventId
+          });
+        }
+      } else {
+        const docRef = await addDoc(collection(db, eventosCollectionPath), eventoParaFirestore);
+        const googleResponse = await gapiClient.client.calendar.events.insert({
+          calendarId: 'primary',
+          resource: eventoParaGoogle,
+          sendNotifications: true,
+        });
+        const googleEventId = googleResponse.result.id;
+        await updateDoc(docRef, { googleEventId: googleEventId });
+      }
+      console.log("Evento salvo/atualizado com sucesso!");
+      setSaving(false);
+      onClose();
+    } catch (e) {
+      console.error("Erro ao salvar evento:", e);
+      
+      // Lógica de Recuperação Automática para Erro 401 (Token Expirado)
+      if (e.result && e.result.error && e.result.error.code === 401) {
+         console.log("Token expirado detectado. Limpando credenciais...");
+         localStorage.removeItem('gapi_access_token');
+         // Opcional: Recarregar a página para forçar novo login limpo
+         window.location.reload();
+      }
+      
+      // Não definimos setModalError visível para o usuário
+      setSaving(false);
+    }
+  };
   const handleMusicoToggle = (musicoId) => {
   	// ... (código idêntico)
     setSelectedMusicos(prev =>
@@ -1408,21 +1404,13 @@ const TabButton = ({ label, isActive, onClick }) => (
     {label}
   </button>
 );
-const ErrorMessage = ({ message, onDismiss }) => (
-  // ... (código idêntico)
-  <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded-lg flex justify-between items-center">
-  	<div>
-    	<p className="font-bold">Erro</p>
-    	<p>{message}</p>
-  	</div>
-  	{onDismiss && (
-    	<button onClick={onDismiss} className="text-red-700 font-bold ml-4">
-      	&times;
-    	</button>
-  	)}
-  </div>
-);
-
+// Componente de Erro Silencioso (Apenas loga no console)
+const ErrorMessage = ({ message }) => {
+  if (message) {
+    console.warn("Erro capturado pelo sistema:", message);
+  }
+  return null; // Não renderiza nada na tela
+};
 const InfoItem = ({ label, value, children }) => (
   <div>
     <label className="block text-xs font-medium text-[#A9B4BD] uppercase tracking-wide mb-1">
