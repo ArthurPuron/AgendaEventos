@@ -117,11 +117,10 @@ const buildCachetsMap = (musicosArray = []) => {
 // Função para pegar iniciais do nome (Adicione isto!)
 const getInitials = (name) => {
   if (!name) return '';
-  const names = name.split(' ');
+  const names = name.trim().split(/\s+/);
   if (names.length === 1) return names[0].substring(0, 2).toUpperCase();
   return (names[0][0] + names[names.length - 1][0]).toUpperCase();
 };
-
 
 function App() {
   // --- Estados da Autenticação ---
@@ -1252,7 +1251,6 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      {/* Formulário de Cadastro */}
       <div className="lg:col-span-1">
         <div className="bg-[#2A3E4D] rounded-2xl shadow-xl p-6 border border-[#C69874]/20">
           <h3 className="text-2xl font-bold text-[#C69874] mb-6 border-b border-[#C69874]/30 pb-2">
@@ -1304,7 +1302,6 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
         </div>
       </div>
 
-      {/* Lista de Músicos */}
       <div className="lg:col-span-2">
         <div className="bg-[#2A3E4D] rounded-2xl shadow-xl p-6 border border-[#C69874]/20">
           <h3 className="text-2xl font-bold text-[#F5F0ED] mb-6 border-b border-[#C69874]/30 pb-2">
@@ -1323,17 +1320,20 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
           {!loading && musicos.length > 0 && (
             <ul className="space-y-4">
               {musicos.map(musico => (
-                <li key={musico.id} className="bg-[#162A3A] p-4 rounded-xl border border-[#374151] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                  <div className="flex items-center gap-4">
-                    <Avatar name={musico.nome || "?"} />
-                    <div>
-                      <p className="text-lg font-bold text-[#F5F0ED]">{musico.nome}</p>
-                      <p className="text-xs text-[#C69874] font-bold uppercase tracking-wide">{musico.instrumento}</p>
-                      <p className="text-sm text-[#A9B4BD] mt-0.5">{musico.email}</p>
+                <li key={musico.id} className="bg-[#162A3A] p-4 rounded-xl border border-[#374151] flex justify-between items-center gap-3">
+                  
+                  <div className="flex items-center gap-4 flex-1 min-w-0">
+                    <div className="flex-shrink-0">
+                       <Avatar name={musico.nome || "?"} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-lg font-bold text-[#F5F0ED] truncate">{musico.nome}</p>
+                      <p className="text-xs text-[#C69874] font-bold uppercase tracking-wide truncate">{musico.instrumento}</p>
+                      <p className="text-sm text-[#A9B4BD] mt-0.5 break-all">{musico.email}</p>
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     <button
                       onClick={() => setMusicoParaEditar(musico)}
                       className="p-2 rounded-full text-[#C69874] hover:bg-[#2A3E4D] transition-colors"
@@ -1357,8 +1357,7 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
       </div>
     </div>
   );
-};
-// Componente reusável para Input (NOVO ESTILO)
+};omponente reusável para Input (NOVO ESTILO)
 const FormInput = ({ label, type = 'text', value, onChange, placeholder, inputMode = 'text', className = '' }) => (
   <div>
     <label className="block text-sm font-medium text-gray-400 mb-1">
