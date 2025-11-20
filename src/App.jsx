@@ -543,7 +543,7 @@ const AdminAuthScreen = () => (
     </>
   );
 const MusicianDashboard = () => (
-    <div className="w-full">
+    <div className="w-full text-center">
       <h2 className="text-2xl sm:text-3xl font-bold text-[#F5F0ED] mb-6 border-b border-[#C69874] pb-2 inline-block">
         Meus Próximos Eventos
       </h2>
@@ -554,7 +554,7 @@ const MusicianDashboard = () => (
         </div>
       )}
       {!loadingEventos && eventos.length > 0 && (
-        <ul className="space-y-4">
+        <ul className="space-y-4 text-left">
           {eventos.map(evento => (
             <li key={evento.id}>
               <div
@@ -796,7 +796,6 @@ const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
     <div className="fixed inset-0 bg-black bg-opacity-70 z-40 flex items-center justify-center p-4 backdrop-blur-sm">
       <div className="bg-[#2A3E4D] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-[#C69874]/30 relative">
         
-        {/* Botão Fechar (X) isolado no topo direito */}
         <button
           type="button"
           onClick={onClose}
@@ -805,8 +804,7 @@ const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
 
-        <div className="p-6 pt-12">
-           {/* Cabeçalho do Card */}
+        <div className="p-6 pt-16">
            <div className="flex justify-between items-start mb-6">
               <div className="pr-4">
                  <h3 className="text-2xl font-bold text-[#C69874] leading-tight mb-1">
@@ -820,7 +818,6 @@ const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
            </div>
 
            <div className="space-y-4">
-              {/* Card de Datas */}
               <div className="bg-[#162A3A] p-4 rounded-lg border border-[#374151]">
                  <div className="grid grid-cols-2 gap-4">
                     <InfoItem label="Data" value={dateString} />
@@ -828,7 +825,6 @@ const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
                  </div>
               </div>
               
-              {/* Card Financeiro */}
               <div className="bg-[#162A3A] p-4 rounded-lg border border-[#374151]">
                 {isAdmin ? (
                   <InfoItem label="Pacote" value={evento.pacote} />
@@ -843,7 +839,6 @@ const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
                  )}
               </div>
 
-              {/* Lista de Músicos */}
               <div>
                 <h4 className="text-xs font-bold text-[#C69874] mb-3 uppercase tracking-wider">
                   Músicos Escalados
@@ -1430,7 +1425,7 @@ import './App.css';
 // Componente Helper (NOVO ESTILO DARK)
 const StatusBadge = ({ status }) => (
   <span
-    className={`px-3 py-2 rounded-lg text-xs font-bold
+    className={`px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap
     	${status === 'Confirmado'
       	? 'bg-[#C69874] text-white'
       	: 'bg-[#162A3A] text-white'
