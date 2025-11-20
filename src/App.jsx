@@ -394,8 +394,19 @@ const [userRole, setUserRole] = useState(null);
   };
 
 const renderHeader = () => (
-    <header className="w-full bg-[#162A3A]">
-      {/* pt-0 remove o espaço do topo */}
+    <header className="w-full bg-[#162A3A] relative">
+      
+      {/* 1. BACKDROP (Camada escura que detecta clique fora e fecha os menus) */}
+      {(isMenuOpen || isUserMenuOpen) && (
+        <div 
+          className="fixed inset-0 z-20 bg-black bg-opacity-50 backdrop-blur-sm"
+          onClick={() => {
+            setIsMenuOpen(false);
+            setIsUserMenuOpen(false);
+          }}
+        />
+      )}
+
       <div className="pt-0 px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-start"> 
           <div className="flex items-center pt-1">
@@ -405,7 +416,7 @@ const renderHeader = () => (
                   setIsMenuOpen(!isMenuOpen);
                   setIsUserMenuOpen(false);
                 }}
-                className="text-[#C69874] hover:text-white focus:outline-none"
+                className="text-[#C69874] hover:text-white focus:outline-none relative z-30"
               >
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path>
@@ -414,8 +425,7 @@ const renderHeader = () => (
             )}
           </div>
 
-          {/* z-10 garante que o ícone fique ABAIXO dos modais (que são z-40) */}
-          <div className="relative z-10">
+          <div className="relative z-30">
             <button 
               onClick={() => {
                 setIsUserMenuOpen(!isUserMenuOpen);
@@ -434,19 +444,21 @@ const renderHeader = () => (
               )}
             </button>
 
+            {/* MENU USUÁRIO (Melhorado visualmente) */}
             {isUserMenuOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-[#2A3E4D] rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 border border-[#162A3A]">
-                 <div className="px-4 py-2 border-b border-[#162A3A]">
-                    <p className="text-sm text-[#F5F0ED] font-medium">Olá, {userProfile.name.split(' ')[0]}</p>
+              <div className="absolute right-0 mt-2 w-56 bg-[#2A3E4D] rounded-xl shadow-2xl py-2 ring-1 ring-black ring-opacity-5 border border-[#C69874]">
+                 <div className="px-4 py-3 border-b border-[#162A3A] bg-[#233442] rounded-t-xl mb-1">
+                    <p className="text-xs text-[#A9B4BD] uppercase tracking-wider">Logado como</p>
+                    <p className="text-sm text-[#F5F0ED] font-bold truncate">{userProfile.name}</p>
                  </div>
                 <button
                   onClick={() => {
                     setIsUserMenuOpen(false);
                     handleSignoutClick();
                   }}
-                  className="block w-full text-left px-4 py-2 text-sm text-[#C69874] hover:bg-[#162A3A]"
+                  className="block w-full text-left px-4 py-3 text-sm text-[#C69874] hover:bg-[#162A3A] transition-colors font-medium"
                 >
-                  Sair
+                  Sair da Conta
                 </button>
               </div>
             )}
@@ -460,16 +472,23 @@ const renderHeader = () => (
         </div>
       </div>
       
+      {/* 2. MENU LATERAL (Transformado em Gaveta Fixa) */}
       {isMenuOpen && userRole === 'admin' && (
-        <div className="absolute top-20 left-0 w-64 bg-[#2A3E4D] shadow-xl z-40 rounded-br-lg border-r border-b border-[#162A3A]">
+        <div className="fixed top-0 left-0 h-full w-72 bg-[#2A3E4D] shadow-2xl z-30 border-r border-[#C69874] flex flex-col">
+          <div className="p-6 bg-[#162A3A] border-b border-[#C69874] flex items-center justify-between">
+            <span className="text-[#C69874] font-bold text-xl">Menu</span>
+            <button onClick={() => setIsMenuOpen(false)} className="text-gray-400 hover:text-white">
+               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+          </div>
           <div className="flex flex-col py-2">
             <button
               onClick={() => {
                 setPage('eventos');
                 setIsMenuOpen(false);
               }}
-              className={`text-left px-6 py-4 font-medium transition-colors duration-200 border-b border-[#162A3A] last:border-0
-                ${page === 'eventos' ? 'text-[#C69874] bg-[#162A3A]' : 'text-[#F5F0ED] hover:bg-[#162A3A]'}
+              className={`text-left px-6 py-4 font-medium transition-all duration-200 border-l-4
+                ${page === 'eventos' ? 'border-[#C69874] bg-[#233442] text-[#C69874]' : 'border-transparent text-[#F5F0ED] hover:bg-[#162A3A]'}
               `}
             >
               Eventos
@@ -479,8 +498,8 @@ const renderHeader = () => (
                 setPage('musicos');
                 setIsMenuOpen(false);
               }}
-              className={`text-left px-6 py-4 font-medium transition-colors duration-200
-                ${page === 'musicos' ? 'text-[#C69874] bg-[#162A3A]' : 'text-[#F5F0ED] hover:bg-[#162A3A]'}
+              className={`text-left px-6 py-4 font-medium transition-all duration-200 border-l-4
+                ${page === 'musicos' ? 'border-[#C69874] bg-[#233442] text-[#C69874]' : 'border-transparent text-[#F5F0ED] hover:bg-[#162A3A]'}
               `}
             >
               Músicos
