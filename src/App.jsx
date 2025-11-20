@@ -804,7 +804,8 @@ const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
 
-        <div className="p-6 pt-16">
+        {/* AQUI: Mudamos de pt-16 para pt-24 para dar mais espaço */}
+        <div className="p-6 pt-24">
            <div className="flex justify-between items-start mb-6">
               <div className="pr-4">
                  <h3 className="text-2xl font-bold text-[#C69874] leading-tight mb-1">
@@ -869,7 +870,6 @@ const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
   </div>
   );
 };
-
 const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollectionPath, eventoParaEditar }) => {
   // ... (código idêntico)
   const isEditMode = eventoParaEditar !== null;
