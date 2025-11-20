@@ -472,7 +472,7 @@ const renderHeader = () => (
       </div>
       
       {isMenuOpen && userRole === 'admin' && (
-        <div className="fixed top-0 left-0 h-full w-72 bg-[#2A3E4D] shadow-2xl z-30 border-r border-[#C69874] flex flex-col">
+        <div className="fixed top-0 left-0 h-full w-72 bg-[#2A3E4D] shadow-2xl z-30 flex flex-col">
           <div className="p-6 bg-[#162A3A] flex items-center justify-between">
             <span className="text-[#C69874] font-bold text-xl">Menu</span>
             <button onClick={() => setIsMenuOpen(false)} className="text-gray-400 hover:text-white">
