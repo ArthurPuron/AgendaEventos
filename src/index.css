@@ -2,36 +2,41 @@
 @tailwind components;
 @tailwind utilities;
 
-/* --- RESET FUNDAMENTAL --- */
+/* --- RESET FUNDAMENTAL E OTIMIZAÇÃO DE TOQUE --- */
 html, body, #root {
   height: 100%;
   width: 100%;
   margin: 0;
   padding: 0;
-  background-color: #162A3A; /* Garante fundo azul no 'elástico' do iPhone */
-  overscroll-behavior-y: none; /* Bloqueia o efeito de puxar a página além do topo */
-  -webkit-tap-highlight-color: transparent;
+  background-color: #162A3A;
+  overscroll-behavior-y: none; /* Bloqueia efeito elástico na página toda */
+  -webkit-tap-highlight-color: transparent; /* Remove quadrado azul ao clicar */
+  touch-action: manipulation; /* Remove delay do clique e impede zoom de duplo toque */
+  -webkit-font-smoothing: antialiased;
 }
 
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
   color-scheme: dark;
   color: #f3f4f6;
   background-color: #162A3A;
+}
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* --- Correção de Input para Mobile (Evita Zoom e clique fantasma) --- */
+input, select, textarea, button {
+  font-size: 16px !important; /* Impede zoom automático no iOS */
+  max-width: 100%;
 }
 
 /* --- Estilos Globais --- */
 body {
   min-width: 320px;
   min-height: 100vh;
+  /* dynamic viewport height fix para mobile */
+  min-height: 100dvh; 
+  overflow-x: hidden;
 }
 
 a {
@@ -43,20 +48,18 @@ a:hover {
   color: #e0c8b3;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
 button {
   border-radius: 8px;
   border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
   cursor: pointer;
-  transition: all 0.25s;
+  transition: all 0.2s;
+  /* Garante área de toque mínima */
+  touch-action: manipulation;
+}
+
+/* --- Scroll Suave em Modais --- */
+* {
+  -webkit-overflow-scrolling: touch; /* Habilita inércia no scroll do iOS */
 }
 
 /* --- Loading Screen --- */
@@ -100,15 +103,14 @@ button {
   animation: spin 10s linear infinite;
 }
 
-/* --- Inputs e Selects --- */
+/* --- Inputs e Selects Customizados --- */
 .form-input-dark {
   background-color: transparent;
   border: none;
   border-bottom: 2px solid #374151;
   color: #f3f4f6;
   border-radius: 0;
-  padding-left: 0.25rem;
-  padding-right: 0.25rem;
+  padding: 0.5rem 0.25rem; /* Aumenta área de toque */
   transition: border-color 0.2s ease-in-out;
 }
 
@@ -134,9 +136,4 @@ button {
 .form-select-dark option {
   background-color: #1f2937;
   color: #f3f4f6;
-}
-
-/* Safe Area apenas com padding, sem margens extras */
-.pt-safe {
-  padding-top: env(safe-area-inset-top, 20px);
 }
