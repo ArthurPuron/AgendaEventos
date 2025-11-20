@@ -1355,9 +1355,11 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
           )}
         </div>
       </div>
-    </div>
+</div>
   );
-};omponente reusável para Input (NOVO ESTILO)
+};
+
+// Componente reusável para Input (NOVO ESTILO)
 const FormInput = ({ label, type = 'text', value, onChange, placeholder, inputMode = 'text', className = '' }) => (
   <div>
     <label className="block text-sm font-medium text-gray-400 mb-1">
