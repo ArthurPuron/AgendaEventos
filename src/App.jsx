@@ -395,9 +395,8 @@ const [userRole, setUserRole] = useState(null);
 
 const renderHeader = () => (
     <header className="w-full bg-[#162A3A]">
-      {/* Trocamos pt-safe por pt-2 para reduzir o espaço do topo */}
       <div className="pt-2 px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-start pt-1">
+        <div className="flex justify-between items-start pt-1"> 
           <div className="flex items-center">
             {userRole === 'admin' && (
               <button
@@ -405,7 +404,7 @@ const renderHeader = () => (
                   setIsMenuOpen(!isMenuOpen);
                   setIsUserMenuOpen(false);
                 }}
-                className="text-[#C9A798] hover:text-white focus:outline-none"
+                className="text-[#C69874] hover:text-white focus:outline-none"
               >
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path>
@@ -424,7 +423,7 @@ const renderHeader = () => (
             >
               {userProfile.picture ? (
                 <img
-                  className="h-10 w-10 rounded-full object-cover border-2 border-[#C9A798] p-0.5"
+                  className="h-10 w-10 rounded-full object-cover border-2 border-[#C69874] p-0.5"
                   src={userProfile.picture}
                   alt="Foto do Perfil"
                 />
@@ -443,7 +442,7 @@ const renderHeader = () => (
                     setIsUserMenuOpen(false);
                     handleSignoutClick();
                   }}
-                  className="block w-full text-left px-4 py-2 text-sm text-[#C9A798] hover:bg-[#162A3A]"
+                  className="block w-full text-left px-4 py-2 text-sm text-[#C69874] hover:bg-[#162A3A]"
                 >
                   Sair
                 </button>
@@ -452,11 +451,11 @@ const renderHeader = () => (
           </div>
         </div>
         
-       <div className="flex justify-center mt-4 mb-4">
-          <h1 className="text-xl font-bold text-[#C69874]">
-           Agenda de Eventos
-         </h1>
-       </div>
+        <div className="flex justify-center mt-4 mb-4">
+           <h1 className="text-xl font-bold text-[#C69874]">
+            Agenda de Eventos
+          </h1>
+        </div>
       </div>
       
       {isMenuOpen && userRole === 'admin' && (
@@ -468,7 +467,7 @@ const renderHeader = () => (
                 setIsMenuOpen(false);
               }}
               className={`text-left px-6 py-4 font-medium transition-colors duration-200 border-b border-[#162A3A] last:border-0
-                ${page === 'eventos' ? 'text-[#C9A798] bg-[#162A3A]' : 'text-[#F5F0ED] hover:bg-[#162A3A]'}
+                ${page === 'eventos' ? 'text-[#C69874] bg-[#162A3A]' : 'text-[#F5F0ED] hover:bg-[#162A3A]'}
               `}
             >
               Eventos
@@ -479,7 +478,7 @@ const renderHeader = () => (
                 setIsMenuOpen(false);
               }}
               className={`text-left px-6 py-4 font-medium transition-colors duration-200
-                ${page === 'musicos' ? 'text-[#C9A798] bg-[#162A3A]' : 'text-[#F5F0ED] hover:bg-[#162A3A]'}
+                ${page === 'musicos' ? 'text-[#C69874] bg-[#162A3A]' : 'text-[#F5F0ED] hover:bg-[#162A3A]'}
               `}
             >
               Músicos
@@ -499,11 +498,11 @@ const renderHeader = () => (
         Para gerenciar eventos, você precisa autorizar o acesso ao seu Google Calendar.
     	</p>
       <button
-        onClick={handleCalendarAuth}
-        className="bg-[#C9A798] hover:opacity-90 text-black font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1"
-    	>
-        Autorizar Google Calendar
-    	</button>
+        onClick={handleCalendarAuth}
+        className="bg-[#C69874] hover:opacity-90 text-black font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1"
+    	>
+        Autorizar Google Calendar
+    	</button>
       <p className="text-sm text-[#A9B4BD] mt-4">
         (Os músicos não verão esta etapa.)
     	</p>
@@ -551,32 +550,32 @@ const renderHeader = () => (
 
 // --- Componente: Aba de Eventos (ADMIN) ---
 const renderEventosPage = () => (
-    <div>
-      <div className="mb-6">
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="w-auto bg-[#C9A798] hover:opacity-90 text-white font-bold py-2 px-6 rounded-lg shadow-lg transition duration-300"
-      	>
-          + Novo Evento
-      	</button>
-    	</div>
+    <div>
+      <div className="mb-6">
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="w-auto bg-[#C69874] hover:opacity-90 text-white font-bold py-2 px-6 rounded-lg shadow-lg transition duration-300"
+      	>
+          + Novo Evento
+      	</button>
+    	</div>
 
-    	{loadingEventos && <p>Carregando eventos...</p>}
-    	{!loadingEventos && eventos.length === 0 && (
-      	<p className="text-gray-400">Nenhum evento cadastrado ainda.</p>
-    	)}
-    	{!loadingEventos && eventos.length > 0 && (
-      	<ul className="space-y-4">
-        	{eventos.map(evento => (
-          	<li 
-            	key={evento.id}
-            	className="bg-[#2A3E4D] p-4 rounded-lg shadow-md cursor-pointer flex justify-between items-start"
+    	{loadingEventos && <p>Carregando eventos...</p>}
+    	{!loadingEventos && eventos.length === 0 && (
+      	<p className="text-gray-400">Nenhum evento cadastrado ainda.</p>
+    	)}
+    	{!loadingEventos && eventos.length > 0 && (
+      	<ul className="space-y-4">
+        	{eventos.map(evento => (
+          	<li 
+            	key={evento.id}
+            	className="bg-[#2A3E4D] p-4 rounded-lg shadow-md cursor-pointer flex justify-between items-start"
 				onClick={() => setSelectedEvento(evento)}
-          	>
-            	<div className="flex flex-col">
-              	<p className="text-xl font-bold text-[#F5F0ED]">{evento.nome}</p>
-              	<p className="text-sm text-[#A9B4BD]">{evento.cidade}</p>
-              	
+          	>
+            	<div className="flex flex-col">
+              	<p className="text-xl font-bold text-[#F5F0ED]">{evento.nome}</p>
+              	<p className="text-sm text-[#A9B4BD]">{evento.cidade}</p>
+              	
                 <div className="mt-4">
                     <p className="text-base text-[#F5F0ED]">
                         {new Date(evento.dataInicio).toLocaleDateString('pt-BR')}
@@ -585,41 +584,41 @@ const renderEventosPage = () => (
                         {new Date(evento.dataInicio).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} - {new Date(evento.dataFim).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                     </p>
                 </div>
-            	</div>
-            	
-            	<div className="flex flex-col items-end justify-between h-full min-h-[120px]">
-              	<StatusBadge status={evento.status} />
-              	
-              	<div className="flex mt-4">
-                	<button
-                  	onClick={(e) => {
-                    	e.stopPropagation(); 
-                    	setEventoParaEditar(evento);
-                  	}}
-                  	className="text-[#C9A798] hover:text-white p-2 rounded-full transition duration-300"
-                  	title="Editar evento"
-                	>
-                  	<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg>
-                	</button>
+            	</div>
+            	
+            	<div className="flex flex-col items-end justify-between h-full min-h-[120px]">
+              	<StatusBadge status={evento.status} />
+              	
+              	<div className="flex mt-4">
+                	<button
+                  	onClick={(e) => {
+                    	e.stopPropagation(); 
+                    	setEventoParaEditar(evento);
+                  	}}
+                  	className="text-[#C69874] hover:text-white p-2 rounded-full transition duration-300"
+                  	title="Editar evento"
+                	>
+                  	<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg>
+                	</button>
 
-                	<button
-                  	onClick={(e) => {
-                    	e.stopPropagation();
-                    	handleDeleteEvento(evento.id);
-                  	}}
-                  	className="text-[#C9A798] hover:text-red-500 p-2 ml-2 rounded-full transition duration-300"
-                  	title="Deletar evento do app"
-                	>
-                  	<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                	</button>
-              	</div>
-            	</div>
-          	</li>
-        	))}
-      	</ul>
-    	)}
-  	</div>
-  );
+                	<button
+                  	onClick={(e) => {
+                    	e.stopPropagation();
+                    	handleDeleteEvento(evento.id);
+                  	}}
+                  	className="text-[#C69874] hover:text-red-500 p-2 ml-2 rounded-full transition duration-300"
+                  	title="Deletar evento do app"
+                	>
+                  	<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                	</button>
+              	</div>
+            	</div>
+          	</li>
+        	))}
+      	</ul>
+    	)}
+  	</div>
+);
 	
   const renderMusicosPage = () => (
   	// ... (código idêntico)
@@ -1054,11 +1053,11 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
                     	{/* Checkbox e Nome */}
                     	<label className="flex items-center space-x-3 cursor-pointer">
                       	<input
-                        	type="checkbox"
-                        	checked={selectedMusicos.includes(musico.id)}
-                        	onChange={() => handleMusicoToggle(musico.id)}
-                        	className="h-5 w-5 rounded text-[#d4b79b] bg-gray-600 border-gray-500 focus:ring-[#d4b79b]"
-                      	/>
+                          type="checkbox"
+                          checked={selectedMusicos.includes(musico.id)}
+                          onChange={() => handleMusicoToggle(musico.id)}
+                          className="h-5 w-5 rounded text-[#C69874] bg-gray-600 border-gray-500 focus:ring-[#C69874]"
+                        />
                       	<span className="text-gray-100">
                         	{musico.nome} <span className="text-gray-400 text-sm">({musico.instrumento})</span>
                       	</span>
@@ -1095,13 +1094,13 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
           	</button>
           	{/* Botão Salvar (Estilo Rose Gold) */}
           	<button
-            	type="submit"
-            	disabled={saving}
-            	className="bg-[#C9A798] hover:opacity-90 text-black font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 disabled:opacity-50"
-          	>
-            	{/* Texto dinâmico */}
-            	{saving ? 'Salvando...' : (isEditMode ? 'Atualizar Evento' : 'Salvar Evento')}
-          	</button>
+            type="submit"
+            disabled={saving}
+            className="bg-[#C69874] hover:opacity-90 text-black font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 disabled:opacity-50"
+          >
+            {/* Texto dinâmico */}
+            {saving ? 'Salvando...' : (isEditMode ? 'Atualizar Evento' : 'Salvar Evento')}
+          </button>
         	</div>
     	</form>
   	</div>
@@ -1333,17 +1332,17 @@ const FormSelect = ({ label, value, onChange, options }) => (
 
 // Componente reusável para Botão de Aba (NOVO ESTILO)
 const TabButton = ({ label, isActive, onClick }) => (
-  <button
-    onClick={onClick}
-    className={`pb-2 px-2 font-medium text-base transition-all duration-200 border-b-2
-    	${isActive
-      	? 'border-[#C9A798] text-[#C9A798]'
-      	: 'text-[#A9B4BD] border-transparent hover:text-[#F5F0ED]'
-    	}
-  	`}
-  >
-    {label}
-  </button>
+  <button
+    onClick={onClick}
+    className={`pb-2 px-2 font-medium text-base transition-all duration-200 border-b-2
+    	${isActive
+      	? 'border-[#C69874] text-[#C69874]'
+      	: 'text-[#A9B4BD] border-transparent hover:text-[#F5F0ED]'
+    	}
+  	`}
+  >
+    {label}
+  </button>
 );
 const ErrorMessage = ({ message, onDismiss }) => (
   // ... (código idêntico)
@@ -1379,27 +1378,27 @@ const InfoItem = ({ label, value, children }) => (
 import './App.css';
 // Componente Helper (NOVO ESTILO DARK)
 const StatusBadge = ({ status }) => (
-  <span
-    className={`px-3 py-2 rounded-lg text-xs font-bold
-    	${status === 'Confirmado'
-      	? 'bg-[#C9A798] text-white'
-      	: 'bg-[#162A3A] text-white'
-    	}
-  	`}
-  >
-  	{status}
-  </span>
+  <span
+    className={`px-3 py-2 rounded-lg text-xs font-bold
+    	${status === 'Confirmado'
+      	? 'bg-[#C69874] text-white'
+      	: 'bg-[#162A3A] text-white'
+    	}
+  	`}
+  >
+  	{status}
+  </span>
 );
 // ATUALIZAÇÃO: Avatar usa a cor Rose Gold
 const Avatar = ({ name }) => {
-  const initials = getInitials(name);
-  return (
-  	<div
-    	className="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center font-bold border-2 border-[#C9A798] text-[#C9A798] bg-transparent"
-  	>
-    	{initials}
-  	</div>
-  );
+  const initials = getInitials(name);
+  return (
+  	<div
+    	className="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center font-bold border-2 border-[#C69874] text-[#C69874] bg-transparent"
+  	>
+    	{initials}
+  	</div>
+  );
 };
 
 export default App;
