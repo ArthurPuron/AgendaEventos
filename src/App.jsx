@@ -397,7 +397,6 @@ const [userRole, setUserRole] = useState(null);
 const renderHeader = () => (
     <header className="w-full bg-[#162A3A] relative">
       
-      {/* 1. BACKDROP (Camada escura que detecta clique fora e fecha os menus) */}
       {(isMenuOpen || isUserMenuOpen) && (
         <div 
           className="fixed inset-0 z-20 bg-black bg-opacity-50 backdrop-blur-sm"
@@ -445,7 +444,6 @@ const renderHeader = () => (
               )}
             </button>
 
-            {/* MENU USUÁRIO (Melhorado visualmente) */}
             {isUserMenuOpen && (
               <div className="absolute right-0 mt-2 w-56 bg-[#2A3E4D] rounded-xl shadow-2xl py-2 ring-1 ring-black ring-opacity-5 border border-[#C69874]">
                  <div className="px-4 py-3 border-b border-[#162A3A] bg-[#233442] rounded-t-xl mb-1">
@@ -473,10 +471,9 @@ const renderHeader = () => (
         </div>
       </div>
       
-      {/* 2. MENU LATERAL (Transformado em Gaveta Fixa) */}
       {isMenuOpen && userRole === 'admin' && (
         <div className="fixed top-0 left-0 h-full w-72 bg-[#2A3E4D] shadow-2xl z-30 border-r border-[#C69874] flex flex-col">
-          <div className="p-6 bg-[#162A3A] border-b border-[#C69874] flex items-center justify-between">
+          <div className="p-6 bg-[#162A3A] flex items-center justify-between">
             <span className="text-[#C69874] font-bold text-xl">Menu</span>
             <button onClick={() => setIsMenuOpen(false)} className="text-gray-400 hover:text-white">
                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -693,17 +690,17 @@ const renderEventosPage = () => (
   // <<< FIM DA ATUALIZAÇÃO DA TELA DE LOADING >>>
   // **********************************************************
   
-  // Tela de Login (Se o Firebase não tiver usuário E o loading terminou)
+// Tela de Login (Se o Firebase não tiver usuário E o loading terminou)
   if (!userProfile) {
     return (
       <div className="min-h-screen bg-[#162A3A] flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-[#2A3E4D] rounded-2xl shadow-2xl p-8 text-center border border-[#C69874]/30">
           
-         <div className="flex justify-center mb-8">
+          <div className="flex justify-center mb-8">
              <img 
                src={loginLogo} 
                alt="Logo da Empresa" 
-               className="h-32 object-contain drop-shadow-xl" 
+               className="h-56 object-contain drop-shadow-xl" 
              />
           </div>
 
@@ -712,7 +709,7 @@ const renderEventosPage = () => (
           </h1>
           
           <p className="text-[#A9B4BD] mb-8 text-sm leading-relaxed">
-            Acesse sua agenda de eventos musicais com exclusividade e praticidade.
+            Acesse sua agenda de eventos musicais com exclusividade e sofisticação.
           </p>
 
           {globalError && <ErrorMessage message={globalError} />}
