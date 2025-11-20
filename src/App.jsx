@@ -511,25 +511,33 @@ const renderHeader = () => (
     </header>
 );
  // --- NOVO: Tela de Autorização do Admin (Atualizada com a Paleta) ---
-  const AdminAuthScreen = () => (
-    <div className="bg-[#2A3E4D] rounded-lg shadow-xl p-4 sm:p-8 text-center">
-      <h2 className="text-2xl sm:text-3xl font-bold text-[#F5F0ED] mb-4">
-        Autorização Necessária
-    	</h2>
-      <p className="text-[#F5F0ED] mb-6">
-        Para gerenciar eventos, você precisa autorizar o acesso ao seu Google Calendar.
-    	</p>
-      <button
+const AdminAuthScreen = () => (
+    <div className="max-w-lg mx-auto mt-10 bg-[#2A3E4D] rounded-2xl shadow-2xl border border-[#C69874]/30 p-8 text-center">
+      <div className="flex justify-center mb-6">
+        <div className="w-20 h-20 bg-[#162A3A] rounded-full flex items-center justify-center border-2 border-[#C69874] shadow-lg">
+          <svg className="w-10 h-10 text-[#C69874]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+          </svg>
+        </div>
+      </div>
+      
+      <h2 className="text-2xl font-bold text-[#F5F0ED] mb-3 tracking-wide">
+        Sincronização de Agenda
+      </h2>
+      
+      <p className="text-[#A9B4BD] mb-8 leading-relaxed">
+        Para gerenciar os eventos com eficiência, precisamos conectar ao seu Google Calendar.
+      </p>
+      
+      <button
         onClick={handleCalendarAuth}
-        className="bg-[#C69874] hover:opacity-90 text-black font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1"
-    	>
+        className="w-full bg-[#C69874] hover:bg-[#b08463] text-[#162A3A] font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1 flex items-center justify-center gap-2"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
         Autorizar Google Calendar
-    	</button>
-      <p className="text-sm text-[#A9B4BD] mt-4">
-        (Os músicos não verão esta etapa.)
-    	</p>
-  	</div>
-  );
+      </button>
+    </div>
+  );
   const AdminDashboard = () => (
   	// ... (código idêntico)
     <>
