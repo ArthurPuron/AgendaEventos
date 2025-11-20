@@ -452,12 +452,11 @@ const renderHeader = () => (
           </div>
         </div>
         
-        {/* AQUI: Aumentei o espaçamento entre os ícones e o título (mt-10) */}
-        <div className="flex justify-center mt-10 mb-4">
-           <h1 className="text-xl font-bold text-[#C9A798]">
-            Agenda de Eventos
-          </h1>
-        </div>
+       <div className="flex justify-center mt-4 mb-4">
+          <h1 className="text-xl font-bold text-[#C69874]">
+           Agenda de Eventos
+         </h1>
+       </div>
       </div>
       
       {isMenuOpen && userRole === 'admin' && (
