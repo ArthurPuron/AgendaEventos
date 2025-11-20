@@ -26,6 +26,7 @@ import {
 // --- NOVO: Importação dos seus arquivos de logo ---
 import claveLogo from './assets/clave.png';
 import rodaLogo from './assets/roda.png'; // (Assumindo que o nome do arquivo da roda é 'roda.png')
+import loginLogo from './assets/logo-login.png';
 
 /*
   LEIA ANTES DE RODAR: INSTRUÇÕES DO IMPLEMENTADOR (Passo 36)
@@ -690,11 +691,11 @@ const renderEventosPage = () => (
       <div className="min-h-screen bg-[#162A3A] flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-[#2A3E4D] rounded-2xl shadow-2xl p-8 text-center border border-[#C69874]/30">
           
-          <div className="flex justify-center mb-6">
+         <div className="flex justify-center mb-8">
              <img 
-               src={claveLogo} 
-               alt="Logo" 
-               className="h-28 object-contain drop-shadow-2xl filter brightness-110" 
+               src={loginLogo} 
+               alt="Logo da Empresa" 
+               className="h-32 object-contain drop-shadow-xl" 
              />
           </div>
 
