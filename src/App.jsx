@@ -396,8 +396,8 @@ const [userRole, setUserRole] = useState(null);
 const renderHeader = () => (
     <header className="w-full bg-[#162A3A]">
       <div className="pt-0 px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-start pt-1"> 
-          <div className="flex items-center">
+        <div className="flex justify-between items-start"> 
+          <div className="flex items-center pt-1">
             {userRole === 'admin' && (
               <button
                 onClick={() => {
@@ -413,7 +413,7 @@ const renderHeader = () => (
             )}
           </div>
 
-          <div className="relative z-30">
+          <div className="relative z-10">
             <button 
               onClick={() => {
                 setIsUserMenuOpen(!isUserMenuOpen);
