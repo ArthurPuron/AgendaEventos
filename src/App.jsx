@@ -685,29 +685,42 @@ const renderEventosPage = () => (
   // **********************************************************
   
   // Tela de Login (Se o Firebase não tiver usuário E o loading terminou)
-  if (!userProfile) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      	{/* ... (código idêntico) ... */}
-      	<div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
-        	<h1 className="text-3xl font-bold text-gray-800 mb-2">
-          	Agenda de Músicos
-        	</h1>
-        	<p className="text-gray-600 mb-8">
-          	Faça login com sua conta Google para gerenciar os eventos.
-        	</p>
-        	{globalError && <ErrorMessage message={globalError} />}
-        	<button
-          	onClick={handleAuthClick}
-          	className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1"
-        	>
-          	Fazer Login com Google
-        	</button>
-      	</div>
-      </div>
-    );
-  }
+  if (!userProfile) {
+    return (
+      <div className="min-h-screen bg-[#162A3A] flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-[#2A3E4D] rounded-2xl shadow-2xl p-8 text-center border border-[#C69874]/30">
+          
+          <div className="flex justify-center mb-6">
+             <img 
+               src={claveLogo} 
+               alt="Logo" 
+               className="h-28 object-contain drop-shadow-2xl filter brightness-110" 
+             />
+          </div>
 
+          <h1 className="text-3xl font-bold text-[#F5F0ED] mb-3 tracking-wide">
+            Bem-vindo(a)
+          </h1>
+          
+          <p className="text-[#A9B4BD] mb-8 text-sm leading-relaxed">
+            Acesse sua agenda de eventos musicais com exclusividade e sofisticação.
+          </p>
+
+          {globalError && <ErrorMessage message={globalError} />}
+          
+          <button
+            onClick={handleAuthClick}
+            className="w-full bg-[#C69874] hover:bg-[#b08463] text-[#162A3A] font-bold py-3.5 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1 flex items-center justify-center gap-3"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z"/>
+            </svg>
+            Entrar com Google
+          </button>
+        </div>
+      </div>
+    );
+  }
   // Tela Principal (Logado e Autorizado)
   // (Só chega aqui se authLoading = false E userProfile = true)
   return (
