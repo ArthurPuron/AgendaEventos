@@ -34,9 +34,12 @@ import loginLogo from './assets/logo-login.png';
 */
 
 // **********************************************************
-// UID DE ADMIN (Corrigido no Passo 33)
+// LISTA DE ADMINS (Adicione o e-mail dela aqui)
 // **********************************************************
-const ADMIN_UID = "b2XJT8OqQ7SezDjU3WtWv6MwYVa2"; 
+const ADMIN_EMAILS = [
+  "arthurpuron@gmail.com",
+  "COLOQUE_O_EMAIL_DELA_AQUI@GMAIL.COM" 
+];
 
 // **********************************************************
 // Chaves de Configuração (Base Correta)
@@ -163,11 +166,11 @@ const [userRole, setUserRole] = useState(null);
   // 2. Observador de Autenticação (A SOLUÇÃO DE PERSISTÊNCIA)
   // (Idêntico ao anterior, 100% funcional)
   // **********************************************************
- // Observador de Autenticação
+// Observador de Autenticação
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        console.log("onAuthStateChanged: Usuário encontrado.", user.uid);
+        console.log("onAuthStateChanged: Usuário encontrado.", user.email);
         setUserId(user.uid);
         setUserProfile({
           name: user.displayName,
@@ -175,12 +178,12 @@ const [userRole, setUserRole] = useState(null);
           picture: user.photoURL,
         });
 
-        if (user.uid === ADMIN_UID) {
+        // AQUI MUDOU: Verifica se o e-mail está na lista de admins
+        if (ADMIN_EMAILS.includes(user.email)) {
           setUserRole('admin');
           console.log("Status de Acesso: ADMIN");
           const storedToken = localStorage.getItem('gapi_access_token');
           
-          // SE tiver token salvo, NÃO para o loading aqui (espera o initializeGapi)
           if (storedToken) {
             const scriptGapi = document.createElement('script');
             scriptGapi.src = 'https://apis.google.com/js/api.js';
@@ -189,7 +192,6 @@ const [userRole, setUserRole] = useState(null);
             scriptGapi.onload = () => initializeGapi(storedToken);
             document.body.appendChild(scriptGapi);
           } else {
-            // Se NÃO tiver token, pode parar o loading
             setAuthLoading(false);
           }
         } else {
@@ -218,7 +220,6 @@ const [userRole, setUserRole] = useState(null);
 
     return () => unsubscribe();
   }, []);
-
 
   // 3. Carregamento de Músicos (Idêntico)
   useEffect(() => {
@@ -315,10 +316,7 @@ const [userRole, setUserRole] = useState(null);
   // --- Funções de Autenticação Google (Idêntico e simplificado) ---
   const handleAuthClick = async () => {
   	// ... (código idêntico)
-    if (ADMIN_UID === "COLE_SEU_GOOGLE_UID_AQUI") {
-      setGlobalError("Erro de Configuração: O ADMIN_UID ainda não foi definido no código App.jsx.");
-      return;
-    }
+   
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
