@@ -542,39 +542,42 @@ const AdminAuthScreen = () => (
       {page === 'musicos' && renderMusicosPage()}
     </>
   );
-  const MusicianDashboard = () => (
-  	// ... (código idêntico)
-    <div className="bg-white rounded-lg shadow-xl p-4 sm:p-8">
-      <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">
-        Meus Próximos Eventos
-      </h2>
-      {loadingEventos && <p>Carregando seus eventos...</p>}
-      {!loadingEventos && eventos.length === 0 && (
-        <p className="text-gray-600">Você ainda não foi convidado para nenhum evento.</p>
-      )}
-      {!loadingEventos && eventos.length > 0 && (
-        <ul className="divide-y divide-gray-200">
-          {eventos.map(evento => (
-            <li key={evento.id}>
-              <div
-                className="py-4 flex justify-between items-center w-full text-left hover:bg-gray-50 rounded-lg cursor-pointer"
-                onClick={() => setSelectedEvento(evento)}
-              >
-                <div>
-                  <p className="text-lg font-medium text-gray-900">{evento.nome}</p>
-                  <p className="text-sm text-gray-600">{evento.cidade} - <StatusBadge status={evento.status} /></p>
-                  <p className="text-sm text-gray-500">
-                    {formatDisplayDate(evento.dataInicio, evento.dataFim)}
-                  </p>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-
+const MusicianDashboard = () => (
+    <div className="w-full">
+      <h2 className="text-2xl sm:text-3xl font-bold text-[#F5F0ED] mb-6 border-b border-[#C69874] pb-2 inline-block">
+        Meus Próximos Eventos
+      </h2>
+      {loadingEventos && <p className="text-[#A9B4BD]">Carregando seus eventos...</p>}
+      {!loadingEventos && eventos.length === 0 && (
+        <div className="bg-[#2A3E4D] p-6 rounded-xl shadow-lg text-center border border-[#162A3A]">
+           <p className="text-[#A9B4BD]">Você ainda não foi convidado para nenhum evento.</p>
+        </div>
+      )}
+      {!loadingEventos && eventos.length > 0 && (
+        <ul className="space-y-4">
+          {eventos.map(evento => (
+            <li key={evento.id}>
+              <div
+                className="bg-[#2A3E4D] p-5 rounded-xl shadow-lg cursor-pointer border-l-4 border-[#C69874] hover:bg-[#344a5c] transition-colors flex justify-between items-center"
+                onClick={() => setSelectedEvento(evento)}
+              >
+                <div>
+                  <p className="text-xl font-bold text-[#F5F0ED] mb-1">{evento.nome}</p>
+                  <p className="text-sm text-[#A9B4BD] mb-2">{evento.cidade}</p>
+                  <p className="text-sm text-[#F5F0ED]">
+                    {formatDisplayDate(evento.dataInicio, evento.dataFim)}
+                  </p>
+                </div>
+                <div className="pl-2">
+                   <StatusBadge status={evento.status} />
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
 // --- Componente: Aba de Eventos (ADMIN) ---
 const renderEventosPage = () => (
     <div>
@@ -780,87 +783,96 @@ const renderEventosPage = () => (
 // ATUALIZAÇÃO (Passo 34/35) - Componente Inteiro Atualizado
 // **********************************************************
 const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
-  const isAdmin = userRole === 'admin';
-  const startDate = new Date(evento.dataInicio);
-  const endDate = new Date(evento.dataFim);
-  const dateString = startDate.toLocaleDateString('pt-BR', { 
-    day: '2-digit', month: '2-digit', year: 'numeric' 
-  });
-  const timeString = `${startDate.toLocaleTimeString('pt-BR', { timeStyle: 'short' })} - ${endDate.toLocaleTimeString('pt-BR', { timeStyle: 'short' })}`;
-  const myCachet = evento.musicos.find(m => m.email === userEmail)?.cachet || '0';
-  
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto pb-4">
-        <div className="flex justify-between items-start p-6 border-b border-gray-200">
-          <div className="flex-grow">
-            <div className="flex justify-between items-center">
-              <h3 className="text-2xl font-bold text-gray-900">
-                {evento.nome}
-              </h3>
-              <StatusBadge status={evento.status} />
-            </div>
-            <p className="text-sm text-gray-500">{evento.cidade}</p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 ml-4"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-          </button>
-        </div>
-        <div className="p-6 space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <InfoItem label="Data" value={dateString} />
-            <InfoItem label="Horário" value={timeString} />
-            {isAdmin ? (
-              <InfoItem label="Pacote" value={evento.pacote} />
-            ) : (
-              <InfoItem label="Seu Cachet" value={formatCurrency(myCachet)} />
-            )}
-          </div>
-          {isAdmin && (
-            <div>
-              <h4 className="text-lg font-semibold text-gray-800 mb-2 border-b pb-1">
-                Financeiro (Admin)
-              </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <InfoItem label="Valor Total do Evento" value={formatCurrency(evento.valorEvento)} />
-              </div>
-            </div>
-          )}
-          <div>
-            <h4 className="text-lg font-semibold text-gray-800 mb-2 border-b pb-1">
-              Músicos no Evento
-            </h4>
-            {evento.musicos && evento.musicos.length > 0 ? (
-              <ul className="divide-y divide-gray-200">
-                {evento.musicos.map(musico => {
-                  const isMe = musico.email === userEmail;
-                  return (
-                    <li key={musico.id} className="py-3 flex justify-between items-center">
-                      <div>
-                        <p className="font-medium text-gray-900">{musico.nome}</p>
-                        <p className="text-sm text-gray-500">{musico.instrumento}</p>
-                      </div>
-                      {isAdmin && (
-                        <p className="text-gray-700 font-semibold">
-                          {formatCurrency(musico.cachet)}
-                      	</p>
-                    	)}
-                  	</li>
-                	);
-            	  })}
-          	  </ul>
-        	) : (
-          	<p className="text-gray-500">Nenhum músico selecionado para este evento.</p>
-        	)}
-          </div>
-        </div>
-      </div>
-  </div>
-  );
+  const isAdmin = userRole === 'admin';
+  const startDate = new Date(evento.dataInicio);
+  const endDate = new Date(evento.dataFim);
+  const dateString = startDate.toLocaleDateString('pt-BR', { 
+    day: '2-digit', month: '2-digit', year: 'numeric' 
+  });
+  const timeString = `${startDate.toLocaleTimeString('pt-BR', { timeStyle: 'short' })} - ${endDate.toLocaleTimeString('pt-BR', { timeStyle: 'short' })}`;
+  const myCachet = evento.musicos.find(m => m.email === userEmail)?.cachet || '0';
+  
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-70 z-40 flex items-center justify-center p-4 backdrop-blur-sm">
+      <div className="bg-[#2A3E4D] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-[#C69874]/30 relative">
+        
+        {/* Botão Fechar (X) isolado no topo direito */}
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-4 right-4 text-[#A9B4BD] hover:text-white bg-[#162A3A] rounded-full p-2 transition-colors"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+
+        <div className="p-6 pt-12">
+           {/* Cabeçalho do Card */}
+           <div className="flex justify-between items-start mb-6">
+              <div className="pr-4">
+                 <h3 className="text-2xl font-bold text-[#C69874] leading-tight mb-1">
+                   {evento.nome}
+                 </h3>
+                 <p className="text-sm text-[#F5F0ED] opacity-80">{evento.cidade}</p>
+              </div>
+              <div className="flex-shrink-0">
+                 <StatusBadge status={evento.status} />
+              </div>
+           </div>
+
+           <div className="space-y-4">
+              {/* Card de Datas */}
+              <div className="bg-[#162A3A] p-4 rounded-lg border border-[#374151]">
+                 <div className="grid grid-cols-2 gap-4">
+                    <InfoItem label="Data" value={dateString} />
+                    <InfoItem label="Horário" value={timeString} />
+                 </div>
+              </div>
+              
+              {/* Card Financeiro */}
+              <div className="bg-[#162A3A] p-4 rounded-lg border border-[#374151]">
+                {isAdmin ? (
+                  <InfoItem label="Pacote" value={evento.pacote} />
+                ) : (
+                  <InfoItem label="Seu Cachet" value={formatCurrency(myCachet)} />
+                )}
+                
+                 {isAdmin && (
+                    <div className="mt-4 pt-4 border-t border-[#374151]">
+                       <InfoItem label="Valor Total" value={formatCurrency(evento.valorEvento)} />
+                    </div>
+                 )}
+              </div>
+
+              {/* Lista de Músicos */}
+              <div>
+                <h4 className="text-xs font-bold text-[#C69874] mb-3 uppercase tracking-wider">
+                  Músicos Escalados
+                </h4>
+                {evento.musicos && evento.musicos.length > 0 ? (
+                  <ul className="divide-y divide-[#374151]">
+                    {evento.musicos.map(musico => (
+                      <li key={musico.id} className="py-3 flex justify-between items-center">
+                        <div>
+                          <p className="text-[#F5F0ED] font-medium text-sm">{musico.nome}</p>
+                          <p className="text-xs text-[#A9B4BD]">{musico.instrumento}</p>
+                        </div>
+                        {isAdmin && (
+                          <span className="text-[#F5F0ED] font-bold text-sm">
+                            {formatCurrency(musico.cachet)}
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-[#A9B4BD] text-sm italic">Nenhum músico escalado.</p>
+                )}
+              </div>
+           </div>
+        </div>
+      </div>
+  </div>
+  );
 };
 
 const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollectionPath, eventoParaEditar }) => {
@@ -1400,19 +1412,18 @@ const ErrorMessage = ({ message, onDismiss }) => (
 );
 
 const InfoItem = ({ label, value, children }) => (
-  // ... (código idêntico)
-  <div>
-    <label className="block text-sm font-medium text-gray-500">
-      {label}
-    </label>
-  	{children ? (
-    	<div className="mt-1">{children}</div>
-  	) : (
-    	<p className="text-lg font-semibold text-gray-900">
-      	{value}
-    	</p>
-  	)}
-  </div>
+  <div>
+    <label className="block text-xs font-medium text-[#A9B4BD] uppercase tracking-wide mb-1">
+      {label}
+    </label>
+    {children ? (
+      <div className="mt-1">{children}</div>
+    ) : (
+      <p className="text-base font-semibold text-[#F5F0ED]">
+        {value}
+      </p>
+    )}
+  </div>
 );
 
 import './App.css';
