@@ -1154,191 +1154,209 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
 };
 
 const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
-  const [musicoParaEditar, setMusicoParaEditar] = useState(null);
-  const [nome, setNome] = useState('');
-  const [email, setEmail] = useState('');
-  const [instrumento, setInstrumento] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [formError, setFormError] = useState(null);
+  const [musicoParaEditar, setMusicoParaEditar] = useState(null);
+  const [nome, setNome] = useState('');
+  const [email, setEmail] = useState('');
+  const [instrumento, setInstrumento] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState(null);
 
-  useEffect(() => {
-    if (musicoParaEditar) {
-      setNome(musicoParaEditar.nome);
-      setEmail(musicoParaEditar.email);
-      setInstrumento(musicoParaEditar.instrumento);
-      setFormError(null);
-    } else {
-      setNome('');
-      setEmail('');
-      setInstrumento('');
-    }
-  }, [musicoParaEditar]);
+  useEffect(() => {
+    if (musicoParaEditar) {
+      setNome(musicoParaEditar.nome);
+      setEmail(musicoParaEditar.email);
+      setInstrumento(musicoParaEditar.instrumento);
+      setFormError(null);
+    } else {
+      setNome('');
+      setEmail('');
+      setInstrumento('');
+    }
+  }, [musicoParaEditar]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!nome || !email || !instrumento) {
-      setFormError("Por favor, preencha todos os campos.");
-      return;
-    }
-    if (!collectionPath) {
-      setError("Erro de conexão (User ID nulo).");
-      return;
-    }
-    setSaving(true);
-    setFormError(null);
-    try {
-      if (musicoParaEditar) {
-        const musicoRef = doc(db, collectionPath, musicoParaEditar.id);
-        await setDoc(musicoRef, {
-          nome: nome,
-          email: email,
-        	instrumento: instrumento,
-        	});
-      	setMusicoParaEditar(null);
-      } else {
-      	await addDoc(collection(db, collectionPath), {
-        	nome: nome,
-        	email: email,
-        	instrumento: instrumento,
-      	});
-      	setNome('');
-      	setEmail('');
-      	setInstrumento('');
-      	}
-  	} catch (e) {
-    	console.error("[Firestore] Erro ao salvar músico:", e);
-    	setFormError("Não foi possível salvar o músico.");
-  	}
-  	setSaving(false);
-  };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!nome || !email || !instrumento) {
+      setFormError("Por favor, preencha todos os campos.");
+      return;
+    }
+    if (!collectionPath) {
+      setError("Erro de conexão (User ID nulo).");
+      return;
+    }
+    setSaving(true);
+    setFormError(null);
+    try {
+      if (musicoParaEditar) {
+        const musicoRef = doc(db, collectionPath, musicoParaEditar.id);
+        await setDoc(musicoRef, {
+          nome: nome,
+          email: email,
+          instrumento: instrumento,
+          });
+        setMusicoParaEditar(null);
+      } else {
+        await addDoc(collection(db, collectionPath), {
+          nome: nome,
+          email: email,
+          instrumento: instrumento,
+        });
+        setNome('');
+        setEmail('');
+        setInstrumento('');
+        }
+    } catch (e) {
+      console.error("[Firestore] Erro ao salvar músico:", e);
+      setFormError("Não foi possível salvar o músico.");
+    }
+    setSaving(false);
+  };
 
-  const handleDelete = async (musicoId) => {
-    if (!collectionPath) {
-      setError("Erro de conexão (User ID nulo).");
-      return;
-    }
-    if (musicoParaEditar && musicoParaEditar.id === musicoId) {
-    	setMusicoParaEditar(null);
-    }
-    const result = await Swal.fire({
-      title: 'Tem certeza que deseja deletar?',
-      text: "O músico será removido permanentemente.",
-      icon: 'warning',
-    	showCancelButton: true,
-    	confirmButtonColor: '#3085d6',
-    	cancelButtonColor: '#d33',
-    	confirmButtonText: 'Sim, deletar!',
-    	cancelButtonText: 'Cancelar'
-  	});
-  	if (result.isConfirmed) {
-    	try {
-      	await deleteDoc(doc(db, collectionPath, musicoId));
-      	Swal.fire('Deletado!','O músico foi removido da sua lista.','success');
-    	} catch (e) {
-      	console.error("[Firestore] Erro ao deletar músico:", e);
-      	setError("Não foi possível deletar o músico.");
-      	Swal.fire('Erro!','Não foi possível deletar o músico.','error');
-  	}
-  	}
-  };
+  const handleDelete = async (musicoId) => {
+    if (!collectionPath) {
+      setError("Erro de conexão (User ID nulo).");
+      return;
+    }
+    if (musicoParaEditar && musicoParaEditar.id === musicoId) {
+      setMusicoParaEditar(null);
+    }
+    const result = await Swal.fire({
+      title: 'Tem certeza?',
+      text: "O músico será removido permanentemente.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#C69874',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Sim, deletar!',
+      cancelButtonText: 'Cancelar',
+      background: '#2A3E4D',
+      color: '#F5F0ED'
+    });
+    if (result.isConfirmed) {
+      try {
+        await deleteDoc(doc(db, collectionPath, musicoId));
+        Swal.fire({
+            title: 'Deletado!',
+            text: 'Músico removido.',
+            icon: 'success',
+            confirmButtonColor: '#C69874',
+            background: '#2A3E4D',
+            color: '#F5F0ED'
+        });
+      } catch (e) {
+        console.error("[Firestore] Erro ao deletar músico:", e);
+        setError("Não foi possível deletar o músico.");
+      }
+    }
+  };
 
-  return (
-  	<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-    	<div className="lg:col-span-1">
-      	<div className="bg-white rounded-lg shadow-xl p-4 sm:p-6">
-        	<h3 className="text-2xl font-bold text-gray-900 mb-4">
-          	{musicoParaEditar ? 'Editar Músico' : 'Adicionar Músico'}
-        	</h3>
-        	{formError && <ErrorMessage message={formError} onDismiss={() => setFormError(null)} />}
-        	<form onSubmit={handleSubmit} className="space-y-4">
-          	<FormInput
-            	label="Nome"
-            	value={nome}
-            	onChange={setNome}
-  	        	placeholder="Ex: João Silva"
-                className="!text-gray-900" 
-          	/>
-          	<FormInput
-            	label="Email"
-            	type="email"
-            	value={email}
-  	        	onChange={setEmail}
-            	placeholder="joao.silva@gmail.com"
-                className="!text-gray-900"
-          	/>
-          	<FormInput
-  	        	label="Instrumento"
-            	value={instrumento}
-            	onChange={setInstrumento}
-            	placeholder="Ex: Guitarra, Vocal"
-                className="!text-gray-900"
-        	/>
-        	<div className="flex flex-col sm:flex-row sm:gap-2">
-          	<button
-            	type="submit"
-            	disabled={saving}
-            	className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 disabled:opacity-50"
-          	>
-            	{saving ? 'Salvando...' : (musicoParaEditar ? 'Atualizar Músico' : 'Salvar Músico')}
-          	</button>
-          	{musicoParaEditar && (
-            	<button
-              	type="button"
-  	          	onClick={() => setMusicoParaEditar(null)}
-              	className="w-full sm:w-auto bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-300 mt-2 sm:mt-0"
-            	>
-  	          	Cancelar
-            	</button>
-          	)}
-        	</div>
-      	</form>
-      	</div>
-  	</div>
-  	<div className="lg:col-span-2">
-    	<div className="bg-white rounded-lg shadow-xl p-4 sm:p-6">
-      	<h3 className="text-2xl font-bold text-gray-900 mb-4">
-        	Músicos Cadastrados
-      	</h3>
-      	{loading && <p>Carregando músicos...</p>}
-      	{!loading && musicos.length === 0 && (
-        	<p className="text-gray-600">Nenhum músico cadastrado ainda.</p>
-      	)}
-      	{!loading && musicos.length > 0 && (
-        	<ul className="divide-y divide-gray-200">
-          	{musicos.map(musico => (
-            	<li key={musico.id} className="py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
-              	<div className="mb-2 sm:mb-0 flex items-center">
-                	<Avatar name={musico.nome} />
-                	<div className="ml-3">
-                  	<p className="text-lg font-medium text-gray-900">{musico.nome}</p>
-                  	<p className="text-sm text-gray-600">{musico.instrumento}</p>
-  	            	<p className="text-sm text-gray-500">{musico.email}</p>
-              	</div>
-            	</div>
-            	<div className="flex flex-shrink-0 ml-2 w-full sm:w-auto">
-              	<button
-                	onClick={() => setMusicoParaEditar(musico)}
-                	className="w-1/2 sm:w-auto bg-blue-100 hover:bg-blue-200 text-blue-700 p-2 rounded-lg text-sm transition duration-300"
-  	          		title="Editar Músico"
-              	>
-                	<svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg>
-              	</button>
-              	<button
-                	onClick={() => handleDelete(musico.id)}
-                	className="w-1/2 sm:w-auto bg-red-100 hover:bg-red-200 text-red-700 p-2 ml-2 rounded-lg text-sm transition duration-300"
-                	title="Deletar Músico"
-              	>
-  	          		<svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-              	</button>
-            	</div>
-          	</li>
-          	))}
-        	</ul>
-      	)}
-      	</div>
-  	</div>
-  	</div>
-  );
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* Formulário de Cadastro */}
+      <div className="lg:col-span-1">
+        <div className="bg-[#2A3E4D] rounded-2xl shadow-xl p-6 border border-[#C69874]/20">
+          <h3 className="text-2xl font-bold text-[#C69874] mb-6 border-b border-[#C69874]/30 pb-2">
+            {musicoParaEditar ? 'Editar Músico' : 'Novo Músico'}
+          </h3>
+          {formError && <ErrorMessage message={formError} onDismiss={() => setFormError(null)} />}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <FormInput
+              label="Nome Completo"
+              value={nome}
+              onChange={setNome}
+              placeholder="Ex: João Silva"
+              className="text-[#F5F0ED]" 
+            />
+            <FormInput
+              label="Email Google"
+              type="email"
+              value={email}
+              onChange={setEmail}
+              placeholder="email@gmail.com"
+              className="text-[#F5F0ED]"
+            />
+            <FormInput
+              label="Instrumento / Função"
+              value={instrumento}
+              onChange={setInstrumento}
+              placeholder="Ex: Vocal"
+              className="text-[#F5F0ED]"
+            />
+            <div className="flex flex-col gap-3 pt-2">
+              <button
+                type="submit"
+                disabled={saving}
+                className="w-full bg-[#C69874] hover:bg-[#b08463] text-[#162A3A] font-bold py-3 px-4 rounded-lg shadow-lg transition duration-300 disabled:opacity-50 transform hover:-translate-y-1"
+              >
+                {saving ? 'Salvando...' : (musicoParaEditar ? 'Atualizar Músico' : 'Salvar Músico')}
+              </button>
+              {musicoParaEditar && (
+                <button
+                  type="button"
+                  onClick={() => setMusicoParaEditar(null)}
+                  className="w-full bg-transparent border border-[#A9B4BD] text-[#A9B4BD] hover:bg-[#162A3A] hover:text-white font-medium py-2 px-4 rounded-lg transition duration-300"
+                >
+                  Cancelar Edição
+                </button>
+              )}
+            </div>
+          </form>
+        </div>
+      </div>
+
+      {/* Lista de Músicos */}
+      <div className="lg:col-span-2">
+        <div className="bg-[#2A3E4D] rounded-2xl shadow-xl p-6 border border-[#C69874]/20">
+          <h3 className="text-2xl font-bold text-[#F5F0ED] mb-6 border-b border-[#C69874]/30 pb-2">
+            Músicos Cadastrados
+          </h3>
+          
+          {loading && <p className="text-[#A9B4BD]">Carregando lista...</p>}
+          
+          {!loading && musicos.length === 0 && (
+            <div className="text-center py-8 text-[#A9B4BD]">
+               <p>Nenhum músico cadastrado ainda.</p>
+               <p className="text-sm mt-2">Use o formulário ao lado para adicionar.</p>
+            </div>
+          )}
+          
+          {!loading && musicos.length > 0 && (
+            <ul className="space-y-4">
+              {musicos.map(musico => (
+                <li key={musico.id} className="bg-[#162A3A] p-4 rounded-xl border border-[#374151] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div className="flex items-center gap-4">
+                    <Avatar name={musico.nome || "?"} />
+                    <div>
+                      <p className="text-lg font-bold text-[#F5F0ED]">{musico.nome}</p>
+                      <p className="text-xs text-[#C69874] font-bold uppercase tracking-wide">{musico.instrumento}</p>
+                      <p className="text-sm text-[#A9B4BD] mt-0.5">{musico.email}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                    <button
+                      onClick={() => setMusicoParaEditar(musico)}
+                      className="p-2 rounded-full text-[#C69874] hover:bg-[#2A3E4D] transition-colors"
+                      title="Editar"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg>
+                    </button>
+                    <button
+                      onClick={() => handleDelete(musico.id)}
+                      className="p-2 rounded-full text-red-400 hover:bg-[#2A3E4D] hover:text-red-300 transition-colors"
+                      title="Excluir"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 };
 // Componente reusável para Input (NOVO ESTILO)
 const FormInput = ({ label, type = 'text', value, onChange, placeholder, inputMode = 'text', className = '' }) => (
