@@ -2,16 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
-/* --- RESET FUNDAMENTAL E OTIMIZAÇÃO DE TOQUE --- */
 html, body, #root {
   height: 100%;
   width: 100%;
   margin: 0;
   padding: 0;
-  background-color: #162A3A;
-  overscroll-behavior-y: none; /* Bloqueia efeito elástico na página toda */
-  -webkit-tap-highlight-color: transparent; /* Remove quadrado azul ao clicar */
-  touch-action: manipulation; /* Remove delay do clique e impede zoom de duplo toque */
+  background-image: url('/background.png');
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-attachment: fixed;
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -21,9 +24,7 @@ html, body, #root {
   font-weight: 400;
   color-scheme: dark;
   color: #f3f4f6;
-  background-color: #162A3A;
 }
-
 /* --- Correção de Input para Mobile (Evita Zoom e clique fantasma) --- */
 input, select, textarea, button {
   font-size: 16px !important; /* Impede zoom automático no iOS */
@@ -74,7 +75,7 @@ button {
   justify-content: center;
   position: fixed;
   inset: 0;
-  background-color: #162A3A;
+  background-color: transparent;
   min-height: 100vh;
   z-index: 9999;
 }
