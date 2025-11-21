@@ -553,7 +553,7 @@ const MusicianDashboard = () => (
           {eventos.map(evento => (
             <li key={evento.id}>
               <div
-                className="bg-[#2A3E4D] p-5 rounded-xl shadow-lg cursor-pointer border-l-4 border-[#C69874] hover:bg-[#344a5c] transition-colors flex justify-between items-center"
+                className="bg-[#2A3E4D]/40 backdrop-blur-md p-5 rounded-xl shadow-lg cursor-pointer border-l-4 border-[#C69874] hover:bg-[#2A3E4D]/60 transition-colors flex justify-between items-center"
                 onClick={() => setSelectedEvento(evento)}
               >
                 <div>
@@ -592,11 +592,11 @@ const renderEventosPage = () => (
     	{!loadingEventos && eventos.length > 0 && (
       	<ul className="space-y-4">
         	{eventos.map(evento => (
-          	<li 
-            	key={evento.id}
-            	className="bg-[#2A3E4D] p-4 rounded-lg shadow-md cursor-pointer flex justify-between items-start"
-				onClick={() => setSelectedEvento(evento)}
-          	>
+          <li 
+            key={evento.id}
+            className="bg-[#2A3E4D]/40 backdrop-blur-md p-4 rounded-lg shadow-md cursor-pointer flex justify-between items-start"
+            onClick={() => setSelectedEvento(evento)}
+          >
             	<div className="flex flex-col">
               	<p className="text-xl font-bold text-[#F5F0ED]">{evento.nome}</p>
               	<p className="text-sm text-[#A9B4BD]">{evento.cidade}</p>
@@ -689,10 +689,10 @@ const renderEventosPage = () => (
   // **********************************************************
   
 // Tela de Login (Se o Firebase não tiver usuário E o loading terminou)
-  if (!userProfile) {
+ if (!userProfile) {
     return (
-<div className="min-h-screen bg-transparent flex items-center justify-center p-4">
-	<div className="max-w-md w-full bg-[#2A3E4D] rounded-2xl shadow-2xl p-8 text-center border border-[#C69874]/30">
+      <div className="min-h-screen bg-transparent flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-[#2A3E4D]/40 backdrop-blur-md rounded-2xl shadow-2xl p-8 text-center border border-[#C69874]/30">
           
           <div className="flex justify-center mb-8">
              <img 
@@ -1322,7 +1322,7 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <div className="lg:col-span-1">
-        <div className="bg-[#2A3E4D] rounded-2xl shadow-xl p-6 border border-[#C69874]/20">
+        <div className="bg-[#2A3E4D]/40 backdrop-blur-md rounded-2xl shadow-xl p-6 border border-[#C69874]/20">
           <h3 className="text-2xl font-bold text-[#C69874] mb-6 border-b border-[#C69874]/30 pb-2">
             {musicoParaEditar ? 'Editar Músico' : 'Novo Músico'}
           </h3>
