@@ -882,7 +882,6 @@ const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
         </div>
       </div>
 
-      {/* Modal de Escolha de GPS */}
       {showMapModal && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-60 backdrop-blur-sm"
@@ -910,8 +909,8 @@ const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
                 onClick={() => setShowMapModal(false)}
                 title="Google Maps"
               >
-                {/* AQUI: Usando a imagem PNG do Maps */}
-                <img src={mapsLogo} alt="Google Maps" className="w-10 h-10 object-contain" />
+                {/* AQUI: Aumentei para w-16 h-16 para preencher o quadrado */}
+                <img src={mapsLogo} alt="Google Maps" className="w-16 h-16 object-contain" />
               </a>
               
               <a 
@@ -922,8 +921,8 @@ const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
                 onClick={() => setShowMapModal(false)}
                 title="Waze"
               >
-                {/* AQUI: Usando a imagem PNG do Waze */}
-                <img src={wazeLogo} alt="Waze" className="w-10 h-10 object-contain" />
+                {/* AQUI: Aumentei para w-16 h-16 para preencher o quadrado */}
+                <img src={wazeLogo} alt="Waze" className="w-16 h-16 object-contain" />
               </a>
             </div>
           </div>
