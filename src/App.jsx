@@ -691,8 +691,8 @@ const renderEventosPage = () => (
 // Tela de Login (Se o Firebase não tiver usuário E o loading terminou)
   if (!userProfile) {
     return (
-      <div className="min-h-screen bg-[#162A3A] flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-[#2A3E4D] rounded-2xl shadow-2xl p-8 text-center border border-[#C69874]/30">
+<div className="min-h-screen bg-transparent flex items-center justify-center p-4">
+	<div className="max-w-md w-full bg-[#2A3E4D] rounded-2xl shadow-2xl p-8 text-center border border-[#C69874]/30">
           
           <div className="flex justify-center mb-8">
              <img 
@@ -728,7 +728,7 @@ const renderEventosPage = () => (
   // Tela Principal (Logado e Autorizado)
   // (Só chega aqui se authLoading = false E userProfile = true)
   return (
-<div className="min-h-screen bg-[#162A3A] text-[#F5F0ED] font-sans">
+<div className="min-h-screen bg-transparent text-[#F5F0ED] font-sans">
 	{renderHeader()}
     	
     	<main className="py-6 px-4 sm:px-6 lg:px-8">
