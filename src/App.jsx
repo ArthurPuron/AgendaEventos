@@ -785,6 +785,8 @@ const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
   const timeString = `${startDate.toLocaleTimeString('pt-BR', { timeStyle: 'short' })} - ${endDate.toLocaleTimeString('pt-BR', { timeStyle: 'short' })}`;
   const myCachet = evento.musicos.find(m => m.email === userEmail)?.cachet || '0';
   
+  const encodedAddress = encodeURIComponent(evento.cidade || "");
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 z-40 flex items-center justify-center p-4 backdrop-blur-sm">
       <div className="bg-[#2A3E4D] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-[#C69874]/30 relative">
@@ -797,14 +799,12 @@ const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
 
-        {/* AQUI: Mudamos de pt-16 para pt-24 para dar mais espaço */}
         <div className="p-6 pt-24">
            <div className="flex justify-between items-start mb-6">
               <div className="pr-4">
                  <h3 className="text-2xl font-bold text-[#C69874] leading-tight mb-1">
                    {evento.nome}
                  </h3>
-                 <p className="text-sm text-[#F5F0ED] opacity-80">{evento.cidade}</p>
               </div>
               <div className="flex-shrink-0">
                  <StatusBadge status={evento.status} />
@@ -812,6 +812,31 @@ const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
            </div>
 
            <div className="space-y-4">
+              
+              <div className="bg-[#162A3A] p-4 rounded-lg border border-[#374151]">
+                 <InfoItem label="Endereço" value={evento.cidade} />
+                 <div className="flex gap-3 mt-4">
+                    <a 
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodedAddress}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 bg-[#2A3E4D] hover:bg-[#374151] text-[#F5F0ED] border border-[#C69874]/50 py-2 px-3 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-colors"
+                    >
+                      <svg className="w-4 h-4 text-[#C69874]" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                      Google Maps
+                    </a>
+                    <a 
+                      href={`https://waze.com/ul?q=${encodedAddress}&navigate=yes`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 bg-[#2A3E4D] hover:bg-[#374151] text-[#F5F0ED] border border-[#C69874]/50 py-2 px-3 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-colors"
+                    >
+                      <svg className="w-4 h-4 text-[#C69874]" fill="currentColor" viewBox="0 0 24 24"><path d="M12.46,6.31c0.83,0.6,1.73,1.46,2.38,2.2c0.65-0.74,1.55-1.6,2.38-2.2c2.3-1.66,5.65-0.53,6.32,2.22 c0.27,1.12,0.02,2.25-0.55,3.18l-8.15,10.62L6.69,11.71c-0.57-0.93-0.82-2.06-0.55-3.18C6.81,5.78,10.16,4.65,12.46,6.31z"/></svg>
+                      Waze
+                    </a>
+                 </div>
+              </div>
+
               <div className="bg-[#162A3A] p-4 rounded-lg border border-[#374151]">
                  <div className="grid grid-cols-2 gap-4">
                     <InfoItem label="Data" value={dateString} />
@@ -1030,11 +1055,11 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
             	placeholder="Ex: Casamento Ana e Bruno"
           	/>
           	<FormInput
-            	label="Cidade"
-            	value={cidade}
-            	onChange={setCidade}
-  	        	placeholder="Ex: São Paulo, SP"
-          	/>
+              label="Endereço / Local"
+              value={cidade}
+              onChange={setCidade}
+              placeholder="Ex: Rua das Flores, 123 - Campinas"
+            />
           	<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             	<FormInput
               	label="Data"
