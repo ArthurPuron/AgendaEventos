@@ -390,7 +390,7 @@ const handleCalendarAuth = async () => {
   };
 
 const renderHeader = () => (
-    <header className="w-full bg-[#162A3A] relative">
+    <header className="w-full bg-transparent relative">
       
       {(isMenuOpen || isUserMenuOpen) && (
         <div 
