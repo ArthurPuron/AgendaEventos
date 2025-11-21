@@ -776,6 +776,7 @@ const renderEventosPage = () => (
 // ATUALIZAÇÃO (Passo 34/35) - Componente Inteiro Atualizado
 // **********************************************************
 const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
+  const [showMapModal, setShowMapModal] = useState(false);
   const isAdmin = userRole === 'admin';
   const startDate = new Date(evento.dataInicio);
   const endDate = new Date(evento.dataFim);
@@ -788,113 +789,143 @@ const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
   const encodedAddress = encodeURIComponent(evento.cidade || "");
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-70 z-40 flex items-center justify-center p-4 backdrop-blur-sm">
-      <div className="bg-[#2A3E4D] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-[#C69874]/30 relative">
-        
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute top-4 right-4 text-[#A9B4BD] hover:text-white bg-[#162A3A] rounded-full p-2 transition-colors"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-        </button>
+    <>
+      <div className="fixed inset-0 bg-black bg-opacity-70 z-40 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div className="bg-[#2A3E4D] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-[#C69874]/30 relative">
+          
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute top-4 right-4 text-[#A9B4BD] hover:text-white bg-[#162A3A] rounded-full p-2 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
 
-        <div className="p-6 pt-24">
-           <div className="flex justify-between items-start mb-6">
-              <div className="pr-4">
-                 <h3 className="text-2xl font-bold text-[#C69874] leading-tight mb-1">
-                   {evento.nome}
-                 </h3>
-              </div>
-              <div className="flex-shrink-0">
-                 <StatusBadge status={evento.status} />
-              </div>
-           </div>
+          <div className="p-6 pt-24">
+             <div className="flex justify-between items-start mb-6">
+                <div className="pr-4">
+                   <h3 className="text-2xl font-bold text-[#C69874] leading-tight mb-1">
+                     {evento.nome}
+                   </h3>
+                </div>
+                <div className="flex-shrink-0">
+                   <StatusBadge status={evento.status} />
+                </div>
+             </div>
 
-           <div className="space-y-4">
-              
-              {/* 1. Cartão de Data e Horário (Agora vem primeiro) */}
-              <div className="bg-[#162A3A] p-4 rounded-lg border border-[#374151]">
-                 <div className="grid grid-cols-2 gap-4">
-                    <InfoItem label="Data" value={dateString} />
-                    <InfoItem label="Horário" value={timeString} />
-                 </div>
-              </div>
-
-              {/* 2. Cartão de Endereço com Ícones (Agora vem em segundo) */}
-              <div className="bg-[#162A3A] p-4 rounded-lg border border-[#374151] flex justify-between items-center gap-4">
-                 <div className="flex-grow">
-                    <InfoItem label="Endereço" value={evento.cidade} />
-                 </div>
-                 <div className="flex gap-3 flex-shrink-0">
-                    {/* Botão Google Maps (Apenas Ícone G) */}
-                    <a 
-                      href={`https://www.google.com/maps/search/?api=1&query=${encodedAddress}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-10 h-10 bg-[#2A3E4D] hover:bg-[#374151] border border-[#C69874]/50 rounded-lg flex items-center justify-center transition-colors"
-                      title="Abrir no Google Maps"
-                    >
-                      <svg className="w-5 h-5 text-[#C69874]" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .533 5.333.533 12S5.867 24 12.48 24c3.44 0 6.013-1.133 8.027-3.24 2.053-2.053 2.627-4.96 2.627-7.44 0-.52-.053-1.093-.147-1.667h-10.5z"/>
-                      </svg>
-                    </a>
-                    
-                    {/* Botão Waze (Apenas Ícone) */}
-                    <a 
-                      href={`https://waze.com/ul?q=${encodedAddress}&navigate=yes`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-10 h-10 bg-[#2A3E4D] hover:bg-[#374151] border border-[#C69874]/50 rounded-lg flex items-center justify-center transition-colors"
-                      title="Abrir no Waze"
-                    >
-                      <svg className="w-6 h-6 text-[#C69874]" fill="currentColor" viewBox="0 0 24 24"><path d="M12.46,6.31c0.83,0.6,1.73,1.46,2.38,2.2c0.65-0.74,1.55-1.6,2.38-2.2c2.3-1.66,5.65-0.53,6.32,2.22 c0.27,1.12,0.02,2.25-0.55,3.18l-8.15,10.62L6.69,11.71c-0.57-0.93-0.82-2.06-0.55-3.18C6.81,5.78,10.16,4.65,12.46,6.31z"/></svg>
-                    </a>
-                 </div>
-              </div>
-              
-              <div className="bg-[#162A3A] p-4 rounded-lg border border-[#374151]">
-                {isAdmin ? (
-                  <InfoItem label="Pacote" value={evento.pacote} />
-                ) : (
-                  <InfoItem label="Seu Cachet" value={formatCurrency(myCachet)} />
-                )}
+             <div className="space-y-4">
                 
-                 {isAdmin && (
-                    <div className="mt-4 pt-4 border-t border-[#374151]">
-                       <InfoItem label="Valor Total" value={formatCurrency(evento.valorEvento)} />
-                    </div>
-                 )}
-              </div>
+                <div className="bg-[#162A3A] p-4 rounded-lg border border-[#374151]">
+                   <div className="grid grid-cols-2 gap-4">
+                      <InfoItem label="Data" value={dateString} />
+                      <InfoItem label="Horário" value={timeString} />
+                   </div>
+                </div>
 
-              <div>
-                <h4 className="text-xs font-bold text-[#C69874] mb-3 uppercase tracking-wider">
-                  Músicos Escalados
-                </h4>
-                {evento.musicos && evento.musicos.length > 0 ? (
-                  <ul className="divide-y divide-[#374151]">
-                    {evento.musicos.map(musico => (
-                      <li key={musico.id} className="py-3 flex justify-between items-center">
-                        <div>
-                          <p className="text-[#F5F0ED] font-medium text-sm">{musico.nome}</p>
-                          <p className="text-xs text-[#A9B4BD]">{musico.instrumento}</p>
-                        </div>
-                        {isAdmin && (
-                          <span className="text-[#F5F0ED] font-bold text-sm">
-                            {formatCurrency(musico.cachet)}
-                          </span>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-[#A9B4BD] text-sm italic">Nenhum músico escalado.</p>
-                )}
-              </div>
-           </div>
+                <div className="bg-[#162A3A] p-4 rounded-lg border border-[#374151] flex justify-between items-center gap-4">
+                   <div className="flex-grow">
+                      <InfoItem label="Endereço" value={evento.cidade} />
+                   </div>
+                   <button 
+                      onClick={() => setShowMapModal(true)}
+                      className="w-10 h-10 bg-[#2A3E4D] hover:bg-[#374151] border border-[#C69874]/50 rounded-lg flex items-center justify-center transition-colors flex-shrink-0"
+                      title="Traçar Rota"
+                   >
+                      <svg className="w-5 h-5 text-[#C69874]" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                      </svg>
+                   </button>
+                </div>
+                
+                <div className="bg-[#162A3A] p-4 rounded-lg border border-[#374151]">
+                  {isAdmin ? (
+                    <InfoItem label="Pacote" value={evento.pacote} />
+                  ) : (
+                    <InfoItem label="Seu Cachet" value={formatCurrency(myCachet)} />
+                  )}
+                  
+                   {isAdmin && (
+                      <div className="mt-4 pt-4 border-t border-[#374151]">
+                         <InfoItem label="Valor Total" value={formatCurrency(evento.valorEvento)} />
+                      </div>
+                   )}
+                </div>
+
+                <div>
+                  <h4 className="text-xs font-bold text-[#C69874] mb-3 uppercase tracking-wider">
+                    Músicos Escalados
+                  </h4>
+                  {evento.musicos && evento.musicos.length > 0 ? (
+                    <ul className="divide-y divide-[#374151]">
+                      {evento.musicos.map(musico => (
+                        <li key={musico.id} className="py-3 flex justify-between items-center">
+                          <div>
+                            <p className="text-[#F5F0ED] font-medium text-sm">{musico.nome}</p>
+                            <p className="text-xs text-[#A9B4BD]">{musico.instrumento}</p>
+                          </div>
+                          {isAdmin && (
+                            <span className="text-[#F5F0ED] font-bold text-sm">
+                              {formatCurrency(musico.cachet)}
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-[#A9B4BD] text-sm italic">Nenhum músico escalado.</p>
+                  )}
+                </div>
+             </div>
+          </div>
         </div>
       </div>
-  </div>
+
+      {/* Modal de Escolha de GPS */}
+      {showMapModal && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-60 backdrop-blur-sm"
+          onClick={() => setShowMapModal(false)}
+        >
+          <div 
+            className="bg-[#2A3E4D] border border-[#C69874] p-6 rounded-2xl shadow-2xl w-full max-w-xs text-center animate-fade-in-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-xl font-bold text-[#F5F0ED] mb-6">Traçar Rota com:</h3>
+            
+            <div className="space-y-3">
+              <a 
+                href={`https://www.google.com/maps/search/?api=1&query=${encodedAddress}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full bg-[#162A3A] hover:bg-[#374151] text-[#F5F0ED] py-3 px-4 rounded-xl border border-[#374151] flex items-center justify-center gap-3 transition-all font-medium"
+                onClick={() => setShowMapModal(false)}
+              >
+                <svg className="w-5 h-5 text-[#C69874]" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                Google Maps
+              </a>
+              
+              <a 
+                href={`https://waze.com/ul?q=${encodedAddress}&navigate=yes`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full bg-[#162A3A] hover:bg-[#374151] text-[#F5F0ED] py-3 px-4 rounded-xl border border-[#374151] flex items-center justify-center gap-3 transition-all font-medium"
+                onClick={() => setShowMapModal(false)}
+              >
+                <svg className="w-6 h-6 text-[#C69874]" fill="currentColor" viewBox="0 0 24 24"><path d="M12.46,6.31c0.83,0.6,1.73,1.46,2.38,2.2c0.65-0.74,1.55-1.6,2.38-2.2c2.3-1.66,5.65-0.53,6.32,2.22 c0.27,1.12,0.02,2.25-0.55,3.18l-8.15,10.62L6.69,11.71c-0.57-0.93-0.82-2.06-0.55-3.18C6.81,5.78,10.16,4.65,12.46,6.31z"/></svg>
+                Waze
+              </a>
+            </div>
+
+            <button 
+              onClick={() => setShowMapModal(false)}
+              className="mt-6 text-[#A9B4BD] text-sm hover:text-white underline decoration-[#C69874]"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollectionPath, eventoParaEditar }) => {
