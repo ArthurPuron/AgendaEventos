@@ -1181,19 +1181,25 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
     }
     setSaving(true);
     setFormError(null);
+
+    // --- AQUI ESTÁ A PROTEÇÃO QUE FALTAVA ---
+    const emailLimpo = email.trim().toLowerCase();
+    const nomeLimpo = nome.trim();
+    // ----------------------------------------
+
     try {
       if (musicoParaEditar) {
         const musicoRef = doc(db, collectionPath, musicoParaEditar.id);
         await setDoc(musicoRef, {
-          nome: nome,
-          email: email,
+          nome: nomeLimpo,
+          email: emailLimpo, // Usa o e-mail limpo
           instrumento: instrumento,
           });
         setMusicoParaEditar(null);
       } else {
         await addDoc(collection(db, collectionPath), {
-          nome: nome,
-          email: email,
+          nome: nomeLimpo,
+          email: emailLimpo, // Usa o e-mail limpo
           instrumento: instrumento,
         });
         setNome('');
@@ -1351,10 +1357,9 @@ const MusicosManager = ({ musicos, loading, collectionPath, setError }) => {
           )}
         </div>
       </div>
-</div>
+    </div>
   );
 };
-
 // Componente reusável para Input (NOVO ESTILO)
 const FormInput = ({ label, type = 'text', value, onChange, placeholder, inputMode = 'text', className = '' }) => (
   <div>
