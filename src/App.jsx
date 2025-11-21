@@ -880,17 +880,25 @@ const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
         </div>
       </div>
 
-      {/* Modal de Escolha de GPS */}
+    {/* Modal de Escolha de GPS */}
       {showMapModal && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-60 backdrop-blur-sm"
           onClick={() => setShowMapModal(false)}
         >
           <div 
-            className="bg-[#2A3E4D] border border-[#C69874] p-6 rounded-2xl shadow-2xl w-full max-w-xs text-center animate-fade-in-up"
+            className="bg-[#2A3E4D] border border-[#C69874] p-6 rounded-2xl shadow-2xl w-full max-w-xs text-center relative animate-fade-in-up"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-xl font-bold text-[#F5F0ED] mb-6">Traçar Rota com:</h3>
+            {/* Botão Fechar (X) no topo direito */}
+            <button 
+              onClick={() => setShowMapModal(false)}
+              className="absolute top-3 right-3 text-[#A9B4BD] hover:text-white p-1"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+
+            <h3 className="text-xl font-bold text-[#F5F0ED] mb-6 mt-2">Traçar Rota com:</h3>
             
             <div className="space-y-3">
               <a 
@@ -900,7 +908,7 @@ const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
                 className="block w-full bg-[#162A3A] hover:bg-[#374151] text-[#F5F0ED] py-3 px-4 rounded-xl border border-[#374151] flex items-center justify-center gap-3 transition-all font-medium"
                 onClick={() => setShowMapModal(false)}
               >
-                <svg className="w-5 h-5 text-[#C69874]" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                <svg className="w-5 h-5 text-[#C69874]" fill="currentColor" viewBox="0 0 24 24"><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .533 5.333.533 12S5.867 24 12.48 24c3.44 0 6.013-1.133 8.027-3.24 2.053-2.053 2.627-4.96 2.627-7.44 0-.52-.053-1.093-.147-1.667h-10.5z"/></svg>
                 Google Maps
               </a>
               
@@ -911,23 +919,14 @@ const ViewEventModal = ({ evento, onClose, userRole, userEmail }) => {
                 className="block w-full bg-[#162A3A] hover:bg-[#374151] text-[#F5F0ED] py-3 px-4 rounded-xl border border-[#374151] flex items-center justify-center gap-3 transition-all font-medium"
                 onClick={() => setShowMapModal(false)}
               >
-                <svg className="w-6 h-6 text-[#C69874]" fill="currentColor" viewBox="0 0 24 24"><path d="M12.46,6.31c0.83,0.6,1.73,1.46,2.38,2.2c0.65-0.74,1.55-1.6,2.38-2.2c2.3-1.66,5.65-0.53,6.32,2.22 c0.27,1.12,0.02,2.25-0.55,3.18l-8.15,10.62L6.69,11.71c-0.57-0.93-0.82-2.06-0.55-3.18C6.81,5.78,10.16,4.65,12.46,6.31z"/></svg>
+                {/* Ícone do Waze (Rodas e sorriso) */}
+                <svg className="w-6 h-6 text-[#C69874]" fill="currentColor" viewBox="0 0 24 24"><path d="M22.8 12.9c-.6-1.7-1.9-2.8-3.4-2.8-1.1 0-2.1.6-2.8 1.5-.5-1.7-1.9-3-3.6-3.4.3-1 .2-2-.4-2.9-1-1.3-2.6-1.9-4.2-1.6-2.3.4-4 2.4-4 4.8v5.9c0 .8.7 1.5 1.5 1.5h10.3c.8 0 1.5-.7 1.5-1.5v-.6c.9-.3 1.7-1 2.2-1.9.9-1.5.2-3.4-1.1-3.9zM7.5 16c-.8 0-1.5-.7-1.5-1.5S6.7 13 7.5 13s1.5.7 1.5 1.5S8.3 16 7.5 16zm1.1-7.8c.8 0 1.5.7 1.5 1.5s-.7 1.5-1.5 1.5-1.5-.7-1.5-1.5.7-1.5 1.5-1.5zm5 4.3c-.8 0-1.5-.7-1.5-1.5s.7-1.5 1.5-1.5 1.5.7 1.5 1.5-.7 1.5-1.5 1.5zm4.3 5c-.8 0-1.5-.7-1.5-1.5s.7-1.5 1.5-1.5 1.5.7 1.5 1.5-.7 1.5-1.5 1.5z" /></svg>
                 Waze
               </a>
             </div>
-
-            <button 
-              onClick={() => setShowMapModal(false)}
-              className="mt-6 text-[#A9B4BD] text-sm hover:text-white underline decoration-[#C69874]"
-            >
-              Cancelar
-            </button>
           </div>
         </div>
       )}
-    </>
-  );
-};
 const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollectionPath, eventoParaEditar }) => {
   // ... (código idêntico)
   const isEditMode = eventoParaEditar !== null;
