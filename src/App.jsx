@@ -504,7 +504,7 @@ const renderHeader = () => (
 );
  // --- NOVO: Tela de Autorização do Admin (Atualizada com a Paleta) ---
 const AdminAuthScreen = () => (
-    <div className="max-w-lg mx-auto mt-10 bg-[#2A3E4D] rounded-2xl shadow-2xl border border-[#C69874]/30 p-8 text-center">
+    <div className="max-w-lg mx-auto mt-10 bg-[#2A3E4D]/40 backdrop-blur-md rounded-2xl shadow-2xl border border-[#C69874]/30 p-8 text-center">
       <div className="flex justify-center mb-6">
         <div className="w-20 h-20 bg-[#162A3A] rounded-full flex items-center justify-center border-2 border-[#C69874] shadow-lg">
           <svg className="w-10 h-10 text-[#C69874]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
