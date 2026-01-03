@@ -1001,8 +1001,13 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
         reminders: { useDefault: true },
       };
 
-      if (isEditMode) {
+     if (isEditMode) {
+        // --- MODO EDIÇÃO ---
+        // Primeiro Google, depois Firebase (já estava correto, mas mantendo a estrutura)
         const eventoRef = doc(db, eventosCollectionPath, eventoParaEditar.id);
+        
+        let finalGoogleEventId = eventoParaEditar.googleEventId;
+
         if (eventoParaEditar.googleEventId) {
            await gapiClient.client.calendar.events.update({
             calendarId: 'primary',
@@ -1010,48 +1015,63 @@ const AddEventModal = ({ onClose, musicosCadastrados, gapiClient, eventosCollect
             resource: eventoParaGoogle,
             sendUpdates: 'all'
           });
-          await setDoc(eventoRef, {
-            ...eventoParaFirestore,
-            googleEventId: eventoParaEditar.googleEventId
-          });
         } else {
+          // Caso raro onde existia no app mas não no Google, cria no Google agora
           const googleResponse = await gapiClient.client.calendar.events.insert({
             calendarId: 'primary',
             resource: eventoParaGoogle,
             sendNotifications: true,
           });
-          const newGoogleEventId = googleResponse.result.id;
-          await setDoc(eventoRef, {
-            ...eventoParaFirestore,
-            googleEventId: newGoogleEventId
-          });
+          finalGoogleEventId = googleResponse.result.id;
         }
+
+        // Só salva no banco se o Google não deu erro
+        await setDoc(eventoRef, {
+          ...eventoParaFirestore,
+          googleEventId: finalGoogleEventId
+        });
+
       } else {
-        const docRef = await addDoc(collection(db, eventosCollectionPath), eventoParaFirestore);
+        // --- MODO NOVO EVENTO (A CORREÇÃO PRINCIPAL) ---
+        
+        // 1. Tenta salvar no Google Calendar PRIMEIRO
+        // Se falhar aqui (token expirado), o código para e vai pro 'catch',
+        // evitando criar um evento "fantasma" no App.
         const googleResponse = await gapiClient.client.calendar.events.insert({
           calendarId: 'primary',
           resource: eventoParaGoogle,
           sendNotifications: true,
         });
+        
         const googleEventId = googleResponse.result.id;
-        await updateDoc(docRef, { googleEventId: googleEventId });
+
+        // 2. Se o Google aceitou, salva no Firestore já com o ID correto
+        await addDoc(collection(db, eventosCollectionPath), {
+           ...eventoParaFirestore, 
+           googleEventId: googleEventId 
+        });
       }
+
       console.log("Evento salvo/atualizado com sucesso!");
       setSaving(false);
       onClose();
+
     } catch (e) {
       console.error("Erro ao salvar evento:", e);
-      
-      // Lógica de Recuperação Automática para Erro 401 (Token Expirado)
-      if (e.result && e.result.error && e.result.error.code === 401) {
-         console.log("Token expirado detectado. Limpando credenciais...");
-         localStorage.removeItem('gapi_access_token');
-         // Opcional: Recarregar a página para forçar novo login limpo
-         window.location.reload();
-      }
-      
-      // Não definimos setModalError visível para o usuário
       setSaving(false);
+
+      // Verificação robusta de Token Expirado (401)
+      const isTokenExpired = e?.result?.error?.code === 401 || e?.status === 401 || (e?.result?.error?.message && e.result.error.message.includes('Invalid Credentials'));
+
+      if (isTokenExpired) {
+         console.log("Token expirado detectado. Forçando logout...");
+         localStorage.removeItem('gapi_access_token');
+         alert("Sua conexão com o Google Agenda expirou por segurança. Por favor, faça login novamente.");
+         window.location.reload(); // Recarrega para limpar o estado e pedir login
+      } else {
+        // Mostra erro genérico se não for token
+        setModalError("Erro ao conectar com Google Agenda. Verifique sua conexão.");
+      }
     }
   };
   const handleMusicoToggle = (musicoId) => {
